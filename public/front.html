@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Chat</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <style>
+    #chat { max-width: 400px; margin: auto; border: 1px solid #ccc; padding: 10px; }
+    .message { margin: 5px 0; }
+    .from-me { color: green; text-align: right; }
+    .from-them { color: blue; text-align: left; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>Live Chat</h2>
+    <input type="text" id="from" placeholder="رقمك"><br>
+    <input type="text" id="to" placeholder="رقم المستلم"><br>
+    <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا">
+    <button onclick="sendMessage()">إرسال</button>
+
+    <div id="messages"></div>
+  </div>
+
+  <script>
+    const socket = io("http://localhost:3000");
+
+    socket.on("message_sent_successfully", ({ from, message }) => {
+      appendMessage(`أنا: ${message}`, "from-me");
+    });
+
+    socket.on("receive_message", ({ from, message }) => {
+      appendMessage(`${from}: ${message}`, "from-them");
+    });
+
+    socket.on("error_message", ({ message }) => {
+      alert("❌ " + message);
+    });
+
+    function sendMessage() {
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+      const message = document.getElementById("messageInput").value;
+      socket.emit("send_message", { from, to, message });
+      document.getElementById("messageInput").value = "";
+    }
+
+    function appendMessage(text, className) {
+      const div = document.createElement("div");
+      div.className = "message " + className;
+      div.innerText = text;
+      document.getElementById("messages").appendChild(div);
+    }
+  </script>
+</body>
+</html>

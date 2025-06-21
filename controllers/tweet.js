@@ -1,12 +1,16 @@
 const Tweet = require("../models/tweets");
 const { tweetValidationSchema } = require("../validation/tweetvalidition");
-const Comment=require("../models/comments.js");
+const Comment = require("../models/comments.js");
+const getMessages=require("../configration/getmessages.js");
 const addTweet = async (req, res, next) => {
     try {
-        const { error } = tweetValidationSchema.validate(req.body);
+        const lang=req.headers['accept-language'] || 'en';
+        const messages=getMessages(lang);
+        const { error } = tweetValidationSchema(lang).validate(req.body);
         if (error) {
             return res.status(400).send({
-                status: res.statusCode,
+                code: 400,
+                status: false,
                 message: error.details[0].message
             });
         }
@@ -17,8 +21,9 @@ const addTweet = async (req, res, next) => {
             userId: id,
         });
         res.status(200).send({
-            status: res.status,
-            message: "تم اضافه التويت بنجاح",
+            code: 200,
+            status: true,
+            message: messages.tweet.addTweet,
         })
     }
     catch (err) {
@@ -28,11 +33,17 @@ const addTweet = async (req, res, next) => {
 const addLike = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const tweetId= req.params.id;
+        const tweetId = req.params.id;
         console.log(tweetId);
+        const lang=req.headers['accept-language'] || 'en';
+        const messages=getMessages(lang);
         const tweet = await Tweet.findOne({ _id: tweetId });
         if (!tweet) {
-            return res.status(404).json({ message: "لم يتم العثور على التويت" });
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.tweet.existTweet
+            });
         }
         const alreadyLiked = tweet.likedBy.includes(userId);
         let updatedTweet;
@@ -52,8 +63,10 @@ const addLike = async (req, res, next) => {
             );
         }
         return res.status(200).json({
-            message: alreadyLiked ? "تم إلغاء الإعجاب بالتويت" : "تم الإعجاب بالتويت",
-            likesCount: updatedTweet.likedBy.length 
+            status: true,
+            code: 200,
+            message: alreadyLiked ? messages.tweet.removeLike : messages.tweet.addLike,
+            likesCount: updatedTweet.likedBy.length
         });
     }
     catch (err) {
@@ -61,33 +74,40 @@ const addLike = async (req, res, next) => {
     }
 }
 const getTweetWithComments = async (req, res, next) => {
-  try {
-    const tweetId = req.params.id;
+    try {
+        const tweetId = req.params.id;
+         const lang=req.headers['accept-language'] || 'en';
+        const messages=getMessages(lang);
+        //get tweet
+        const tweet = await Tweet.findById(tweetId);
+        if (!tweet) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.tweet.existTweet
+            });
+        }
+        const rawComments = await Comment.find({ tweetId }).populate('userId', 'name email');
 
-    //get tweet
-    const tweet = await Tweet.findById(tweetId);
-    if (!tweet) {
-      return res.status(404).json({ message: 'لم يتم العثور على التويتة' });
+        const comments = rawComments.map(comment => {
+            const commentObj = comment.toObject();
+            commentObj.userData = commentObj.userId;
+            delete commentObj.userId;
+            return commentObj;
+        });
+        res.status(200).send({
+            code: 200,
+            status: true,
+            tweet,
+            comments
+        });
+
+    } catch (err) {
+        next(err);
     }
-    const rawComments = await Comment.find({ tweetId }).populate('userId', 'name email');
-
-    const comments = rawComments.map(comment => {
-      const commentObj = comment.toObject(); 
-      commentObj.userData = commentObj.userId; 
-      delete commentObj.userId; 
-      return commentObj;
-    });
-      res.status(200).json({
-      tweet,
-      comments
-    });
-
-  } catch (err) {
-    next(err);
-  }
 };
 module.exports = {
     addTweet,
-   addLike,
-   getTweetWithComments
+    addLike,
+    getTweetWithComments
 }

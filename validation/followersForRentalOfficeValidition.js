@@ -1,19 +1,23 @@
 const Joi = require('joi');
-const followerSchemaValidation = Joi.object({
+const getMessages=require("../locales/schemaValiditionMessages/followersForRentalOfficeValiditionMessages")
+const followerSchemaValidation = (lang='en')=>{
+  const messages=getMessages(lang);
+  return Joi.object({
   userId: Joi.string().required().messages({
-    'string.base': 'معرف المستخدم يجب أن يكون نصًا',
-    'any.required': 'معرف المستخدم مطلوب'
+    'string.base': messages.userId.base,
+    'any.required': messages.userId.required
   }),
 
   rentalOfficeId: Joi.string().required().messages({
-    'string.base': 'معرف مكتب التأجير يجب أن يكون نصًا',
-    'any.required': 'معرف مكتب التأجير مطلوب'
+    'string.base': messages.rentalOfficeId.base,
+    'any.required': messages.rentalOfficeId.required
   }),
 
   followedAt: Joi.date().optional().messages({
-    'date.base': 'تاريخ المتابعة يجب أن يكون تاريخًا صالحًا'
+    'date.base':messages.followedAt.base
   })
 });
+}
 module.exports={
  followerSchemaValidation   
 }

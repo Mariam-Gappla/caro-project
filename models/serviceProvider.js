@@ -6,8 +6,6 @@ const serviceProviderSchema= new mongoose.Schema({
     },
     email:{
         type:"string",
-        required:true,
-        unique:true,
         match:/^[a-zA-z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,4}$/,
     },
      password:{

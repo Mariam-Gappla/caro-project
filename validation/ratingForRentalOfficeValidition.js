@@ -1,22 +1,29 @@
 const Joi = require('joi');
-const ratingSchemaValidation = Joi.object({
-  userId: Joi.string().required().messages({
-    'string.base': 'معرف المستخدم يجب أن يكون نصًا',
-    'any.required': 'معرف المستخدم مطلوب'
-  }),
-
-  rentalOfficeId: Joi.string().required().messages({
-    'string.base': 'معرف مكتب التأجير يجب أن يكون نصًا',
-    'any.required': 'معرف مكتب التأجير مطلوب'
-  }),
-
-  rating: Joi.number().min(1).max(5).required().messages({
-    'number.base': 'التقييم يجب أن يكون رقمًا',
-    'number.min': 'أقل تقييم مسموح هو 1',
-    'number.max': 'أعلى تقييم مسموح هو 5',
-    'any.required': 'قيمة التقييم مطلوبة'
-  })
-});
+const getMessages=require("../locales/schemaValiditionMessages/ratingForOrderValiditionMessages");
+const ratingSchemaValidation = (lang='en')=>{
+  const msg=getMessages(lang);
+   return  Joi.object({
+    
+    orderId: Joi.string().required().messages({
+      'any.required': msg.orderId.required,
+      'string.base': msg.orderId.string
+    }),
+    targetType: Joi.string().valid('rentalOffice', 'serviceProvider').required().messages({
+      'any.required': msg.targetType.required,
+      'any.only': msg.targetType.valid,
+      'string.base': msg.targetType.string
+    }),
+    rating: Joi.number().min(1).max(5).required().messages({
+      'any.required': msg.rating.required,
+      'number.base': msg.rating.number,
+      'number.min': msg.rating.min,
+      'number.max': msg.rating.max
+    }),
+    comment: Joi.string().allow('').optional().messages({
+      'string.base': msg.comment.string
+    })
+  });
+}
 
 module.exports={
    ratingSchemaValidation

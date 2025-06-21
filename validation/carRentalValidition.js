@@ -1,111 +1,164 @@
 const Joi = require('joi');
-const carRentalValidationSchema = Joi.object({
-  rentalType: Joi.string()
-    .valid("يومى","اسبوعى","اسبوعي","يومي","منتهى بتملك","منتهي بتملك")
-    .required()
-    .messages({
-      'any.required': 'نوع التأجير مطلوب',
-      'any.only': "نوع التأجير يجب أن يكون يومي/أسبوعى أو منتهي بالتمليك",
-      'string.base': 'نوع التأجير يجب أن يكون نصًا'
+const getMessages = require("../locales/schemaValiditionMessages/carRentalValiditionMessages");
+const getupdateMessages = require("../locales/schemaValiditionMessages/updateCarRentalValidationMessages");
+const getRentToOwnMessages=require("../locales/schemaValiditionMessages/rentToOwnValiditionMessages");
+const carRentalWeeklyValiditionSchema = (lang = "en") => {
+  const messages = getMessages(lang)
+  return Joi.object({
+    rentalType: Joi.string()
+      .valid("weekly/daily", "rent to own")
+      .required()
+      .messages({
+        'any.required': messages.rentalType.required,
+        'any.only': messages.rentalType.valid,
+        'string.base': messages.rentalType.string
+      }),
+
+    images: Joi.array().items(Joi.string().uri().messages({
+      'string.uri': messages.images.uri
+    })).messages({
+      'array.base': messages.images.base
     }),
 
-  images: Joi.array().items(Joi.string().uri().messages({
-    'string.uri': 'رابط الصورة غير صحيح'
-  })).messages({
-    'array.base': 'الصور يجب أن تكون في مصفوفة'
-  }),
+    carName: Joi.string().required().messages({
+      'string.base': messages.carName.string,
+      'any.required': messages.carName.required
+    }),
 
-  carName: Joi.string().required().messages({
-    'string.base': 'اسم السيارة يجب أن يكون نصًا',
-    'any.required': 'اسم السيارة مطلوب'
-  }),
+    carType: Joi.string().required().messages({
+      'string.base': messages.carType.string,
+      'any.required': messages.carType.required
+    }),
 
-  carType: Joi.string().required().messages({
-    'string.base': 'نوع السيارة يجب أن يكون نصًا',
-    'any.required': 'نوع السيارة مطلوب'
-  }),
+    carModel: Joi.number().required().messages({
+      'number.base': messages.carModel.number,
+      'any.required': messages.carModel.required
+    }),
 
-  carModel: Joi.number().required().messages({
-    'number.base': 'موديل السيارة يجب أن يكون رقمًا',
-    'any.required': 'موديل السيارة مطلوب'
-  }),
+    licensePlateNumber: Joi.string().required().messages({
+      'string.base': messages.licensePlateNumber.string,
+      'any.required': messages.licensePlateNumber.required
+    }),
 
-  licensePlateNumber: Joi.string().required().messages({
-    'string.base': 'رقم اللوحة يجب أن يكون نصًا',
-    'any.required': 'رقم اللوحة مطلوب'
-  }),
+    freeKilometers: Joi.number().required().messages({
+      'number.base': messages.freeKilometers.number,
+      'any.required': messages.freeKilometers.required
+    }),
 
-  freeKilometers: Joi.number().required().messages({
-    'number.base': 'عدد الكيلومترات المجانية يجب أن يكون رقمًا',
-    'any.required': 'عدد الكيلومترات المجانية مطلوب'
-  }),
+    pricePerFreeKilometer: Joi.number().required().messages({
+      'number.base': messages.pricePerFreeKilometer.number,
+      'any.required': messages.pricePerFreeKilometer.required
+    }),
 
-  pricePerFreeKilometer: Joi.number().required().messages({
-    'number.base': 'سعر الكيلو المجاني يجب أن يكون رقمًا',
-    'any.required': 'سعر الكيلو المجاني مطلوب'
-  }),
+    pricePerExtraKilometer: Joi.number().required().messages({
+      'number.base': messages.pricePerExtraKilometer.number,
+      'any.required': messages.pricePerExtraKilometer.required
+    }),
 
-  pricePerExtraKilometer: Joi.number().required().messages({
-    'number.base': 'سعر الكيلو الزائد يجب أن يكون رقمًا',
-    'any.required': 'سعر الكيلو الزائد مطلوب'
-  }),
+    city: Joi.string().required().messages({
+      'string.base': messages.city.string,
+      'any.required': messages.city.required
+    }),
 
-  city: Joi.string().required().messages({
-    'string.base': 'اسم المدينة يجب أن يكون نصًا',
-    'any.required': 'اسم المدينة مطلوب'
-  }),
+    area: Joi.string().required().messages({
+      'string.base': messages.area.string,
+      'any.required': messages.area.required
+    }),
 
-  area: Joi.string().required().messages({
-    'string.base': 'اسم المنطقة يجب أن يكون نصًا',
-    'any.required': 'اسم المنطقة مطلوب'
-  }),
+    carDescription: Joi.string().required().messages({
+      'string.base': messages.carDescription.string,
+      'any.required': messages.carDescription.required
+    }),
 
-  carDescription: Joi.string().required().messages({
-    'string.base': 'وصف السيارة يجب أن يكون نصًا',
-    'any.required': 'وصف السيارة مطلوب'
-  }),
+    deliveryOption: Joi.boolean().messages({
+      'boolean.base': messages.deliveryOption.boolean
+    })
+  });
+}
+const rentToOwnSchema = (lang = "en") => {
+  const messages = getRentToOwnMessages(lang);
 
-  deliveryOption: Joi.boolean().messages({
-    'boolean.base': 'خيار التوصيل يجب أن يكون صح أو خطأ (true/false)'
-  })
-});
-const updateCarRentalValidationSchema = Joi.object({ 
-  pickupDate: Joi.date().required().messages({
-    'date.base': 'تاريخ الاستلام يجب أن يكون تاريخًا صالحًا',
-    'any.required': 'تاريخ الاستلام مطلوب'
-  }),
+  return Joi.object({
+    rentalType: Joi.string()
+      .valid("weekly/daily", "rent to own")
+      .required()
+      .messages({
+        'any.required': messages.rentalType.required,
+        'any.only': messages.rentalType.only,
+        'string.base': messages.rentalType.string
+      }),
 
-  returnDate: Joi.date().required().messages({
-    'date.base': 'تاريخ التسليم يجب أن يكون تاريخًا صالحًا',
-    'any.required': 'تاريخ التسليم مطلوب'
-  }),
+    images: Joi.array().items(
+      Joi.string().uri().messages({
+        'string.uri': messages.images.uri
+      })
+    ).messages({
+      'array.base': messages.images.base
+    }),
 
-  licenseImage: Joi.string().uri().allow(null, '').messages({
-    'string.uri': 'رابط صورة الرخصة غير صحيح'
-  }),
+    carName: Joi.string().required().messages({
+      'string.base': messages.carName.string,
+      'any.required': messages.carName.required
+    }),
 
-  paymentMethod: Joi.string().required().messages({
-    'string.base': 'وسيلة الدفع يجب أن تكون نصًا',
-    'any.required': 'وسيلة الدفع مطلوبة'
-  }),
+    carType: Joi.string().required().messages({
+      'string.base': messages.carType.string,
+      'any.required': messages.carType.required
+    }),
 
-  pickupType: Joi.string().required().messages({
-    'string.base': 'نوع الاستلام يجب أن يكون نصًا',
-    'any.required': 'نوع الاستلام مطلوب'
-  }),
+    carModel: Joi.number().required().messages({
+      'number.base': messages.carModel.number,
+      'any.required': messages.carModel.required
+    }),
 
-  totalPrice: Joi.number().required().messages({
-    'number.base': 'إجمالي السعر يجب أن يكون رقمًا',
-    'any.required': 'إجمالي السعر مطلوب'
-  }),
+    licensePlateNumber: Joi.string().required().messages({
+      'string.base': messages.licensePlateNumber.string,
+      'any.required': messages.licensePlateNumber.required
+    }),
 
-  deliveryLocation: Joi.string().required().messages({
-    'string.base': 'موقع التوصيل يجب أن يكون نصًا',
-    'any.required': 'موقع التوصيل مطلوب'
-  }),
-});
+    totalKilometers: Joi.number().required().messages({
+      'number.base': messages.totalKilometers.number,
+      'any.required': messages.totalKilometers.required
+    }),
 
-module.exports={
-carRentalValidationSchema,
-updateCarRentalValidationSchema
+    carPrice: Joi.number().required().messages({
+      'number.base': messages.carPrice.number,
+      'any.required': messages.carPrice.required
+    }),
+
+    monthlyPayment: Joi.number().required().messages({
+      'number.base': messages.monthlyPayment.number,
+      'any.required': messages.monthlyPayment.required
+    }),
+
+    finalPayment: Joi.number().required().messages({
+      'number.base': messages.finalPayment.number,
+      'any.required': messages.finalPayment.required
+    }),
+
+    city: Joi.string().required().messages({
+      'string.base': messages.city.string,
+      'any.required': messages.city.required
+    }),
+
+    area: Joi.string().required().messages({
+      'string.base': messages.area.string,
+      'any.required': messages.area.required
+    }),
+
+    carDescription: Joi.string().required().messages({
+      'string.base': messages.carDescription.string,
+      'any.required': messages.carDescription.required
+    }),
+
+    deliveryOption: Joi.boolean().messages({
+      'boolean.base': messages.deliveryOption.boolean
+    })
+  });
+};
+
+
+module.exports = {
+  carRentalWeeklyValiditionSchema,
+  rentToOwnSchema
 }

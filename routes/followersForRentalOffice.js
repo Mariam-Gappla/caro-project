@@ -1,7 +1,9 @@
 const express=require("express");
 const router=express.Router();
-const {addFollower}=require("../controllers/followersForRentalOffice");
-router.post("/addfollower/:id",addFollower)
+const {addFollower,getFollowersForRentalOffice}=require("../controllers/followersForRentalOffice");
+router.post("/addfollower/:rentalOfficeId",addFollower);
+router.get("/getfollowers",getFollowersForRentalOffice);
+
 
 
 

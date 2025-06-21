@@ -1,61 +1,69 @@
 const joi = require('joi');
-const registerSchema = joi.object({
-  username: joi.string().min(3).max(30).required().messages({
-    'string.empty': "اسم المستخدم مطلوب",
-    'any.required': "اسم المستخدم مطلوب",
-    "string.min": "يجب أن يكون اسم المستخدم على الأقل 3 أحرف وعلى الأكثر 30 حرفًا",
-    "string.max": "يجب أن يكون اسم المستخدم على الأقل 3 أحرف وعلى الأكثر 30 حرفًا"
-  }),
+const getMessages = require("../locales/schemaValiditionMessages/userValiditionMessages")
+const registerSchema = (lang = "en") => {
+  const messages = getMessages(lang);
+  return joi.object({
+    username: joi.string().min(3).max(30).required().messages({
+      'string.empty': messages.register.username.required,
+      'any.required': messages.register.username.required,
+      "string.min": messages.register.username.min,
+      "string.max": messages.register.username.max
+    }),
 
-  email: joi.string().email({ tlds: { allow: false } }).required().messages({
-    'string.empty': "البريد الإلكتروني مطلوب",
-    'any.required': "البريد الإلكتروني مطلوب",
-    'string.email': "يجب أن يكون البريد الإلكتروني بالصيغة example@gmail.com"
-  }),
+    email: joi.string().email().messages({
+      'string.empty': messages.register.email.required,
+      'any.required': messages.register.email.required,
+      'string.email': messages.register.email.invalid
+    }),
+    phone:joi.string().min(3).required().messages({
+      'string.empty': messages.register.password.required,
+      'string.min': messages.register.password.min,
+      'any.required': messages.register.password.required,
+    }),
+    password: joi.string().min(3).required().messages({
+      'string.empty': messages.register.password.required,
+      'string.min': messages.register.password.min,
+      'any.required': messages.register.password.required,
+    }),
 
-  password:joi.string().min(3).max(30).required().messages({
-    'string.empty': 'كلمة المرور مطلوبة',
-    'string.min': 'كلمة المرور يجب أن تكون 3 أحرف على الأقل',
-    'string.max': 'كلمة المرور يجب ألا تتجاوز 30 حرفًا',
-    'any.required': 'كلمة المرور مطلوبة'
-  }),
+    confirmPassword: joi.any().valid(joi.ref('password')).required().messages({
+      'any.only': messages.register.confirmPassword.match,
+      'any.required': messages.register.confirmPassword.required
+    }),
 
-  confirmPassword: joi.any().valid(joi.ref('password')).required().messages({
-    'any.only': "كلمة المرور وتأكيدها غير متطابقين",
-    'any.required': "تأكيد كلمة المرور مطلوب"
-  }),
-
-  role: joi.string()
-  .valid("rentalOffice", "serviceProvider", "user")
-  .required()
-  .messages({
-    'any.only': "الدور يجب أن يكون إما rentalOffice أو serviceProvider أو user",
-    'string.empty': "الدور مطلوب",
-    'any.required': "الدور مطلوب"
-  })
-});
-const loginSchema = joi.object({
-  email: joi.string().email().required().messages({
-    'string.empty': 'البريد الإلكتروني مطلوب',
-    'string.email': 'صيغة البريد الإلكتروني غير صحيحة',
-    'any.required': 'البريد الإلكتروني مطلوب'
-  }),
-  password: joi.string().min(3).max(30).required().messages({
-    'string.empty': 'كلمة المرور مطلوبة',
-    'string.min': 'كلمة المرور يجب أن تكون 3 أحرف على الأقل',
-    'string.max': 'كلمة المرور يجب ألا تتجاوز 30 حرفًا',
-    'any.required': 'كلمة المرور مطلوبة'
-  }),
-  role: joi.string()
-  .valid("rentalOffice", "serviceProvider", "user")
-  .required()
-  .messages({
-    'any.only': "الدور يجب أن يكون إما rentalOffice أو serviceProvider أو user",
-    'string.empty': "الدور مطلوب",
-    'any.required': "الدور مطلوب"
-  })
-});
-module.exports={
-    registerSchema,
-    loginSchema
+    role: joi.string()
+      .valid("rentalOffice", "serviceProvider", "user")
+      .required()
+      .messages({
+        'any.only': messages.register.role.required,
+        'string.empty': messages.register.role.required,
+        'any.required': messages.register.role.valid
+      })
+  });
+}
+const loginSchema = (lang = "en") => {
+  const messages = getMessages(lang);
+  return joi.object({
+    phone: joi.string().pattern(/^\d{10,15}$/).required().messages({
+      'string.empty': messages.login.phone.required, // "رقم الهاتف مطلوب"
+      'string.pattern.base': messages.login.phone.invalid, // "صيغة رقم الهاتف غير صحيحة"
+      'any.required': messages.login.phone.required // "رقم الهاتف مطلوب"
+    }),
+    password: joi.string().min(3).max(30).required().messages({
+      'string.empty': messages.login.password.required,
+      'any.required': messages.login.password.required
+    }),
+    role: joi.string()
+      .valid("rentalOffice", "serviceProvider", "user")
+      .required()
+      .messages({
+        'any.only': messages.login.role.valid,
+        'string.empty': messages.login.role.required,
+        'any.required': messages.login.role.required
+      })
+  });
+}
+module.exports = {
+  registerSchema,
+  loginSchema
 }

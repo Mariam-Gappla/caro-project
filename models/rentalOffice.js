@@ -1,21 +1,25 @@
+const { required } = require("joi");
 const mongoose=require("mongoose");
 const rentalOfficeSchema= new mongoose.Schema({
     username:{
         required:true,
-        type:"string",
+        type:String,
     },
     email:{
-        type:"string",
-        required:true,
-        unique:true,
+        type:String,
         match:/^[a-zA-z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,4}$/,
     },
+    phone:{
+        type:String,
+        required:true,
+        unique:true
+    },
      password:{
-        type:"string",
+        type:String,
         required:true,
     },
     image:{
-        type:"string",
+        type:String,
         default: "http://localhost:3000/images/rentalOffice.png",
     },
     likedBy: [

@@ -2,10 +2,12 @@ const Comment = require("../models/comments");
 const { commentValidationSchema } = require("../validation/commentvalidition")
 const addComment = async (req, res, next) => {
     try {
-        const { error } = commentValidationSchema.validate(req.body);
+        const lang=req.headers['accept-language'] || 'en'
+        const { error } = commentValidationSchema(lang).validate(req.body);
         if (error) {
             return res.status(400).send({
-                status: res.statusCode,
+                code:400,
+                status: false,
                 message: error.details[0].message
             });
         }
@@ -17,7 +19,8 @@ const addComment = async (req, res, next) => {
             tweetId:tweetId
         });  
       res.status(200).send({
-        status:res.status,
+        status:true,
+        code:200,
         message:"تم اضافه التعليق بنجاح",
       })
     }

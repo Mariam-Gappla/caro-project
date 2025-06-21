@@ -3,78 +3,86 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { registerSchema, loginSchema } = require("../validation/registerAndLoginSchema");
 const rentalOffice = require("../models/rentalOffice");
+const getMessages=require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider")
 const register = async (req, res, next) => {
     try {
-        console.log(req.body);
-        const { error } = registerSchema.validate(req.body);
+        const lang = req.headers['accept-language'] || 'en';
+        const messages=getMessages(lang);
+        const { error } = registerSchema(lang).validate(req.body);
         if (error) {
             return res.status(400).send({
-                status: res.statusCode,
+                status:false,
+                code: 400,
                 message: error.details[0].message
             })
         }
-        const { username, email, password, confirmPassword, role } = req.body;
+        const { username, email, password,phone, confirmPassword, role } = req.body;
+        console.log(req.body)
         const hashedPassword = await bcrypt.hash(password, 10);
         if (role == "rentalOffice") {
-            const existRentalOffice = await rentalOffice.findOne({ email: email });
+            console.log(role)
+            const existRentalOffice = await rentalOffice.findOne({phone });
             if (existRentalOffice) {
                 return res.status(400).send({
-                    status: 400,
-                    message: "هذا المكتب موجود من قبل"
+                    code: 400,
+                    status:false,
+                    message: messages.register.emailExists.rentalOffice
                 })
             }
             await rentalOffice.create({
                 username,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                phone
             });
             return res.status(200).send({
-                status: 200,
-                message: "تم انشاء الحساب بنجاح"
+                code: 200,
+                status:true,
+                message: messages.register.createdSuccessfully
             });
 
         }
         else if (role == "serviceProvider") {
-            const existServiceProvider = await serviceProvider.findOne({ email: email });
+            const existServiceProvider = await serviceProvider.findOne({phone });
             if (existServiceProvider) {
                 return res.status(400).send({
-                    status: 400,
-                    message: "موفر الخدمه موجود من قبل"
+                    code:400,
+                    status: false,
+                    message: messages.register.emailExists.serviceProvider
                 })
             }
             await serviceProvider.create({
                 username,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                phone
             });
             return res.status(200).send({
-                status: 200,
-                message: "تم انشاء الحساب بنجاح"
+                status: true,
+                code:200,
+                message: messages.register.createdSuccessfully
             });
         }
         else if (role == "user") {
-            const existUser = await User.findOne({ email: email });
+            const existUser = await User.findOne({ phone });
             if (existUser) {
                 return res.status(400).send({
-                    status: 400,
-                    message: "هذا المستخدم موجود من قبل"
+                    status: false,
+                    code:400,
+                    message: messages.register.emailExists.user
                 })
             }
             await User.create({
                 username,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                phone
             });
             return res.status(200).send({
-                status: 200,
-                message: "تم انشاء الحساب بنجاح"
-            });
-        }
-        else {
-            return res.status(400).send({
-                status: 400,
-                message: "الدور يجب أن يكون إما rentalOffice أو serviceProvider أو user"
+                status: true,
+                code:200,
+                message: messages.register.createdSuccessfully
             });
         }
     }
@@ -84,87 +92,96 @@ const register = async (req, res, next) => {
 }
 const login = async (req, res, next) => {
     try {
-        const { error } = loginSchema.validate(req.body);
+        const lang = req.headers['accept-language'] || 'en';
+        const messages=getMessages(lang);
+        const { error } = loginSchema(lang).validate(req.body);
         if (error) {
             return res.status(400).send({
-                status: res.statusCode,
+                code:400,
+                status: false,
                 message: error.details[0].message
             })
         }
-        const { email, password, role } = req.body;
+        const { phone,password, role } = req.body;
         if (role == "rentalOffice") {
-            const existRentalOffice = await rentalOffice.findOne({ email: email });
+            const existRentalOffice = await rentalOffice.findOne({ phone: phone });
             if (!existRentalOffice) {
                 return res.status(400).send({
-                    status: 400,
-                    message: "هذا المكتب لم يكن موجود يرجى انشاء حساب"
+                    code:400,
+                    status: false,
+                    message: messages.login.emailExists.rentalOffice
                 })
             }
             const match = await bcrypt.compare(password, existRentalOffice.password);
             if (!match) {
-                return res.status(401).send({
-                    status: res.statusCode,
-                    message: "البيانات المدخلة غير صحيحة، الرجاء التأكد من البريد الإلكتروني وكلمة المرور"
+                return res.status(400).send({
+                    status: false,
+                    code:400,
+                    message: messages.login.incorrectData
                 });
             }
             const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, "mysecret");
             res.status(200).send({
-                status: res.statusCode,
-                message: "تم تسجيل الدخول بنجاح",
-                data: { ...existRentalOffice._doc, token: token }
+                status:true,
+                code:200,
+                message: messages.login.success,
+                data: { ...existRentalOffice._doc },
+                token: token
             })
 
         }
         else if (role == "serviceProvider") {
-            const existServiceProvider = await serviceProvider.findOne({ email: email });
+            const existServiceProvider = await serviceProvider.findOne({ phone });
             if (!existServiceProvider) {
                 return res.status(400).send({
-                    status: 400,
-                    message: "موفر الخدمه لم يكن موجود من قبل يرجى انشاء حساب"
+                    status: false,
+                    code:400,
+                    message: messages.login.emailExists.serviceProvider
                 })
             }
             const match = await bcrypt.compare(password, existServiceProvider.password);
             if (!match) {
-                return res.status(401).send({
-                    status: res.statusCode,
-                    message: "البيانات المدخلة غير صحيحة، الرجاء التأكد من البريد الإلكتروني وكلمة المرور"
+                return res.status(400).send({
+                    code:400,
+                    status: false,
+                    message: messages.login.incorrectData
                 });
             }
             const token = jwt.sign({ id: existServiceProvider._id, role: "serviceProvider" }, "mysecret");
             res.status(200).send({
-                status: res.statusCode,
-                message: "تم تسجيل الدخول بنجاح",
-                data: { ...existServiceProvider._doc, token: token }
+                status: true,
+                code:200,
+                message: messages.success,
+                data: { ...existServiceProvider._doc},
+               token: token 
             })
 
         }
         else if (role == "user") {
-            const existUser = await User.findOne({ email: email });
+            const existUser = await User.findOne({ phone });
             if (!existUser) {
                 return res.status(400).send({
-                    status: 400,
-                    message: "هذا المستخدم لم يكن موجود من قبل يرجى انشاء حساب"
+                    status: false,
+                    code:400,
+                    message: messages.login.emailExists.user
                 })
             }
             const match = await bcrypt.compare(password, existUser.password);
             if (!match) {
-                return res.status(401).send({
-                    status: res.statusCode,
-                    message: "البيانات المدخلة غير صحيحة، الرجاء التأكد من البريد الإلكتروني وكلمة المرور"
+                return res.status(400).send({
+                    code:400,
+                    status: false,
+                    message: messages.login.incorrectData
                 });
             }
             const token = jwt.sign({ id: existUser._id, role:"user" }, "mysecret");
             res.status(200).send({
-                status: res.statusCode,
-                message: "تم تسجيل الدخول بنجاح",
-                data: { ...existUser._doc, token: token }
+                status: true,
+                code:200,
+                message: messages.login.success,
+                data: { ...existUser._doc},
+                token: token 
             })
-        }
-        else {
-            return res.status(400).send({
-                status: 400,
-                message: "الدور يجب أن يكون إما rentalOffice أو serviceProvider أو user"
-            });
         }
     }
     catch (err) {

@@ -1,21 +1,31 @@
-const mongoose=require('mongoose');
-const userSchema=new mongoose.Schema({
-   username:{
-        type:"string",
-        required:true,
-    },
-    email:{
-        type:"string",
-        required:true,
-        unique:true,
-        match:/^[a-zA-z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,4}$/,
-    },
-    password:{
-        type:"string",
-        required:true,
-    },
-     role: { type: String },
-     createdAt: { type: Date, default: Date.now },
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+  },
+  phone: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  image: {
+    type: "string",
+    default: "http://localhost:3000/images/rentalOffice.png",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
-const User=mongoose.model("User",userSchema);
-module.exports=User;
+const User = mongoose.model("User", userSchema);
+module.exports = User;

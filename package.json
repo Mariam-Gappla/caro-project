@@ -10,11 +10,15 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
     "express": "^5.1.0",
+    "io": "^1.5.3",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "socket": "^1.0.0",
+    "socket.io": "^4.8.1"
   }
 }
