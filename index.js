@@ -12,10 +12,12 @@ const replyOnComment=require("./routes/replyOnCommentroutes.js");
 const contactUsRoutes=require("./routes/contactUsroutes.js");
 const invoiceRoutes=require("./routes/invoiceroutes.js");
 const ratingForOrderRoutes=require("./routes/raitingForOrder.js");
+const verificationRoutes=require("./routes/verificationAccount.js");
 const otp=require("./routes/otproutes.js");
 const jwt=require("jsonwebtoken");
 const http = require("http");
 const socketIO = require("socket.io");
+require('dotenv').config(); // لازم يكون في أول الكود
 const server = http.createServer(app);
 const heandelSocket=require("./configration/socket.js");
 app.use(express.json());
@@ -63,6 +65,7 @@ app.use("/replyoncomment",replyOnComment);
 app.use("/contactus",contactUsRoutes);
 app.use("/invoice",invoiceRoutes);
 app.use("/ratingForOrder",ratingForOrderRoutes);
+app.use("/verification",verificationRoutes);
 
 // handel error
 app.use((err,req,res,next)=>{

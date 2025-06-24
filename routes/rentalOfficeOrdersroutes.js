@@ -1,9 +1,10 @@
 const express=require("express");
 const router=express.Router();
-const {addOrder,ordersForRentalOffice,getOrdersForRentalOfficeByWeekDay,getOrderById,acceptorder,getOrders,getBookedDays}=require("../controllers/rentalOfficeOrders");
+const {addOrder,ordersForRentalOfficewithstatus,getOrdersForRentalOfficeByWeekDay,getOrderById,acceptorder,getOrders,getBookedDays, getOrdersByRentalOffice}=require("../controllers/rentalOfficeOrders");
 const upload=require("../configration/uploadFile");
-router.get("/",ordersForRentalOffice)
+router.get("/",ordersForRentalOfficewithstatus)
 router.get("/OrdersByWeekDay",getOrdersForRentalOfficeByWeekDay);
+router.get("/rentalOffice",getOrdersByRentalOffice);
 router.get("/reportOrder",getOrders)
 router.get('/booked-days/:carId', getBookedDays);
 router.get("/orderdetails/:orderId",getOrderById);

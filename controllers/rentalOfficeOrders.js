@@ -135,7 +135,7 @@ const addOrder = async (req, res, next) => {
         next(err);
     }
 };
-const ordersForRentalOffice = async (req, res, next) => {
+const ordersForRentalOfficewithstatus = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
         const status = req.query.status;
@@ -457,6 +457,56 @@ const getBookedDays = async (req, res, next) => {
     next(error);
   }
 };
+const getOrdersByRentalOffice = async (req, res, next) => {
+  try {
+    const rentalOfficeId = req.user.id; // من التوكن
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const messages = getMessages(req.headers['accept-language'] || 'en');
+
+    // استعلام بعدد الطلبات
+    const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId });
+
+    // جلب الطلبات ومعاها carId
+    const orders = await rentalOfficeOrder.find({ rentalOfficeId })
+      .populate('carId') // جلب بيانات العربية
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    if (!orders || orders.length === 0) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: messages.order.existOrders || "لا توجد طلبات"
+      });
+    }
+
+    // تحويل carId → carDetails
+    const formattedOrders = orders.map(order => {
+      const { carId, ...rest } = order;
+      return {
+        ...rest,
+        carDetails: carId
+      };
+    });
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      page,
+      totalPages: Math.ceil(totalOrders / limit),
+      totalOrders,
+      data: formattedOrders
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 
@@ -465,12 +515,13 @@ const getBookedDays = async (req, res, next) => {
 
 module.exports = {
     addOrder,
-    ordersForRentalOffice,
+    ordersForRentalOfficewithstatus,
     getOrdersForRentalOfficeByWeekDay,
     getOrderById,
     acceptorder,
     getOrders,
-    getBookedDays
+    getBookedDays,
+    getOrdersByRentalOffice
 }
 
 

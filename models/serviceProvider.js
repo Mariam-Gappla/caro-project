@@ -8,6 +8,10 @@ const serviceProviderSchema= new mongoose.Schema({
         type:"string",
         match:/^[a-zA-z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,4}$/,
     },
+    phone:{
+        type:String,
+        required:true
+    },
      password:{
         type:"string",
         required:true,
