@@ -2,54 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Live Chat</title>
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <title>Socket Chat</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
-    #chat { max-width: 400px; margin: auto; border: 1px solid #ccc; padding: 10px; }
-    .message { margin: 5px 0; }
-    .from-me { color: green; text-align: right; }
-    .from-them { color: blue; text-align: left; }
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+    #chat p {
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
-  <div id="chat">
-    <h2>Live Chat</h2>
-    <input type="text" id="from" placeholder="رقمك"><br>
-    <input type="text" id="to" placeholder="رقم المستلم"><br>
-    <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا">
-    <button onclick="sendMessage()">إرسال</button>
+  <h2>🔵 Socket Chat</h2>
 
-    <div id="messages"></div>
+  <div>
+    <label>📱 My Phone:</label>
+    <input id="myPhone" type="text" placeholder="مثلاً: 0111"><br><br>
+
+    <label>👤 My Type:</label>
+    <select id="myType">
+      <option value="user">User</option>
+      <option value="rental">RentalOffice</option>
+      <option value="provider">ServiceProvider</option>
+    </select><br><br>
+
+    <label>📞 To Phone:</label>
+    <input id="toPhone" type="text" placeholder="مثلاً: 0123"><br><br>
+
+    <label>👤 To Type:</label>
+    <select id="toType">
+      <option value="user">User</option>
+      <option value="rental">RentalOffice</option>
+      <option value="provider">ServiceProvider</option>
+    </select><br><br>
+
+    <button onclick="connect()">✅ Join Chat</button>
   </div>
 
+  <hr>
+
+  <div id="chat"></div>
+
+  <input id="messageInput" type="text" placeholder="اكتب رسالتك...">
+  <button onclick="sendMessage()">📤 Send</button>
+
   <script>
-    const socket = io("http://localhost:3000");
+    const socket = io("http://localhost:3000"); // لو مستضيفة عالسيرفر اكتبي الرابط هناك
 
-    socket.on("message_sent_successfully", ({ from, message }) => {
-      appendMessage(`أنا: ${message}`, "from-me");
-    });
+    let from = {}, to = {}, roomId = "";
 
-    socket.on("receive_message", ({ from, message }) => {
-      appendMessage(`${from}: ${message}`, "from-them");
-    });
+    function getRoomId(p1, p2) {
+      return [p1, p2].sort().join("_");
+    }
 
-    socket.on("error_message", ({ message }) => {
-      alert("❌ " + message);
-    });
+    function connect() {
+      from = {
+        phone: document.getElementById("myPhone").value,
+        type: document.getElementById("myType").value
+      };
+      to = {
+        phone: document.getElementById("toPhone").value,
+        type: document.getElementById("toType").value
+      };
+
+      roomId = getRoomId(from.phone, to.phone);
+      socket.emit("join_room", roomId);
+      appendMessage(`🚪 Joined room: ${roomId}`);
+    }
 
     function sendMessage() {
-      const from = document.getElementById("from").value;
-      const to = document.getElementById("to").value;
-      const message = document.getElementById("messageInput").value;
-      socket.emit("send_message", { from, to, message });
+      const msg = document.getElementById("messageInput").value;
+      if (!msg) return;
+
+      socket.emit("send_message", {
+        from,
+        to,
+        message: msg
+      });
+
+      appendMessage(`🟢 You: ${msg}`);
       document.getElementById("messageInput").value = "";
     }
 
-    function appendMessage(text, className) {
-      const div = document.createElement("div");
-      div.className = "message " + className;
-      div.innerText = text;
-      document.getElementById("messages").appendChild(div);
+    socket.on("receive_message", (data) => {
+      appendMessage(`🔵 ${data.from}: ${data.message}`);
+    });
+
+    socket.on("message_sent_successfully", (data) => {
+      console.log("✅ Message saved:", data);
+    });
+
+    socket.on("error_message", (data) => {
+      alert("❌ Error: " + data.message);
+    });
+
+    function appendMessage(msg) {
+      const chat = document.getElementById("chat");
+      const p = document.createElement("p");
+      p.textContent = msg;
+      chat.appendChild(p);
+      chat.scrollTop = chat.scrollHeight;
     }
   </script>
 </body>

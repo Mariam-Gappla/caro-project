@@ -1,34 +1,75 @@
 const Message = require("../models/messages");
 const User = require("../models/user");
 const RentalOffice = require("../models/rentalOffice");
+const ServiceProvider = require("../models/serviceProvider")
+const getUserByTypeAndPhone = async (type, phone) => {
+  if (type === "user") return await User.findOne({ phone });
+  if (type === "rental") return await RentalOffice.findOne({ phone });
+  if (type === "provider") return await ServiceProvider.findOne({ phone });
+  return null;
+};
 
-exports.handleMessage = (io, socket) => {
+const handleMessage = (io, socket) => {
   socket.on("send_message", async ({ from, to, message }) => {
     try {
-      const fromUser = await User.findOne({ phone: from });
-      const toUser = await RentalOffice.findOne({ phone: to });
+      const fromUser = await getUserByTypeAndPhone(from.type, from.phone);
+      const toUser = await getUserByTypeAndPhone(to.type, to.phone);
 
       if (!fromUser || !toUser) {
-        socket.emit("error_message", {
+        return socket.emit("error_message", {
           message: "رقم المرسل أو المستقبل غير موجود في النظام",
         });
-        return;
       }
 
-      const roomId = [from, to].sort().join();
+      const roomId = [from.phone, to.phone].sort().join("_");
+
+      // 🟢 انضم المستخدم للغرفة
       socket.join(roomId);
 
-      await Message.create({ from, to, message, roomId });
+      const savedMessage = await Message.create({
+        from: from.phone,
+        to: to.phone,
+        message,
+        roomId,
+      });
 
-      // إرسال تأكيد للمرسل فقط
-      socket.emit("message_sent_successfully", { from, message });
+      // 🟢 أرسل للطرف الآخر داخل الغرفة
+      socket.to(roomId).emit("receive_message", {
+        from: from.phone,
+        message,
+        timestamp: savedMessage.timestamp,
+      });
 
-      // إرسال الرسالة للطرف الآخر فقط
-      socket.to(roomId).emit("receive_message", { from, message });
+      // 🟢 أرسل تأكيد للمرسل
+      socket.emit("message_sent_successfully", {
+        message,
+        timestamp: savedMessage.timestamp,
+      });
 
     } catch (err) {
-      console.error("Error in handleMessage:", err);
-      socket.emit("error_message", { message: "حدث خطأ أثناء إرسال الرسالة" });
+      console.error("❌ Error sending message:", err);
+      socket.emit("error_message", {
+        message: "حدث خطأ أثناء إرسال الرسالة",
+      });
     }
   });
 };
+
+
+const allMessages = async (req, res, next) => {
+  try {
+    const chatId = req.params.chatId;
+    const messages = await Message.find({ chatId }).sort({ timestamp: 1 });
+    res.status(200).send({
+      code: 200,
+      status: true,
+      messages: messages
+    })
+  } catch (err) {
+    res.status(500).json({ error: "حدث خطأ أثناء جلب الرسائل" });
+  }
+}
+module.exports = {
+  handleMessage,
+  allMessages
+}
