@@ -52,7 +52,8 @@ module.exports = {
     notExist: "This order does not exist",
     orderId:"orderId is required",
     acceptedSuccess:"order accepted and video uploaded",
-    licenseImage:"Only image files are allowed."
+    licenseImage:"Only image files are allowed.",
+    licenseImageRequired:"licenseImage is required"
   },
   replyOnComment: {
   addReplay: "Reply added successfully",

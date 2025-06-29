@@ -53,7 +53,8 @@ module.exports = {
     notExist: "هذا الطلب غير موجود",
     orderId:"معرف الطلب مطلوب",
     acceptedSuccess: "تم قبول الطلب ورفع فيديو السيارة بنجاح",
-    licenseImage:"مسموح برفع صور فقط"
+    licenseImage:"مسموح برفع صور فقط",
+    licenseImageRequired:"صوره الرخصه مطلوبه"
   },
   replyOnComment:{
     addreplay:"تمت إضافة الرد بنجاح",

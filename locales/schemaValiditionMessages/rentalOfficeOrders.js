@@ -27,6 +27,10 @@ const messages = {
       lat: "Latitude must be a number",
       long: "Longitude must be a number",
     },
+    licenseImage:{
+      base:"licenseImage must be string",
+      required:"licenseImage is required"
+    },
     deliveryType: {
       required: "Delivery type is required",
       valid: "Delivery type must be either 'branch' or 'delivery'",
@@ -40,6 +44,10 @@ const messages = {
   ar: {
     userId: {
       required: "معرّف المستخدم مطلوب",
+    },
+    licenseImage:{
+      base:"صوره الرخصه يجب ان تكون نصا",
+      required:"صوره الرخصه مطلوبه"
     },
     carId: {
       required: "معرّف السيارة مطلوب",

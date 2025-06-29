@@ -16,6 +16,9 @@ const tweetSchema = new mongoose.Schema({
       ref: 'User'
     }
   ],
+  image:{
+    type:String
+  },
   createdAt: {
     type: Date,
     default: Date.now

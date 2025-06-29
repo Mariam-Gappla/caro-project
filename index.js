@@ -64,7 +64,7 @@ app.use("/tweets", tweetRoutes);
 app.use("/comments", commentRoutes);
 app.use("/cars", cars);
 app.use("/rentalOffice", rentalOffice);
-app.use("/rentalOffice/followers", rentalOfficeFollower);
+app.use("/followers", rentalOfficeFollower);
 app.use("/orders", rentalOfficeOrders);
 app.use("/replyoncomment", replyOnComment);
 app.use("/contactus", contactUsRoutes);

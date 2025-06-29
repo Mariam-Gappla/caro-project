@@ -2,6 +2,8 @@ const rentalOfficeOrders = require("../models/rentalOfficeOrders");
 const CarRental = require("../models/carRental");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const rentalOfficeOrderSchema = require("../validation/rentalOfficeOrders");
+const Revenu = require("../models/invoice");
+const Rating=require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const path = require("path");
 const fs = require("fs");
@@ -12,6 +14,7 @@ const addOrder = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang);
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+        
 
         // معالجة اللوكيشن
         req.body.pickupLocation = {
@@ -63,18 +66,18 @@ const addOrder = async (req, res, next) => {
             return res.status(400).send({
                 code: 400,
                 status: false,
-                message: lang=="en"?"The selected period is already booked" :"الفترة المختارة غير متاحة للحجز"
+                message: lang == "en" ? "The selected period is already booked" : "الفترة المختارة غير متاحة للحجز"
             });
         }
 
         // التحقق من صورة الرخصة
         const imageFiles = req.files.filter(f => f.fieldname === "licenseImage");
-
+        console.log(messages.order.licenseImageRequired)
         if (imageFiles.length === 0) {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: messages.licenseImage.required
+                message: messages.order.licenseImageRequired
             });
         }
 
@@ -232,6 +235,7 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
                 $sort: { _id: 1 }
             }
         ]);
+
         const days = {
             1: "Sunday",
             2: "Monday",
@@ -241,7 +245,10 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
             6: "Friday",
             7: "Saturday"
         };
-
+        const fullOrders = await rentalOfficeOrders.find({ rentalOfficeId });
+        const cars = await CarRental.find({ rentalOfficeId });
+        const revenu = await Revenu.find({ rentalOfficeId });
+        const rating= await Rating.find({rentalOfficeId})
         const stats = result.map(r => ({
             day: days[r._id],
             count: r.count
@@ -249,7 +256,14 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         res.status(200).send({
             status: true,
             code: 200,
-            data: stats
+            data: {
+                report: stats,
+                orders:fullOrders.length,
+                cars:cars.length,
+                rating:rating.length,
+                revenu:revenu.length
+
+            }
         })
 
 
@@ -291,6 +305,15 @@ const acceptorder = async (req, res, next) => {
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
         const videoFiles = req.files.filter(f => f.fieldname === "video");
+        if(!req.files)
+        {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.rentalCar.video
+            });
+
+        }
 
         if (videoFiles.length === 0) {
             return res.status(400).send({
@@ -320,7 +343,7 @@ const acceptorder = async (req, res, next) => {
             });
         }
 
-        const fileName = `${Date.now()}-${file.originalname}`;
+       const fileName = `${Date.now()}-${encodeURIComponent(file.originalname)}`;
         const saveDir = path.join(__dirname, '../images');
         const filePath = path.join(saveDir, fileName);
 
@@ -397,114 +420,114 @@ const getOrders = async (req, res, next) => {
     }
 };
 const getBookedDays = async (req, res, next) => {
-  try {
-    const carId = req.params.carId;
-    const year = parseInt(req.query.year);
-    const month = parseInt(req.query.month); // من 1 إلى 12
+    try {
+        const carId = req.params.carId;
+        const year = parseInt(req.query.year);
+        const month = parseInt(req.query.month); // من 1 إلى 12
 
-    if (!year || !month || month < 1 || month > 12) {
-      return res.status(400).send({
-        status: false,
-        code: 400,
-        message: "Invalid year or month",
-      });
+        if (!year || !month || month < 1 || month > 12) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: "Invalid year or month",
+            });
+        }
+
+        // احسب أول وآخر يوم في الشهر المطلوب
+        const startOfMonth = new Date(year, month - 1, 1);
+        const endOfMonth = new Date(year, month, 0, 23, 59, 59); // آخر يوم في الشهر
+
+        // هات كل الحجوزات الخاصة بالعربية في هذا الشهر
+        const orders = await rentalOfficeOrders.find({
+            carId,
+            $or: [
+                {
+                    startDate: { $lte: endOfMonth },
+                    endDate: { $gte: startOfMonth },
+                }
+            ]
+        });
+
+        // استخرج كل الأيام المحجوزة داخل كل حجز
+        const bookedDays = [];
+
+        orders.forEach(order => {
+            let currentDate = new Date(order.startDate);
+            const endDate = new Date(order.endDate);
+
+            while (currentDate <= endDate) {
+                if (
+                    currentDate.getFullYear() === year &&
+                    currentDate.getMonth() === month - 1
+                ) {
+                    // ضيف اليوم بصيغة yyyy-mm-dd
+                    bookedDays.push(currentDate.toISOString().split("T")[0]);
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        });
+
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            carId,
+            year,
+            month,
+            bookedDays
+        });
+
+    } catch (error) {
+        next(error);
     }
-
-    // احسب أول وآخر يوم في الشهر المطلوب
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59); // آخر يوم في الشهر
-
-    // هات كل الحجوزات الخاصة بالعربية في هذا الشهر
-    const orders = await rentalOfficeOrders.find({
-      carId,
-      $or: [
-        {
-          startDate: { $lte: endOfMonth },
-          endDate: { $gte: startOfMonth },
-        }
-      ]
-    });
-
-    // استخرج كل الأيام المحجوزة داخل كل حجز
-    const bookedDays = [];
-
-    orders.forEach(order => {
-      let currentDate = new Date(order.startDate);
-      const endDate = new Date(order.endDate);
-
-      while (currentDate <= endDate) {
-        if (
-          currentDate.getFullYear() === year &&
-          currentDate.getMonth() === month - 1
-        ) {
-          // ضيف اليوم بصيغة yyyy-mm-dd
-          bookedDays.push(currentDate.toISOString().split("T")[0]);
-        }
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-    });
-
-    return res.status(200).send({
-      status: true,
-      code: 200,
-      carId,
-      year,
-      month,
-      bookedDays
-    });
-
-  } catch (error) {
-    next(error);
-  }
 };
 const getOrdersByRentalOffice = async (req, res, next) => {
-  try {
-    const rentalOfficeId = req.user.id; // من التوكن
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    try {
+        const rentalOfficeId = req.user.id; // من التوكن
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-    const messages = getMessages(req.headers['accept-language'] || 'en');
+        const messages = getMessages(req.headers['accept-language'] || 'en');
 
-    // استعلام بعدد الطلبات
-    const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId });
+        // استعلام بعدد الطلبات
+        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId });
 
-    // جلب الطلبات ومعاها carId
-    const orders = await rentalOfficeOrder.find({ rentalOfficeId })
-      .populate('carId') // جلب بيانات العربية
-      .skip(skip)
-      .limit(limit)
-      .lean();
+        // جلب الطلبات ومعاها carId
+        const orders = await rentalOfficeOrder.find({ rentalOfficeId })
+            .populate('carId') // جلب بيانات العربية
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
-    if (!orders || orders.length === 0) {
-      return res.status(400).send({
-        status: false,
-        code: 400,
-        message: messages.order.existOrders || "لا توجد طلبات"
-      });
+        if (!orders || orders.length === 0) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.order.existOrders || "لا توجد طلبات"
+            });
+        }
+
+        // تحويل carId → carDetails
+        const formattedOrders = orders.map(order => {
+            const { carId, ...rest } = order;
+            return {
+                ...rest,
+                carDetails: carId
+            };
+        });
+
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            page,
+            totalPages: Math.ceil(totalOrders / limit),
+            totalOrders,
+            data: formattedOrders
+        });
+
+    } catch (error) {
+        next(error);
     }
-
-    // تحويل carId → carDetails
-    const formattedOrders = orders.map(order => {
-      const { carId, ...rest } = order;
-      return {
-        ...rest,
-        carDetails: carId
-      };
-    });
-
-    return res.status(200).send({
-      status: true,
-      code: 200,
-      page,
-      totalPages: Math.ceil(totalOrders / limit),
-      totalOrders,
-      data: formattedOrders
-    });
-
-  } catch (error) {
-    next(error);
-  }
 };
 
 

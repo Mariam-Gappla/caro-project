@@ -41,7 +41,10 @@ const tweetValidationSchema = (lang = "en") => {
       .messages({
         "array.base": messages.likedBy.arraybase
       }),
-
+      image:Joi.string().optional().messages({
+        "string.base": messages.image.base,
+      }),
+    
     createdAt: Joi.date()
       .optional()
       .messages({

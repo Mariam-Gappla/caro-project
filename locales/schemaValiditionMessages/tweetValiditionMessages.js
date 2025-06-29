@@ -17,6 +17,9 @@ const messages = {
     },
     createdAt: {
       'base': 'تاريخ الإنشاء يجب أن يكون تاريخًا صالحًا'
+    },
+    image:{
+       'base':"الصوره يجب ان تكون نصا"
     }
   },
 
@@ -35,6 +38,9 @@ const messages = {
       'arraybase': 'likedBy must be an array of user IDs',
       'base': 'Each likedBy item must be a string',
       'invalid': 'Invalid user ID inside likedBy'
+    },
+    image:{
+       'base':"image must be string"
     },
     createdAt: {
       'base': 'Created date must be a valid date'

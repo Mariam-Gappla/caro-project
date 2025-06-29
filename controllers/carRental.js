@@ -8,15 +8,17 @@ const addCar = async (req, res, next) => {
         console.log(req.user.id)
         const imageBuffers = req.files || [];
         const lang = req.headers['accept-language'] || 'en';
+        const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
         // ⏰ نحفظ اسم الصورة مرة واحدة لكل صورة
         const imagePaths = [];
         const messages = getMessages(lang);
         const fileInfos = imageBuffers.map(file => {
             const fileName = `${Date.now()}-${file.originalname}`;
             const filePath = path.join(__dirname, '../images', fileName);
-            imagePaths.push(`http://localhost:3000/images/${fileName}`);
+            imagePaths.push(BASE_URL+fileName);
             return { fileName, filePath, buffer: file.buffer };
         });
+        console.log(imagePaths);
         const { rentalType } = req.body;
         if (rentalType == "weekly/daily") {
 
@@ -101,9 +103,10 @@ const addCar = async (req, res, next) => {
     }
 }
 
-const getCarsByRentalOffice = async (req, res, next) => {
+const getCarsByRentalOfficeForUser = async (req, res, next) => {
     try {
         const id = req.user.id;
+        console.log(id)
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang)
         console.log(id)
@@ -151,6 +154,6 @@ const getCarById = async (req, res, next) => {
 }
 module.exports = {
     addCar,
-    getCarsByRentalOffice,
+    getCarsByRentalOfficeForUser,
     getCarById
 }

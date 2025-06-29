@@ -179,7 +179,10 @@ const login = async (req, res, next) => {
                 status: true,
                 code:200,
                 message: messages.login.success,
-                data: { ...existUser._doc},
+                data: { 
+                   user:existUser,
+                    token: token 
+                },
                 token: token 
             })
         }
