@@ -125,8 +125,10 @@ const login = async (req, res, next) => {
                 status:true,
                 code:200,
                 message: messages.login.success,
-                data: { ...existRentalOffice._doc },
-                token: token
+                data: { 
+                    user:existRentalOffice,
+                    token:token
+                 },
             })
 
         }
@@ -152,8 +154,11 @@ const login = async (req, res, next) => {
                 status: true,
                 code:200,
                 message: messages.success,
-                data: { ...existServiceProvider._doc},
-               token: token 
+                data: {
+                    user: existServiceProvider,
+                    token:token
+                    
+                    },
             })
 
         }
@@ -183,7 +188,6 @@ const login = async (req, res, next) => {
                    user:existUser,
                     token: token 
                 },
-                token: token 
             })
         }
     }
