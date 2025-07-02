@@ -62,13 +62,12 @@ const register = async (req, res, next) => {
                 message: messages.register.createdSuccessfully
             });
         }
-        else
-        {
-            return res.status(200).send({
-                status: true,
-                code: 200,
-                message: lang=="en"?"this role not exist":"هذا الدور غير موجود"
-            }); 
+        else {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang == "en" ? "this role not exist" : "هذا الدور غير موجود"
+            });
         }
     }
     catch (err) {
@@ -79,6 +78,7 @@ const login = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang);
+        console.log(req.body)
         const { error } = loginSchema(lang).validate(req.body);
         if (error) {
             return res.status(400).send({
@@ -89,6 +89,17 @@ const login = async (req, res, next) => {
         }
         const { phone, password, role } = req.body;
         if (role == "rentalOffice") {
+            const existRentalOffice = await rentalOffice.findOne({ phone: phone });
+            if (existRentalOffice) {
+                const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, "mysecret");
+                return res.status(200).send({
+                    message: messages.login.success,
+                    data: {
+                        user: existRentalOffice,
+                        token: token
+                    },
+                })
+            }
             const existUser = await User.findOne({ phone: phone });
 
             const match = await bcrypt.compare(password, existUser.password);
@@ -99,14 +110,18 @@ const login = async (req, res, next) => {
                     message: messages.login.incorrectData
                 });
             }
-            const rentalOffice = await rentalOffice.create(existUser)
-            const token = jwt.sign({ id: rentalOffice._id, role: "rentalOffice" }, "mysecret");
+            const Office = await rentalOffice.create({
+                username: existUser.username,
+                phone: existUser.phone,
+                password: existUser.password
+            })
+            const token = jwt.sign({ id: Office._id, role: "rentalOffice" }, "mysecret");
             res.status(200).send({
                 status: true,
                 code: 200,
                 message: messages.login.success,
                 data: {
-                    rentalOffice: rentalOffice,
+                    user: Office,
                     token: token
                 },
             })
@@ -201,12 +216,12 @@ const resetPassword = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await Model.findByIdAndUpdate(user._id,{password:hashedPassword},{new:true})
+        await Model.findByIdAndUpdate(user._id, { password: hashedPassword }, { new: true })
 
-        return res.status(200).send({ 
-            status:true,
-            code:200,
-            message: 'Password updated successfully' 
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message: 'Password updated successfully'
         });
 
     } catch (err) {
