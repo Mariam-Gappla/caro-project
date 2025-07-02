@@ -3,7 +3,7 @@ const CarRental = require("../models/carRental");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const rentalOfficeOrderSchema = require("../validation/rentalOfficeOrders");
 const Revenu = require("../models/invoice");
-const Rating=require("../models/ratingForOrder");
+const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const path = require("path");
 const fs = require("fs");
@@ -14,7 +14,7 @@ const addOrder = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang);
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-        
+
 
         // معالجة اللوكيشن
         req.body.pickupLocation = {
@@ -131,7 +131,6 @@ const addOrder = async (req, res, next) => {
             status: true,
             code: 200,
             message: messages.order.addOrder,
-            order
         });
 
     } catch (err) {
@@ -143,6 +142,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         const rentalOfficeId = req.user.id;
         const status = req.query.status;
         const page = parseInt(req.query.page) || 1;
+        const lang = req.headers['accept-language'] || 'en'
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const now = new Date();
@@ -189,10 +189,16 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
-            page,
-            totalPages: Math.ceil(totalOrders / limit),
-            totalOrders,
-            data: formattedOrders
+            data: {
+                message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+                totalOrders,
+                orders: formattedOrders,
+                pagination: {
+                    page,
+                    totalPages: Math.ceil(totalOrders / limit),
+                },
+
+            }
         });
 
     } catch (err) {
@@ -204,6 +210,7 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
         const orders = await rentalOfficeOrder.find({ rentalOfficeId })
+        const lang = req.headers['accept-language'] || 'en'
         if (!orders) {
             return res.status(400).send({
                 status: false,
@@ -248,7 +255,7 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         const fullOrders = await rentalOfficeOrders.find({ rentalOfficeId });
         const cars = await CarRental.find({ rentalOfficeId });
         const revenu = await Revenu.find({ rentalOfficeId });
-        const rating= await Rating.find({rentalOfficeId})
+        const rating = await Rating.find({ rentalOfficeId })
         const stats = result.map(r => ({
             day: days[r._id],
             count: r.count
@@ -256,12 +263,13 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         res.status(200).send({
             status: true,
             code: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: {
                 report: stats,
-                orders:fullOrders.length,
-                cars:cars.length,
-                rating:rating.length,
-                revenu:revenu.length
+                orders: fullOrders.length,
+                cars: cars.length,
+                rating: rating.length,
+                revenu: revenu.length
 
             }
         })
@@ -288,6 +296,7 @@ const getOrderById = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: rawComments
         })
 
@@ -305,8 +314,7 @@ const acceptorder = async (req, res, next) => {
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
         const videoFiles = req.files.filter(f => f.fieldname === "video");
-        if(!req.files)
-        {
+        if (!req.files) {
             return res.status(400).send({
                 status: false,
                 code: 400,
@@ -343,7 +351,7 @@ const acceptorder = async (req, res, next) => {
             });
         }
 
-       const fileName = `${Date.now()}-${encodeURIComponent(file.originalname)}`;
+        const fileName = `${Date.now()}-${encodeURIComponent(file.originalname)}`;
         const saveDir = path.join(__dirname, '../images');
         const filePath = path.join(saveDir, fileName);
 
@@ -379,8 +387,6 @@ const acceptorder = async (req, res, next) => {
             status: true,
             code: 200,
             message: messages.order.acceptedSuccess || "تم قبول الطلب ورفع فيديو السيارة بنجاح",
-            order,
-            car: updatedCar
         });
 
     } catch (error) {
@@ -410,9 +416,12 @@ const getOrders = async (req, res, next) => {
             status: true,
             code: 200,
             data: {
-                deliveredOrders: deliveredOrders.length,
-                pendingOrders: pendingOrders.length,
-                expiredOrders: expiredOrders.length
+                message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+                report: {
+                    deliveredOrders: deliveredOrders.length,
+                    pendingOrders: pendingOrders.length,
+                    expiredOrders: expiredOrders.length
+                }
             }
         });
     } catch (error) {
@@ -424,7 +433,7 @@ const getBookedDays = async (req, res, next) => {
         const carId = req.params.carId;
         const year = parseInt(req.query.year);
         const month = parseInt(req.query.month); // من 1 إلى 12
-
+        const lang = req.headers['accept-language'] || 'en';
         if (!year || !month || month < 1 || month > 12) {
             return res.status(400).send({
                 status: false,
@@ -470,10 +479,10 @@ const getBookedDays = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
-            carId,
-            year,
-            month,
-            bookedDays
+            data: {
+                message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+                bookedDays
+            }
         });
 
     } catch (error) {
@@ -484,6 +493,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id; // من التوكن
         const page = parseInt(req.query.page) || 1;
+         const lang = req.headers['accept-language'] || 'en';
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
@@ -519,10 +529,14 @@ const getOrdersByRentalOffice = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
-            page,
-            totalPages: Math.ceil(totalOrders / limit),
-            totalOrders,
-            data: formattedOrders
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+            data: {
+                orders: formattedOrders,
+                pagination: {
+                    page,
+                    totalPages: Math.ceil(totalOrders / limit),
+                }
+            }
         });
 
     } catch (error) {

@@ -1,3 +1,5 @@
+const { number, required } = require("joi");
+
 const messages = {
   ar: {
     rentalType: {
@@ -51,7 +53,12 @@ const messages = {
     },
     deliveryOption: {
       boolean: "خيار التوصيل يجب أن يكون صح أو خطأ (true/false)"
+    },
+    odoMeter:{
+      required:"عداد السياره مطلوب",
+      number:"عداد السياره مطلوب"
     }
+
   },
 
   en: {
@@ -106,7 +113,11 @@ const messages = {
     },
     deliveryOption: {
       boolean: "Delivery option must be true or false"
-    }
+    },
+     odoMeter:{
+      required:"odoMeter is required",
+      number:"odoMeter must be number"
+     }
   }
 };
 const getMessages = (lang = 'en') => {

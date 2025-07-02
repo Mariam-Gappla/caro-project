@@ -47,6 +47,7 @@ const addCar = async (req, res, next) => {
                 area: req.body.area,
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
+                odoMeter:req.body.odoMeter,
                 rentalOfficeId: req.user.id
             });
 
@@ -96,7 +97,7 @@ const addCar = async (req, res, next) => {
         return res.status(200).send({
             code: 200,
             status: true,
-            message: "تم اضافه السياره بنجاح"
+            message: lang=="en" ? "تم اضافه السياره بنجاح":"car added successfully"
         });
     } catch (err) {
         next(err);
@@ -122,6 +123,7 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
         return res.status(200).send({
             code: 200,
             status: true,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: cars
         })
     }
@@ -145,6 +147,7 @@ const getCarById = async (req, res, next) => {
         }
         return res.status(200).send({
             status: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: car
         })
     }

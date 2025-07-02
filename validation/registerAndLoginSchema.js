@@ -12,7 +12,6 @@ const registerSchema = (lang = "en") => {
 
     email: joi.string().email().messages({
       'string.empty': messages.register.email.required,
-      'any.required': messages.register.email.required,
       'string.email': messages.register.email.invalid
     }),
     phone:joi.string().min(3).required().messages({

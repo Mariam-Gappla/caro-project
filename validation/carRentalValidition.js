@@ -44,7 +44,10 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       'number.base': messages.freeKilometers.number,
       'any.required': messages.freeKilometers.required
     }),
-
+    odoMeter:Joi.number().required().messages({
+      'number.base': messages.odoMeter.number,
+      'any.required': messages.odoMeter.required
+    }),
     pricePerFreeKilometer: Joi.number().required().messages({
       'number.base': messages.pricePerFreeKilometer.number,
       'any.required': messages.pricePerFreeKilometer.required

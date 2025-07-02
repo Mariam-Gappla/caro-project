@@ -6,7 +6,8 @@ const carRentalSchema = new mongoose.Schema({
   carType: { type: String, required: true },              
   carModel: { type: Number, required: true },              
   licensePlateNumber: { type: String, required: true },   
-  freeKilometers: { type: Number},        
+  freeKilometers: { type: Number}, 
+  odoMeter:{type:Number},  
   pricePerFreeKilometer: { type: Number}, 
   pricePerExtraKilometer: { type: Number},
   city: { type: String, required: true },
@@ -17,6 +18,7 @@ const carRentalSchema = new mongoose.Schema({
   carPrice:{type:Number},
   monthlyPayment:{type:Number},
   finalPayment:{type:Number},
+  color:{type:String},
   videoCar:{type:String},                           
   rentalOfficeId  :{
     type: mongoose.Schema.Types.ObjectId, 
