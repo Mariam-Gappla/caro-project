@@ -5,7 +5,6 @@ const { registerSchema, loginSchema } = require("../validation/registerAndLoginS
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
-const { rentalOffice } = require("../locales/generalmessages/ar");
 const register = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
