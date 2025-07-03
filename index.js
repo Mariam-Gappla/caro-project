@@ -27,6 +27,7 @@ const ratingForOrderRoutes = require("./routes/raitingForOrder.js");
 const verificationRoutes = require("./routes/verificationAccount.js");
 const chatRoutes = require("./routes/chat.js");
 const otp = require("./routes/otproutes.js");
+const notificationRoutes=require("./routes/notification.js");
 
 // 🟢 Middleware
 app.use(express.json());
@@ -72,6 +73,7 @@ app.use("/invoice", invoiceRoutes);
 app.use("/ratingForOrder", ratingForOrderRoutes);
 app.use("/verification", verificationRoutes);
 app.use("/chat", chatRoutes);
+app.use("/notification",notificationRoutes);
 
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {

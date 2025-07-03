@@ -96,11 +96,11 @@ const getRevenue = async (req, res, next) => {
                 message: messages.invoice.noInvoices
             });
         }
-        const totalRevenue = invoices.reduce((acc, invoice) => acc + invoice.amount, 0);
+        /*const totalRevenue = invoices.reduce((acc, invoice) => acc + invoice.amount, 0);*/
         res.status(200).send({
             code: 200,
             status: true,
-            revenue: totalRevenue
+            revenue: invoices
         });
     } catch (err) {
         next(err);

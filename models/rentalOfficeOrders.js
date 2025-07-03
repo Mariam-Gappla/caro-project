@@ -1,3 +1,4 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
 const rentalOfficeOrderSchema = new mongoose.Schema({
   userId: {
@@ -39,12 +40,12 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
       type: Number,
     }
   },
+  ended:{
+     type: Boolean,
+    default: false 
+  },
   deliveryType: {
     type: String,
-    required: true
-  },
-  totalAmount: {
-    type: Number,
     required: true
   },
   paymentStatus: {
@@ -61,6 +62,15 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
     type: Boolean,
     default: false 
   },
+  isAvailable: {
+    type: Boolean,
+    default: true,
+  },
+  totalCost:{
+    type:Number,
+    required:true,
+  },
+  priceType:{type:string ,enum:["open_km","limited_km"]},
   date: {
     type: Date,
     default: Date.now

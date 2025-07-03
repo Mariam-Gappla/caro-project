@@ -17,6 +17,9 @@ const register = async (req, res, next) => {
                 message: error.details[0].message
             })
         }
+        const token = req.headers.authorization?.split(" ")[1];
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { identifier } = decoded;
         const { username, email, password, phone, role } = req.body;
         console.log(req.body)
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -91,7 +94,7 @@ const login = async (req, res, next) => {
         if (role == "rentalOffice") {
             const existRentalOffice = await rentalOffice.findOne({ phone: phone });
             if (existRentalOffice) {
-                const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, "mysecret");
+                const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
                 return res.status(200).send({
                     message: messages.login.success,
                     data: {
@@ -190,42 +193,79 @@ const login = async (req, res, next) => {
         next(err)
     }
 }
-const resetPassword = async (req, res) => {
+const resetPassword = async (req, res, next) => {
     try {
-        const lang = req.headers['accept-language'] || 'en';
-        const { phone, role, newPassword } = req.body;
+        const lang = req.headers["accept-language"] || "en";
+        const { newPassword, role } = req.body;
 
+        // 1. جلب التوكن من header
+        const token = req.headers.authorization?.split(" ")[1];
+
+        if (!token) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang === "en" ? "Token is missing" : "التوكن مفقود"
+            });
+        }
+
+        // 2. فك الشيفرة
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).send({
+                status: false,
+                code: 401,
+                message:
+                    lang === "en"
+                        ? "Invalid or expired token"
+                        : "الرابط غير صالح أو انتهت صلاحيته"
+            });
+        }
+
+        const { identifier } = decoded;
+
+        // 3. حدد الـ Model
         let Model;
-        if (role === 'user') Model = User;
-        else if (role === 'rentalOffice') Model = rentalOffice;
-        else if (role === 'serviceProvider') Model = serviceProvider;
-        else return res.status(400).send({
-            status: true,
-            code: 400,
-            message: lang == "en" ? 'Invalid role' : "هذا الدور غير موجود"
-        });
+        if (role === "user") Model = User;
+        else if (role === "rentalOffice") Model = rentalOffice;
+        else if (role === "serviceProvider") Model = serviceProvider;
+        else
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang === "en" ? "Invalid role" : "هذا الدور غير موجود"
+            });
 
-        const user = await Model.findOne({ phone });
-
+        // 4. تحديث الباسورد
+        const user = await Model.findOne({ phone: identifier });
         if (!user) {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: lang == "en" ? 'this account not found' : "هذا الحساب غير موجود"
+                message:
+                    lang === "en" ? "Account not found" : "هذا الحساب غير موجود"
             });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await Model.findByIdAndUpdate(user._id, { password: hashedPassword }, { new: true })
+        await Model.findOneAndUpdate(
+            { phone:identifier },                        // الشرط
+            { password: hashedPassword },     // البيانات الجديدة
+            { new: true }                     // يرجّع النسخة بعد التحديث (اختياري)
+        );
 
         return res.status(200).send({
             status: true,
             code: 200,
-            message: 'Password updated successfully'
+            message:
+                lang === "en"
+                    ? "Password updated successfully"
+                    : "تم تحديث كلمة المرور بنجاح"
         });
-
     } catch (err) {
-        next(err)
+        next(err);
     }
 };
 module.exports = {

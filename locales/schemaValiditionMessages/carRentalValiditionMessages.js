@@ -39,6 +39,10 @@ const messages = {
       required: "سعر الكيلو الزائد مطلوب",
       number: "سعر الكيلو الزائد يجب أن يكون رقمًا"
     },
+    ownershipPeriod: {
+      required: 'مدة التملك مطلوبة',
+      base: 'مدة التملك يجب أن تكون رقمًا',
+    },
     city: {
       required: "اسم المدينة مطلوب",
       string: "اسم المدينة يجب أن يكون نصًا"
@@ -57,6 +61,11 @@ const messages = {
     odoMeter:{
       required:"عداد السياره مطلوب",
       number:"عداد السياره مطلوب"
+    },
+    title: {
+      base: 'العنوان يجب أن يكون نصًا',
+      empty: 'العنوان لا يمكن أن يكون فارغًا',
+      required: 'العنوان مطلوب'
     }
 
   },
@@ -103,6 +112,10 @@ const messages = {
       required: "City name is required",
       string: "City name must be a string"
     },
+    ownershipPeriod: {
+      'any.required': 'Ownership duration is required',
+      'number.base': 'Ownership duration must be a number',
+    },
     area: {
       required: "Area name is required",
       string: "Area name must be a string"
@@ -117,7 +130,12 @@ const messages = {
      odoMeter:{
       required:"odoMeter is required",
       number:"odoMeter must be number"
-     }
+     },
+      title: {
+      base: 'Title must be a string',
+      empty: 'Title cannot be empty',
+      required: 'Title is required'
+    }
   }
 };
 const getMessages = (lang = 'en') => {

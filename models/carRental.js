@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const carRentalSchema = new mongoose.Schema({
+  title:{type: String, required: true},
   rentalType: { type: String, required: true,enum:["weekly/daily","rent to own"]},           
   images: [{ type: String }],                              
   carName: { type: String, required: true },              
@@ -8,6 +9,7 @@ const carRentalSchema = new mongoose.Schema({
   licensePlateNumber: { type: String, required: true },   
   freeKilometers: { type: Number}, 
   odoMeter:{type:Number},  
+  ownershipPeriod:{type:Number},
   pricePerFreeKilometer: { type: Number}, 
   pricePerExtraKilometer: { type: Number},
   city: { type: String, required: true },
@@ -18,7 +20,6 @@ const carRentalSchema = new mongoose.Schema({
   carPrice:{type:Number},
   monthlyPayment:{type:Number},
   finalPayment:{type:Number},
-  color:{type:String},
   videoCar:{type:String},                           
   rentalOfficeId  :{
     type: mongoose.Schema.Types.ObjectId, 

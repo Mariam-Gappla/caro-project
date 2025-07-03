@@ -6,6 +6,10 @@ const messages = {
     rentalOfficeId: {
       required: "Rental office ID is required",
     },
+    totalCost: {
+      required: "Total cost is required",
+      base: "Total cost must be a number"
+    },
     carId: {
       required: "Car ID is required",
     },
@@ -34,6 +38,11 @@ const messages = {
       required: "Delivery type is required",
       valid: "Delivery type must be either 'branch' or 'delivery'",
     },
+    priceType: {
+      required: 'Price type is required',
+      base: 'Price type must be a string',
+      only: 'Price type must be either "open_km" or "limited_km"',
+    },
     totalAmount: {
       required: "Total amount is required",
       number: "Total amount must be a number",
@@ -46,6 +55,10 @@ const messages = {
     },
     rentalOfficeId: {
       required: "معرّف مكتب التأجير مطلوب",
+    },
+    totalCost: {
+      required: "إجمالي التكلفة مطلوب",
+      base: "إجمالي التكلفة يجب أن يكون رقمًا"
     },
     carId: {
       required: "معرّف السيارة مطلوب",
@@ -74,6 +87,11 @@ const messages = {
     deliveryType: {
       required: "نوع الاستلام مطلوب",
       valid: "نوع الاستلام يجب أن يكون فرع أو توصيل",
+    },
+    priceType: {
+      required: 'نوع التسعير مطلوب',
+      base: 'نوع التسعير يجب أن يكون نصًا',
+      only: 'نوع التسعير يجب أن يكون "open_km" أو "limited_km"',
     },
     totalAmount: {
       required: "الإجمالي مطلوب",

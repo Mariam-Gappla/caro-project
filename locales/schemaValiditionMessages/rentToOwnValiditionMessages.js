@@ -25,10 +25,6 @@ const rentToOwnMessages = {
       string: "License plate number must be a string",
       required: "License plate number is required"
     },
-    totalKilometers: {
-      number: "Total kilometers must be a number",
-      required: "Please enter the total allowed kilometers"
-    },
     carPrice: {
       number: "Car price must be a number",
       required: "Please enter the car price"

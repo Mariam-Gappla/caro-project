@@ -15,7 +15,7 @@ const addCar = async (req, res, next) => {
         const fileInfos = imageBuffers.map(file => {
             const fileName = `${Date.now()}-${file.originalname}`;
             const filePath = path.join(__dirname, '../images', fileName);
-            imagePaths.push(BASE_URL+fileName);
+            imagePaths.push(BASE_URL + fileName);
             return { fileName, filePath, buffer: file.buffer };
         });
         console.log(imagePaths);
@@ -47,7 +47,7 @@ const addCar = async (req, res, next) => {
                 area: req.body.area,
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
-                odoMeter:req.body.odoMeter,
+                odoMeter: req.body.odoMeter,
                 rentalOfficeId: req.user.id
             });
 
@@ -71,14 +71,16 @@ const addCar = async (req, res, next) => {
                 carType: req.body.carType,
                 carModel: req.body.carModel,
                 licensePlateNumber: req.body.licensePlateNumber,
-                totalKilometers: req.body.totalKilometers,
                 carPrice: req.body.carPrice,
                 monthlyPayment: req.body.monthlyPayment,
+                odoMeter: req.body.odoMeter,
                 finalPayment: req.body.finalPayment,
                 city: req.body.city,
                 area: req.body.area,
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
+                ownershipPeriod:req.body.ownershipPeriod,
+                title:req.body.title,
                 rentalOfficeId: req.user.id
             });
         }
@@ -97,7 +99,7 @@ const addCar = async (req, res, next) => {
         return res.status(200).send({
             code: 200,
             status: true,
-            message: lang=="en" ? "تم اضافه السياره بنجاح":"car added successfully"
+            message: lang == "en" ? "تم اضافه السياره بنجاح" : "car added successfully"
         });
     } catch (err) {
         next(err);

@@ -1,7 +1,7 @@
 const Joi = require('joi');
 const getMessages = require("../locales/schemaValiditionMessages/carRentalValiditionMessages");
 const getupdateMessages = require("../locales/schemaValiditionMessages/updateCarRentalValidationMessages");
-const getRentToOwnMessages=require("../locales/schemaValiditionMessages/rentToOwnValiditionMessages");
+const getRentToOwnMessages = require("../locales/schemaValiditionMessages/rentToOwnValiditionMessages");
 const carRentalWeeklyValiditionSchema = (lang = "en") => {
   const messages = getMessages(lang)
   return Joi.object({
@@ -29,7 +29,11 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
-
+     title: {
+      'string.base': messages.title.base,
+      'string.empty': messages.title.empty,
+      'any.required': messages.title.required
+    },
     carModel: Joi.number().required().messages({
       'number.base': messages.carModel.number,
       'any.required': messages.carModel.required
@@ -44,7 +48,7 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       'number.base': messages.freeKilometers.number,
       'any.required': messages.freeKilometers.required
     }),
-    odoMeter:Joi.number().required().messages({
+    odoMeter: Joi.number().required().messages({
       'number.base': messages.odoMeter.number,
       'any.required': messages.odoMeter.required
     }),
@@ -98,6 +102,12 @@ const rentToOwnSchema = (lang = "en") => {
     ).messages({
       'array.base': messages.images.base
     }),
+    ownershipPeriod: Joi.number()
+      .required()
+      .messages({
+        'any.required':messages.ownershipPeriod.required,
+        'number.base':messages.ownershipPeriod.base
+      }),
 
     carName: Joi.string().required().messages({
       'string.base': messages.carName.string,
@@ -108,7 +118,11 @@ const rentToOwnSchema = (lang = "en") => {
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
-
+    title: {
+      'string.base': messages.title.base,
+      'string.empty': messages.title.empty,
+      'any.required': messages.title.required
+    },
     carModel: Joi.number().required().messages({
       'number.base': messages.carModel.number,
       'any.required': messages.carModel.required
@@ -153,7 +167,10 @@ const rentToOwnSchema = (lang = "en") => {
       'string.base': messages.carDescription.string,
       'any.required': messages.carDescription.required
     }),
-
+    odoMeter: Joi.number().required().messages({
+      'number.base': messages.odoMeter.number,
+      'any.required': messages.odoMeter.required
+    }),
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
     })

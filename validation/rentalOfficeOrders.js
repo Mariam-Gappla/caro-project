@@ -21,6 +21,18 @@ const rentalOfficeOrderSchema = (lang = "en") => {
       "any.required": msg.paymentMethod.required,
       "any.only": msg.paymentMethod.valid
     }),
+    priceType: Joi.string()
+      .valid('open_km', 'limited_km')
+      .required()
+      .messages({
+        "any.required": msg.priceType.required,
+        "string.base": msg.priceType.base,
+        "any.only": msg.priceType.only
+      }),
+    totalCost: Joi.number().required().messages({
+     "any.required" :msg.totalCost.base,
+     "number.base" :msg.totalCost.required
+    }),
     pickupLocation: Joi.object({
       lat: Joi.number().required().messages({
         'number.base': msg.pickupLocation.lat

@@ -39,7 +39,7 @@ const verifyOtp = async (req, res, next) => {
    
             }) 
          }
-         const token = jwt.sign({phone:phone}, "mysecret",{ expiresIn: '1h' });
+         const token = jwt.sign({identifier:phone}, process.env.JWT_SECRET,{ expiresIn: '1h' });
         if ( !code || code == existuser[0].otp) {
             return res.status(200).send({
                 status: true,
