@@ -70,7 +70,7 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
     type:Number,
     required:true,
   },
-  priceType:{type:string ,enum:["open_km","limited_km"]},
+  priceType:{type:String ,enum:["open_km","limited_km"]},
   date: {
     type: Date,
     default: Date.now
