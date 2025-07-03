@@ -6,7 +6,7 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
   const messages = getMessages(lang)
   return Joi.object({
     rentalType: Joi.string()
-      .valid("weekly/daily", "rent to own")
+      .valid("weekly/daily")
       .required()
       .messages({
         'any.required': messages.rentalType.required,
@@ -29,11 +29,11 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
-     title: {
+     title: Joi.string().required().messages({
       'string.base': messages.title.base,
       'string.empty': messages.title.empty,
       'any.required': messages.title.required
-    },
+    }),
     carModel: Joi.number().required().messages({
       'number.base': messages.carModel.number,
       'any.required': messages.carModel.required
@@ -87,7 +87,7 @@ const rentToOwnSchema = (lang = "en") => {
 
   return Joi.object({
     rentalType: Joi.string()
-      .valid("weekly/daily", "rent to own")
+      .valid("rent to own")
       .required()
       .messages({
         'any.required': messages.rentalType.required,
@@ -118,11 +118,11 @@ const rentToOwnSchema = (lang = "en") => {
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
-    title: {
+     title: Joi.string().required().messages({
       'string.base': messages.title.base,
       'string.empty': messages.title.empty,
       'any.required': messages.title.required
-    },
+    }),
     carModel: Joi.number().required().messages({
       'number.base': messages.carModel.number,
       'any.required': messages.carModel.required
