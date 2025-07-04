@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
   },
   image: {
     type: "string",
-    default: "http://localhost:3000/images/rentalOffice.png",
+    default: `${process.env.BASE_URL}/images/rentalOffice.png`,
   },
   createdAt: {
     type: Date,

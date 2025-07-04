@@ -47,10 +47,7 @@ const rentalOfficeOrderSchema = (lang = "en") => {
       "any.required": msg.deliveryType.required,
       "any.only": msg.deliveryType.valid
     }),
-    totalAmount: Joi.number().required().messages({
-      "any.required": msg.totalAmount.required,
-      "number.base": msg.totalAmount.number
-    }),
+    
   });
 };
 

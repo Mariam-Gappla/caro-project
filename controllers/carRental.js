@@ -48,6 +48,7 @@ const addCar = async (req, res, next) => {
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
                 odoMeter: req.body.odoMeter,
+                title:req.body.title,
                 rentalOfficeId: req.user.id
             });
 

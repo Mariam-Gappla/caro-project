@@ -9,7 +9,7 @@ const carRentalSchema = new mongoose.Schema({
   licensePlateNumber: { type: String, required: true },   
   freeKilometers: { type: Number}, 
   odoMeter:{type:Number},  
-  ownershipPeriod:{type:Number},
+  ownershipPeriod:{type:String},
   pricePerFreeKilometer: { type: Number}, 
   pricePerExtraKilometer: { type: Number},
   city: { type: String, required: true },

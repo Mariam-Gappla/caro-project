@@ -96,6 +96,8 @@ const login = async (req, res, next) => {
             if (existRentalOffice) {
                 const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
                 return res.status(200).send({
+                    code:200,
+                    status:true,
                     message: messages.login.success,
                     data: {
                         user: existRentalOffice,

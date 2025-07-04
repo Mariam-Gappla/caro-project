@@ -1,69 +1,68 @@
-const review= require("../models/ratingForOrder");
+const review = require("../models/ratingForOrder");
 const ratingSchemaValidation = require("../validation/ratingForRentalOfficeValidition");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const getMessages = require("../configration/getmessages");
-const addRatingForOrder = async (req,res,next)=>{
-try {
-   const lang = req.headers['accept-language'] || 'en';
-   const messages= getMessages(lang);
-    const userId = req.user.id;
-    const { error } = ratingSchemaValidation.ratingSchemaValidation(lang).validate(req.body);
-    if (error) {
-        return res.status(400).send({ 
-            status: false,
-            code:400,
-            message: error.details[0].message
-        });
-    }
-    const {orderId, targetType, rating, comment } = req.body;
-    const existOrder= await rentalOfficeOrder.findById(orderId);
-    if (!existOrder) {
-        return res.status(400).send({
-            status: false,
-            code: 400,
-            message: messages.order.notExist
-        });
-    }
-    const existingRating = await review.findOne({ userId, orderId });
-    if (existingRating) {
-        return res.status(400).send({
-            status: false,
-            code: 400,
-            message: messages.rating.alreadyRated
-        });
-    }
-    if(existOrder.paymentStatus !== 'ended') {
-        return res.status(400).send({
-            status: false,
-            code: 400,
-            message: messages.rating.invalidOrder
-        });
-    }
-    const ratingData={
-         userId: userId,
-         orderId: orderId,
-         targetId: existOrder.rentalOfficeId,
-         targetType,
-         rating,
-         comment
-   }
-    await review.create(ratingData);
-    return res.status(200).send({
-        status: true,
-        code: 200,
-        message: messages.rating.success
-    });
-
-}
-catch (error)
-{
-    next(error);
-}
-}
-const getratingbyrentalOffice = async (req,res,next)=>{
+const addRatingForOrder = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const messages= getMessages(lang);
+        const messages = getMessages(lang);
+        const userId = req.user.id;
+        const { error } = ratingSchemaValidation.ratingSchemaValidation(lang).validate(req.body);
+        if (error) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: error.details[0].message
+            });
+        }
+        const { orderId, targetType, rating, comment } = req.body;
+        const existOrder = await rentalOfficeOrder.findById(orderId);
+        if (!existOrder) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.order.notExist
+            });
+        }
+        const existingRating = await review.findOne({ userId, orderId });
+        if (existingRating) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.rating.alreadyRated
+            });
+        }
+        if (existOrder.paymentStatus !== 'ended') {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.rating.invalidOrder
+            });
+        }
+        const ratingData = {
+            userId: userId,
+            orderId: orderId,
+            targetId: existOrder.rentalOfficeId,
+            targetType,
+            rating,
+            comment
+        }
+        await review.create(ratingData);
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message: messages.rating.success
+        });
+
+    }
+    catch (error) {
+        next(error);
+    }
+}
+const getratingbyrentalOffice = async (req, res, next) => {
+    try {
+        const lang = req.headers['accept-language'] || 'en';
+        const messages = getMessages(lang);
         const rentalOfficeId = req.user.id;
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
@@ -87,25 +86,30 @@ const getratingbyrentalOffice = async (req,res,next)=>{
                 message: messages.rentalOffice.ratingNotFound
             });
         }
-        
+
         const customizedRatings = ratings.map(rating => {
             const user = rating.userId.toObject();
             return {
                 username: user.username,
-                image:  user.image,
+                image: user.image,
                 rating: rating.rating,
                 comment: rating.comment || " ",
                 createdAt: rating.createdAt
             };
         }
         );
+        //customizedRatings,
         return res.status(200).send({
             status: true,
             code: 200,
-            data: customizedRatings,
-            currentPage: page,
-            totalPages: Math.ceil(totalCount / limit),
-            totalRatings: totalCount
+            data: {
+                rating:customizedRatings,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalRatings: totalCount
+                }
+            }
         });
     } catch (error) {
         next(error);
@@ -133,14 +137,14 @@ const getRatingByUser = async (req, res, next) => {
                 message: messages.rating.ratingUser
             });
         }
-         const totalCount = await review.countDocuments({
+        const totalCount = await review.countDocuments({
             userId: userId
         });
         const customizedRatings = ratings.map(rating => {
             const user = rating.userId.toObject();
             return {
                 username: user.username,
-                image:  user.image,
+                image: user.image,
                 rating: rating.rating,
                 comment: rating.comment || " ",
                 createdAt: rating.createdAt
@@ -155,15 +159,14 @@ const getRatingByUser = async (req, res, next) => {
             totalRatings: totalCount
         });
     }
-    catch (error)
-    {
+    catch (error) {
         next(error);
     }
 
 
 
 }
-module.exports ={
+module.exports = {
     addRatingForOrder,
     getratingbyrentalOffice,
     getRatingByUser

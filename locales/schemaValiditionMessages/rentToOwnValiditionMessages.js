@@ -5,6 +5,15 @@ const rentToOwnMessages = {
       only: "Rental type must be 'weekly/daily' or 'rent to own'",
       string: "Rental type must be a valid string"
     },
+    ownershipPeriod: {
+      required: "Ownership period is required",
+      base: "Ownership period must be a string"
+    },
+    totalKilometers: {
+      number: "Total kilometers must be a number",
+      required: "Please enter the total kilometers"
+    },
+
     images: {
       base: "Images must be an array of URLs",
       uri: "Each image must be a valid URL"
@@ -51,7 +60,17 @@ const rentToOwnMessages = {
     },
     deliveryOption: {
       boolean: "Delivery option must be true or false"
-    }
+    },
+    title: {
+      base: 'Title must be a string',
+      empty: 'Title cannot be empty',
+      required: 'Title is required'
+    },
+    odoMeter: {
+      number: "odoMeter must be a number",
+      required: "odoMeter is required"
+    },
+
   },
 
   ar: {
@@ -110,7 +129,20 @@ const rentToOwnMessages = {
     },
     deliveryOption: {
       boolean: "خيار التوصيل يجب أن يكون true أو false"
-    }
+    },
+    title: {
+      base: 'العنوان يجب أن يكون نصًا',
+      empty: 'العنوان لا يمكن أن يكون فارغًا',
+      required: 'العنوان مطلوب'
+    },
+    ownershipPeriod: {
+      required: "مدة التملك مطلوبة",
+      base: "مدة التملك يجب أن تكون نصًا"
+    },
+    odoMeter: {
+      number: "عداد السياره مطلوب",
+      required: "عداد السياره مطلوب"
+    },
   }
 };
 
@@ -118,4 +150,4 @@ const getRentToOwnMessages = (lang = "en") => {
   return rentToOwnMessages[lang] || rentToOwnMessages.en;
 };
 
-module.exports = getRentToOwnMessages ;
+module.exports = getRentToOwnMessages;

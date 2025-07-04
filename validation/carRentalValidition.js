@@ -10,7 +10,7 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       .required()
       .messages({
         'any.required': messages.rentalType.required,
-        'any.only': messages.rentalType.valid,
+        'any.only': messages.rentalType.only,
         'string.base': messages.rentalType.string
       }),
 
@@ -102,11 +102,11 @@ const rentToOwnSchema = (lang = "en") => {
     ).messages({
       'array.base': messages.images.base
     }),
-    ownershipPeriod: Joi.number()
+    ownershipPeriod: Joi.string()
       .required()
       .messages({
         'any.required':messages.ownershipPeriod.required,
-        'number.base':messages.ownershipPeriod.base
+        'string.base':messages.ownershipPeriod.base
       }),
 
     carName: Joi.string().required().messages({

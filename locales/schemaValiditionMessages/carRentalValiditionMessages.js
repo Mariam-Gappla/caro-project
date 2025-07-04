@@ -1,16 +1,17 @@
-const { number, required } = require("joi");
+
 
 const messages = {
   ar: {
     rentalType: {
       required: "نوع التأجير مطلوب",
-      valid: "نوع التأجير يجب أن weekly/daily or rent to own ",
+      only: "نوع التأجير يجب أن weekly/daily or rent to own ",
       string: "نوع التأجير يجب أن يكون نصًا"
     },
     images: {
       base: "الصور يجب أن تكون في مصفوفة",
       uri: "رابط الصورة غير صحيح"
     },
+    
     carName: {
       required: "اسم السيارة مطلوب",
       string: "اسم السيارة يجب أن يكون نصًا"
@@ -39,10 +40,7 @@ const messages = {
       required: "سعر الكيلو الزائد مطلوب",
       number: "سعر الكيلو الزائد يجب أن يكون رقمًا"
     },
-    ownershipPeriod: {
-      required: 'مدة التملك مطلوبة',
-      base: 'مدة التملك يجب أن تكون رقمًا',
-    },
+    
     city: {
       required: "اسم المدينة مطلوب",
       string: "اسم المدينة يجب أن يكون نصًا"
@@ -58,22 +56,23 @@ const messages = {
     deliveryOption: {
       boolean: "خيار التوصيل يجب أن يكون صح أو خطأ (true/false)"
     },
-    odoMeter:{
-      required:"عداد السياره مطلوب",
-      number:"عداد السياره مطلوب"
+    odoMeter: {
+      required: "عداد السياره مطلوب",
+      number: "عداد السياره مطلوب"
     },
     title: {
       base: 'العنوان يجب أن يكون نصًا',
       empty: 'العنوان لا يمكن أن يكون فارغًا',
       required: 'العنوان مطلوب'
-    }
-
+    },
+    
+    
   },
 
   en: {
     rentalType: {
       required: "Rental type is required",
-      valid: "Rental type must be 'weekly/daily' or 'rent to own'",
+      only: "Rental type must be 'weekly/daily' or 'rent to own'",
       string: "Rental type must be a string"
     },
     images: {
@@ -112,10 +111,6 @@ const messages = {
       required: "City name is required",
       string: "City name must be a string"
     },
-    ownershipPeriod: {
-      'any.required': 'Ownership duration is required',
-      'number.base': 'Ownership duration must be a number',
-    },
     area: {
       required: "Area name is required",
       string: "Area name must be a string"
@@ -127,18 +122,20 @@ const messages = {
     deliveryOption: {
       boolean: "Delivery option must be true or false"
     },
-     odoMeter:{
-      required:"odoMeter is required",
-      number:"odoMeter must be number"
-     },
-      title: {
+    odoMeter: {
+      required: "odoMeter is required",
+      number: "odoMeter must be number"
+    }, 
+    title: {
       base: 'Title must be a string',
       empty: 'Title cannot be empty',
       required: 'Title is required'
-    }
+    },
+    
+
   }
 };
 const getMessages = (lang = 'en') => {
-    return messages[lang] || messages.en;
+  return messages[lang] || messages.en;
 };
 module.exports = getMessages;
