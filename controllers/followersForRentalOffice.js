@@ -57,7 +57,8 @@ const getFollowersForRentalOffice = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
         const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang)
+        const messages = getMessages(lang);
+
         if (!rentalOfficeId) {
             return res.status(400).send({
                 status: false,
@@ -65,34 +66,53 @@ const getFollowersForRentalOffice = async (req, res, next) => {
                 message: messages.rentalOffice.rentalOfficeId
             });
         }
-        const followers = await follower.find({ rentalOfficeId }).populate("userId", "username image");
+
+        // 📌 pagination params
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // 📌 get total count
+        const totalCount = await follower.countDocuments({ rentalOfficeId });
+
+        // 📌 get followers with pagination
+        const followers = await follower
+            .find({ rentalOfficeId })
+            .skip(skip)
+            .limit(limit)
+            .populate("userId", "username image");
+
         if (!followers || followers.length === 0) {
-            return res.status(400).send({
+            return res.status(404).send({
                 status: false,
-                code: 400,
+                code: 404,
                 message: messages.follower.noFollowers
             });
         }
-       const modifiedFollowers = followers.map(f => ({
-            ...f.toObject(),
-            userId:undefined,
-            rentalOfficeId: undefined,
-            _id: undefined,
-            followedAt:undefined,
-            __v:undefined,
+
+        // 📌 format response
+        const modifiedFollowers = followers.map(f => ({
             image: f.userId?.image,
             username: f.userId?.username
         }));
+
         res.status(200).send({
             status: true,
             code: 200,
             message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
-            data: modifiedFollowers
+            data: {
+                followers: modifiedFollowers,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                }
+            }
         });
     } catch (err) {
         next(err);
     }
 }
+
 module.exports = {
     addFollower,
     getFollowersForRentalOffice
