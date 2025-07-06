@@ -45,7 +45,9 @@ const verifyOtp = async (req, res, next) => {
                 status: true,
                 code: 200,
                 message:messages.verify.sucess,
-                token
+                data:{
+                    token
+                }
    
             })
         }
