@@ -5,10 +5,12 @@ const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
 const getAllRentallOffice = async (req, res, next) => {
     try {
+         const lang = req.headers['accept-language'] || 'en';
         const allRentalOffice = await rentalOffice.find();
         return res.status(200).send({
             code: 200,
             status: true,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: allRentalOffice
         });
 
@@ -48,11 +50,10 @@ const addLike = async (req, res, next) => {
                 { new: true }
             );
         }
-        return res.status(200).json({
+        return res.status(200).send({
             status: true,
             code: 200,
             message: alreadyLiked ? messages.rentalOffice.removeLike : messages.rentalOffice.addLike,
-            likesCount: updatedRentalOffice.likedBy.length
         });
     }
     catch (err) {
@@ -137,7 +138,6 @@ const getRentalOfficeProfile = async (req, res, next) => {
                 followers: followersCount,
                 cars:formatedCars,
                 pagination: {
-                    totalCars,
                     page,
                     totalPages: Math.ceil(totalCars / limit)
                 }

@@ -77,10 +77,9 @@ const getRevenue = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const messages = getMessages(lang);
-        const rentalOfficeId= req.user.id;
-        console.log(rentalOfficeId)
-        const rentalOfficeExist = await rentalOffice.findById({_id: rentalOfficeId });
-        console.log(rentalOfficeExist)
+        const rentalOfficeId = req.user.id;
+
+        const rentalOfficeExist = await rentalOffice.findById(rentalOfficeId);
         if (!rentalOfficeExist) {
             return res.status(400).send({
                 code: 400,
@@ -88,25 +87,70 @@ const getRevenue = async (req, res, next) => {
                 message: messages.invoice.rentalOfficeId
             });
         }
-        const invoices = await invoice.find({rentalOfficeId:rentalOfficeId });
-        if (invoices.length === 0) {
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalCount = await invoice.countDocuments({ rentalOfficeId });
+
+        const invoices = await invoice.find({ rentalOfficeId })
+            .skip(skip)
+            .limit(limit)
+            .sort({ issuedAt: -1 }); // اختياري حسب الترتيب
+
+        if (!invoices || invoices.length === 0) {
             return res.status(404).send({
                 code: 404,
                 status: false,
                 message: messages.invoice.noInvoices
             });
         }
-        /*const totalRevenue = invoices.reduce((acc, invoice) => acc + invoice.amount, 0);*/
+
+        const formattedInvoices = invoices.map((inv) => ({
+            _id: inv._id,
+            invoiceNumber: inv.invoiceNumber,
+            amount: inv.amount,
+            issuedAt: inv.issuedAt
+        }));
+
         res.status(200).send({
             code: 200,
             status: true,
-            revenue: invoices
+            message: lang === "en" ? "Invoices fetched successfully" : "تم جلب الفواتير بنجاح",
+            data: {
+                revenue: formattedInvoices,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                }
+            }
         });
+
     } catch (err) {
         next(err);
     }
-}
+};
+
+const getRevenueById = async (req, res, next) => {
+  try {
+    const revenuId = req.params.id;
+    const revenuDetails = await invoice.find({ _id: revenuId })
+      .populate({
+        path: "orderId",
+        populate: {
+          path: "carId" // 👈 دي اللي انتي عايزاها
+        }
+      });
+
+    return res.send({ revenuDetails });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
     addinvoice,
-    getRevenue
+    getRevenue,
+    getRevenueById
 }

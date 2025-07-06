@@ -29,6 +29,11 @@ const messages = {
       'string': 'Content cannot exceed 280 characters',
       'required': 'Content is required'
     },
+     title: {
+      'base': 'Title must be a string',
+      'empty': 'Title is required',
+      'required': 'Title is required',
+    },
     userId: {
       'base': 'User ID must be a string',
       'required': 'User ID is required',

@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 const tweetSchema = new mongoose.Schema({
+  title:{
+    type: String,
+    required: true,
+  },
   content: {
     type: String,
     required: true,
-    maxlength: 280
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,

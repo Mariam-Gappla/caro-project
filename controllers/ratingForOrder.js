@@ -32,26 +32,26 @@ const addRatingForOrder = async (req, res, next) => {
                 message: messages.rating.alreadyRated
             });
         }
-        if (existOrder.paymentStatus !== 'ended') {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.rating.invalidOrder
+        if (existOrder.paymentStatus == 'paid' || existOrder.isAvailable == "true") {
+            const ratingData = {
+                userId: userId,
+                orderId: orderId,
+                targetId: existOrder.rentalOfficeId,
+                targetType,
+                rating,
+                comment
+            }
+            await review.create(ratingData);
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: messages.rating.success
             });
         }
-        const ratingData = {
-            userId: userId,
-            orderId: orderId,
-            targetId: existOrder.rentalOfficeId,
-            targetType,
-            rating,
-            comment
-        }
-        await review.create(ratingData);
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            message: messages.rating.success
+        return res.status(400).send({
+            status: false,
+            code: 400,
+            message: messages.rating.invalidOrder
         });
 
     }
@@ -74,11 +74,12 @@ const getratingbyrentalOffice = async (req, res, next) => {
             targetType: 'rentalOffice'
         });
         const ratings = await review.find({ targetId: rentalOfficeId, targetType: 'rentalOffice' })
-            .populate('userId', 'username image')
+            .populate('userId')
             .select('rating comment createdAt')
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 });
+            console.log(ratings)
         if (!ratings || ratings.length === 0) {
             return res.status(400).send({
                 status: false,
@@ -93,21 +94,22 @@ const getratingbyrentalOffice = async (req, res, next) => {
                 username: user.username,
                 image: user.image,
                 rating: rating.rating,
-                comment: rating.comment || " ",
+                comment: rating.comment ?? " ",
                 createdAt: rating.createdAt
             };
         }
         );
+        console.log(customizedRatings)
         //customizedRatings,
         return res.status(200).send({
             status: true,
             code: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: {
-                rating:customizedRatings,
+                rating: customizedRatings,
                 pagination: {
                     currentPage: page,
                     totalPages: Math.ceil(totalCount / limit),
-                    totalRatings: totalCount
                 }
             }
         });
@@ -150,13 +152,17 @@ const getRatingByUser = async (req, res, next) => {
                 createdAt: rating.createdAt
             };
         });
+        /*customizedRatings*/
         return res.status(200).send({
             status: true,
             code: 200,
-            data: customizedRatings,
-            currentPage: page,
-            totalPages: Math.ceil(totalCount / limit),
-            totalRatings: totalCount
+            data: {
+                rating: customizedRatings,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                }
+            },
         });
     }
     catch (error) {
@@ -166,8 +172,67 @@ const getRatingByUser = async (req, res, next) => {
 
 
 }
+const getRatingByServiceProvider= async (req,res,next)=>{
+    try {
+        const lang = req.headers['accept-language'] || 'en';
+        const messages = getMessages(lang);
+        const rentalOfficeId = req.user.id;
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        // 🔢 get total count of ratings
+        const totalCount = await review.countDocuments({
+            targetId: rentalOfficeId,
+            targetType: 'rentalOffice'
+        });
+        const ratings = await review.find({ targetId: rentalOfficeId, targetType: 'serviceProvider' })
+            .populate('userId')
+            .select('rating comment createdAt')
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+            console.log(ratings)
+        if (!ratings || ratings.length === 0) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.rentalOffice.ratingNotFound
+            });
+        }
+
+        const customizedRatings = ratings.map(rating => {
+            const user = rating.userId.toObject();
+            return {
+                username: user.username,
+                image: user.image,
+                rating: rating.rating,
+                comment: rating.comment ?? " ",
+                createdAt: rating.createdAt
+            };
+        }
+        );
+        console.log(customizedRatings)
+        //customizedRatings,
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+            data: {
+                rating: customizedRatings,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                }
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
 module.exports = {
     addRatingForOrder,
     getratingbyrentalOffice,
-    getRatingByUser
+    getRatingByUser,
+    getRatingByServiceProvider
 }

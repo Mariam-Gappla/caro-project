@@ -90,7 +90,7 @@ invoice:{
 },
 rating:{
   success: "Rating added successfully",
-  invalidOrder: "You can only rate completed",
+  invalidOrder: "You can rate the order after receiving it",
   alreadyRated: "You have already rated this order",
 
 }

@@ -1,5 +1,6 @@
 const express=require("express");
 const router=express.Router();
-const {getRentalOfficeNotifications}=require("../controllers/notification")
-router.get("/",getRentalOfficeNotifications);
+const {getNotifications,addNotification}=require("../controllers/notification")
+router.get("/",getNotifications);
+router.post("/add",addNotification)
 module.exports=router;

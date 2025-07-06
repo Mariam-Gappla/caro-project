@@ -12,13 +12,17 @@ const isValidObjectId = (value, helpers) => {
 const tweetValidationSchema = (lang = "en") => {
   const messages=getMessages(lang);
   return Joi.object({
+    title: Joi.string().required().messages({
+        "string.base": messages.title.base,
+        "any.required": messages.title.required,
+        "string.empty": messages.title.required
+    }),
     content: Joi.string()
-      .max(280)
       .required()
       .messages({
         "string.base": messages.content.base,
-        "string.max": messages.content.max,
-        "any.required": messages.content.required
+        "any.required": messages.content.required,
+        "string.empty": messages.content.required
       }),
 
     userId: Joi.string()

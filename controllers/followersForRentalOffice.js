@@ -40,7 +40,6 @@ const addFollower = async (req, res, next) => {
             status: true,
             code: 200,
             message: messages.follower.success,
-            followers
         });
     }
     catch (err) {
@@ -80,12 +79,14 @@ const getFollowersForRentalOffice = async (req, res, next) => {
             rentalOfficeId: undefined,
             _id: undefined,
             followedAt:undefined,
+            __v:undefined,
             image: f.userId?.image,
             username: f.userId?.username
         }));
         res.status(200).send({
             status: true,
             code: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: modifiedFollowers
         });
     } catch (err) {

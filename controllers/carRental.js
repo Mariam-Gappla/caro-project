@@ -109,7 +109,7 @@ const addCar = async (req, res, next) => {
 
 const getCarsByRentalOfficeForUser = async (req, res, next) => {
     try {
-        const id = req.user.id;
+        const id = req.params.id;
         console.log(id)
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang)
@@ -136,11 +136,11 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
 }
 const getCarById = async (req, res, next) => {
     try {
-        const rentalOfficeId = req.user.id;
+        const user= req.user.id;
         const carId = req.params.id;
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang)
-        const car = await carRental.find({ _id: carId, rentalOfficeId: rentalOfficeId });
+        const car = await carRental.find({ _id: carId });
         if (!car) {
             return res.status(400).send({
                 code: 400,

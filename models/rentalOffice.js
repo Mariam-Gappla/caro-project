@@ -30,5 +30,5 @@ const rentalOfficeSchema= new mongoose.Schema({
   ],
     createdAt: { type: Date, default: Date.now },
 });
-const rentalOffice=mongoose.model("RentalOffice",rentalOfficeSchema);
+const rentalOffice=mongoose.model("rentalOffice",rentalOfficeSchema);
 module.exports=rentalOffice;
