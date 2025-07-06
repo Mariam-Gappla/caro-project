@@ -22,6 +22,12 @@ const userSchema = new mongoose.Schema({
     type: "string",
     default: `${process.env.BASE_URL}/images/rentalOffice.png`,
   },
+  resetOtp: {
+    type: Number
+  },
+  resetOtpExpires: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now

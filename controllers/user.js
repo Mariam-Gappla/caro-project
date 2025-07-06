@@ -96,8 +96,8 @@ const login = async (req, res, next) => {
             if (existRentalOffice) {
                 const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
                 return res.status(200).send({
-                    code:200,
-                    status:true,
+                    code: 200,
+                    status: true,
                     message: messages.login.success,
                     data: {
                         user: existRentalOffice,
@@ -195,83 +195,112 @@ const login = async (req, res, next) => {
         next(err)
     }
 }
-const resetPassword = async (req, res, next) => {
+const requestResetPassword = async (req, res, next) => {
     try {
-        const lang = req.headers["accept-language"] || "en";
-        const { newPassword, role } = req.body;
-
-        // 1. جلب التوكن من header
-        const token = req.headers.authorization?.split(" ")[1];
-
-        if (!token) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === "en" ? "Token is missing" : "التوكن مفقود"
-            });
-        }
-
-        // 2. فك الشيفرة
-        let decoded;
-        try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (err) {
-            return res.status(400).send({
-                status: false,
-                code: 401,
-                message:
-                    lang === "en"
-                        ? "Invalid or expired token"
-                        : "الرابط غير صالح أو انتهت صلاحيته"
-            });
-        }
-
-        const { identifier } = decoded;
-
-        // 3. حدد الـ Model
+        const lang = req.headers['accept-language'] || 'en';
+        const { phone, role } = req.body;
         let Model;
-        if (role === "user") Model = User;
-        else if (role === "rentalOffice") Model = rentalOffice;
-        else if (role === "serviceProvider") Model = serviceProvider;
-        else
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === "en" ? "Invalid role" : "هذا الدور غير موجود"
-            });
 
-        // 4. تحديث الباسورد
-        const user = await Model.findOne({ phone: identifier });
+        switch (role) {
+            case 'User':
+                Model = User;
+                break;
+            case 'serviceProvider':
+                Model = serviceProvider;
+                break;
+            case 'rentalOffice':
+                Model = rentalOffice;
+                break;
+            default:
+                return res.status(400).send({
+                    status: false,
+                    code: 400,
+                    message: lang == "ar" ? "هذا الدور غير موجود" : "role must be serviceProvider or User or rentalOffice"
+                });
+        }
+
+        const user = await Model.findOne({ phone });
         if (!user) {
             return res.status(400).send({
-                status: false,
                 code: 400,
-                message:
-                    lang === "en" ? "Account not found" : "هذا الحساب غير موجود"
+                status: false,
+                message: lang == "ar" ? "هذا الرقم غير موجود" : "this phone does not exist"
             });
         }
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await Model.findOneAndUpdate(
-            { phone:identifier },                        // الشرط
-            { password: hashedPassword },     // البيانات الجديدة
-            { new: true }                     // يرجّع النسخة بعد التحديث (اختياري)
-        );
+        const otp = 1111 /*Math.floor(100000 + Math.random() * 900000)*/;
+        user.resetOtp = otp;
+        user.resetOtpExpires = new Date(Date.now() + 5 * 60 * 1000);
+        await user.save();
 
-        return res.status(200).send({
-            status: true,
+        res.send({
             code: 200,
-            message:
-                lang === "en"
-                    ? "Password updated successfully"
-                    : "تم تحديث كلمة المرور بنجاح"
+            status: true,
+            message: lang=="ar"?"تم ارسال الكود بنجاح":"Code sent successfully"
         });
     } catch (err) {
         next(err);
     }
 };
+const resetPassword = async (req, res, next) => {
+  try {
+     const lang = req.headers['accept-language'] || 'en';
+    const { phone, otp, newPassword, role } = req.body;
+
+    // تحديد الموديل بناءً على الـ role
+    let Model;
+    switch (role) {
+      case 'User':
+        Model = User;
+        break;
+      case 'serviceProvider':
+        Model = serviceProvider;
+        break;
+      case 'rentalOffice':
+        Model = rentalOffice;
+        break;
+      default:
+        return res.status(400).send({
+             code:400,
+             status: false, 
+             message: lang=="en" ?"Invalid role":"هذا الدور غير موجود"
+            });
+    }
+
+    const user = await Model.findOne({ phone });
+
+    if (
+      !user ||
+      user.resetOtp != otp || // تطابق الكود
+      !user.resetOtpExpires ||
+      user.resetOtpExpires < new Date() // تحقق من انتهاء صلاحية الكود
+    ) {
+      return res.status(400).send({
+        status: false,
+        message: lang=="en"?"Invalid or expired OTP":"الكود غير صحيح أو انتهت صلاحيته"
+      });
+    }
+
+    // تحديث الباسورد (مع افتراض وجود bcrypt في pre-save)
+    user.password = newPassword;
+    user.resetOtp = undefined;
+    user.resetOtpExpires = undefined;
+
+    await user.save();
+
+    res.status(200).send({
+      status: true,
+      message: lang=="en"?"Password reset successfully":"تم تحديث الباسورد بنجاح"
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 module.exports = {
     register,
     login,
+    requestResetPassword,
     resetPassword
 }

@@ -39,7 +39,10 @@ const authenticateToken = (req, res, next) => {
     req.originalUrl.includes("login") ||
     req.originalUrl.includes("verify-otp") ||
     req.originalUrl.includes("send-otp") ||
-    req.originalUrl.includes("images")
+    req.originalUrl.includes("images")||
+    req.originalUrl.includes("request-reset-password")||
+    req.originalUrl.includes("reset-password")
+
   ) {
     return next(); // Skip auth for public routes
   }
