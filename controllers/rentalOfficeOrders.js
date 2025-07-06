@@ -249,9 +249,9 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         const orders = await rentalOfficeOrder.find({ rentalOfficeId })
         const lang = req.headers['accept-language'] || 'en'
         if (!orders) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
+            return res.status(200).send({
+                status: true,
+                code: 200,
                 message: messages.order.existOrders
             })
         }
@@ -615,10 +615,13 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             .lean();
 
         if (!orders || orders.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.order.existOrders || "لا توجد طلبات"
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: messages.order.existOrders || "لا توجد طلبات",
+                data:{
+                    orders:[]
+                }
             });
         }
 
