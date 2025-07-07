@@ -211,16 +211,16 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                     startDate: rest.startDate,
                     endDate: rest.endDate,
                     rentalType: carId.rentalType,
-                    odoMeter: carId.odoMeter,
                     city: carId.city,
-                    paymentStatus: order.paymentStatus
+                    totalCost:rest.totalCost,
+                    paymentStatus: order.paymentStatus,
                 };
             } else {
                 return {
                     title: carId.title,
                     ownershipPeriod: carId.ownershipPeriod,
                     rentalType: carId.rentalType,
-                    odoMeter: carId.odoMeter,
+                    totalCost:rest.totalCost,
                     city: carId.city,
                     paymentStatus: order.paymentStatus
                 };

@@ -13,13 +13,11 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
         'any.only': messages.rentalType.only,
         'string.base': messages.rentalType.string
       }),
-
     images: Joi.array().items(Joi.string().uri().messages({
       'string.uri': messages.images.uri
     })).messages({
       'array.base': messages.images.base
     }),
-
     carName: Joi.string().required().messages({
       'string.base': messages.carName.string,
       'any.required': messages.carName.required
@@ -56,27 +54,22 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       'number.base': messages.pricePerFreeKilometer.number,
       'any.required': messages.pricePerFreeKilometer.required
     }),
-
     pricePerExtraKilometer: Joi.number().required().messages({
       'number.base': messages.pricePerExtraKilometer.number,
       'any.required': messages.pricePerExtraKilometer.required
     }),
-
     city: Joi.string().required().messages({
       'string.base': messages.city.string,
       'any.required': messages.city.required
     }),
-
     area: Joi.string().required().messages({
       'string.base': messages.area.string,
       'any.required': messages.area.required
     }),
-
     carDescription: Joi.string().required().messages({
       'string.base': messages.carDescription.string,
       'any.required': messages.carDescription.required
     }),
-
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
     })
@@ -94,7 +87,6 @@ const rentToOwnSchema = (lang = "en") => {
         'any.only': messages.rentalType.only,
         'string.base': messages.rentalType.string
       }),
-
     images: Joi.array().items(
       Joi.string().uri().messages({
         'string.uri': messages.images.uri
@@ -240,8 +232,7 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
     }),
-    imagesToDelete: Joi.array()
-      .items(Joi.string().uri())
+    imagesToDelete: Joi
       .optional()
       .messages({
         'array.base': 'imagesToDelete يجب أن تكون قائمة.',
@@ -324,8 +315,7 @@ const rentToOwnUpdateSchema = (lang = "en") => {
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
     }),
-    imagesToDelete: Joi.array()
-      .items(Joi.string().uri())
+    imagesToDelete: Joi
       .optional()
       .messages({
         'array.base': messages.imagesToDelete.base,
