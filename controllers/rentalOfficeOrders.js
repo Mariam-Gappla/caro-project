@@ -230,8 +230,8 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
+            message: lang === "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: {
-                message: lang === "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
                 orders: formattedOrders,
                 pagination: {
                     page,

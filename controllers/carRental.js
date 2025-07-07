@@ -48,7 +48,7 @@ const addCar = async (req, res, next) => {
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
                 odoMeter: req.body.odoMeter,
-                title:req.body.title,
+                title: req.body.title,
                 rentalOfficeId: req.user.id
             });
 
@@ -80,8 +80,8 @@ const addCar = async (req, res, next) => {
                 area: req.body.area,
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
-                ownershipPeriod:req.body.ownershipPeriod,
-                title:req.body.title,
+                ownershipPeriod: req.body.ownershipPeriod,
+                title: req.body.title,
                 rentalOfficeId: req.user.id
             });
         }
@@ -136,7 +136,7 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
 }
 const getCarById = async (req, res, next) => {
     try {
-        const user= req.user.id;
+        const user = req.user.id;
         const carId = req.params.id;
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang)
@@ -158,8 +158,95 @@ const getCarById = async (req, res, next) => {
         next(err)
     }
 }
+const updateCar = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const lang = req.headers['accept-language'] || 'en';
+    const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
+    const messages = getMessages(lang);
+
+    const imageBuffers = req.files || [];
+
+    // 1. جيب العربية المرتبطة بالمستخدم الحالي
+    const car = await carRental.findOne({ _id: id, rentalOfficeId: req.user.id });
+    if (!car) {
+      return res.status(404).send({
+        status: false,
+        message: lang === "en" ? "Car not found" : "السيارة غير موجودة"
+      });
+    }
+
+    // 2. جهزي الصور اللي عايز يحذفها
+    const imagesToDelete = req.body.imagesToDelete
+      ? Array.isArray(req.body.imagesToDelete)
+        ? req.body.imagesToDelete
+        : [req.body.imagesToDelete]
+      : [];
+
+    // 3. حذف الصور من السيرفر
+    imagesToDelete.forEach(imgUrl => {
+      const fileName = imgUrl.split('/').pop();
+      const filePath = path.join(__dirname, '../images', fileName);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    });
+
+    // 4. الصور القديمة اللي هتفضل بعد الحذف
+    let updatedImages = car.images.filter(img => !imagesToDelete.includes(img));
+
+    // 5. جهزي الصور الجديدة
+    const fileInfos = imageBuffers.map(file => {
+      const fileName = `${Date.now()}-${file.originalname}`;
+      const filePath = path.join(__dirname, '../images', fileName);
+      updatedImages.push(BASE_URL + fileName);
+      return { fileName, filePath, buffer: file.buffer };
+    });
+
+    // 6. اختاري الـ schema المناسب حسب rentalType
+    const rentalType = req.body.rentalType || car.rentalType;
+
+    const schema = rentalType === "weekly/daily"
+      ? carRentalWeeklyValiditionSchema(lang)
+      : rentToOwnSchema(lang);
+
+    const { error } = schema.validate({ ...req.body, images: updatedImages });
+    if (error) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: error.details[0].message
+      });
+    }
+
+    // 7. تحديث بيانات السيارة
+    await carRental.updateOne(
+      { _id: id },
+      {
+        $set: {
+          ...req.body,
+          images: updatedImages
+        }
+      }
+    );
+
+    // 8. حفظ الصور الجديدة على السيرفر
+    fileInfos.forEach(file => {
+      fs.writeFileSync(file.filePath, file.buffer);
+    });
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en" ? "Car updated successfully" : "تم تحديث السيارة بنجاح"
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
     addCar,
     getCarsByRentalOfficeForUser,
-    getCarById
+    getCarById,
+    updateCar
 }
