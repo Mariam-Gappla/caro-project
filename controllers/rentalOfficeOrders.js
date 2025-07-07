@@ -463,10 +463,10 @@ const acceptorder = async (req, res, next) => {
                 { new: true }
             );
             return res.status(200).send({
-            status: true,
-            code: 200,
-            message: messages.order.acceptedSuccess || "تم قبول الطلب ورفع فيديو السيارة بنجاح",
-        });
+                status: true,
+                code: 200,
+                message: messages.order.acceptedSuccess || "تم قبول الطلب ورفع فيديو السيارة بنجاح",
+            });
         }
         else {
             const order = await rentalOfficeOrder.findByIdAndUpdate(
@@ -482,16 +482,16 @@ const acceptorder = async (req, res, next) => {
                     message: messages.order.notExist
                 });
             }
-             return res.status(200).send({
-            status: true,
-            code: 200,
-            message: lang=="en"?"order refused":"تم رفض الطلب",
-        });
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: lang == "en" ? "order refused" : "تم رفض الطلب",
+            });
         }
 
 
 
-        
+
 
     } catch (error) {
         next(error);
@@ -614,13 +614,17 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             .limit(limit)
             .lean();
 
-        if (!orders || orders.length === 0) {
+        if (orders.length === 0) {
             return res.status(200).send({
                 status: true,
                 code: 200,
                 message: messages.order.existOrders || "لا توجد طلبات",
-                data:{
-                    orders:[]
+                data: {
+                    orders: [],
+                    pagination: {
+                        page,
+                        totalPages: 0
+                    }
                 }
             });
         }
