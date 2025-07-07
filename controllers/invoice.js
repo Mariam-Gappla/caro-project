@@ -135,6 +135,7 @@ const getRevenue = async (req, res, next) => {
 const getRevenueById = async (req, res, next) => {
   try {
     const revenuId = req.params.id;
+     const lang = req.headers["accept-language"] || "en";
     const revenuDetails = await invoice.find({ _id: revenuId })
       .populate({
         path: "orderId",
@@ -143,7 +144,12 @@ const getRevenueById = async (req, res, next) => {
         }
       });
 
-    return res.send({ revenuDetails });
+    return res.send({ 
+        status:true,
+        code:200,
+         message: lang === "en" ? "Invoice fetched successfully" : "تم جلب الفاتوره بنجاح",
+        data:revenuDetails
+     });
   } catch (error) {
     next(error);
   }
