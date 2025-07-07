@@ -29,7 +29,7 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
-     title: Joi.string().required().messages({
+    title: Joi.string().required().messages({
       'string.base': messages.title.base,
       'string.empty': messages.title.empty,
       'any.required': messages.title.required
@@ -105,8 +105,8 @@ const rentToOwnSchema = (lang = "en") => {
     ownershipPeriod: Joi.string()
       .required()
       .messages({
-        'any.required':messages.ownershipPeriod.required,
-        'string.base':messages.ownershipPeriod.base
+        'any.required': messages.ownershipPeriod.required,
+        'string.base': messages.ownershipPeriod.base
       }),
 
     carName: Joi.string().required().messages({
@@ -118,7 +118,7 @@ const rentToOwnSchema = (lang = "en") => {
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
-     title: Joi.string().required().messages({
+    title: Joi.string().required().messages({
       'string.base': messages.title.base,
       'string.empty': messages.title.empty,
       'any.required': messages.title.required
@@ -181,9 +181,8 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
   return Joi.object({
     rentalType: Joi.string()
       .valid("weekly/daily")
-      .required()
+      .optional()
       .messages({
-        'any.required': messages.rentalType.required,
         'any.only': messages.rentalType.only,
         'string.base': messages.rentalType.string
       }),
@@ -194,66 +193,60 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
       'array.base': messages.images.base
     }),
 
-    carName: Joi.string().required().messages({
+    carName: Joi.string().optional().messages({
       'string.base': messages.carName.string,
-      'any.required': messages.carName.required
     }),
 
-    carType: Joi.string().required().messages({
+    carType: Joi.string().optional().messages({
       'string.base': messages.carType.string,
-      'any.required': messages.carType.required
     }),
-     title: Joi.string().required().messages({
+    title: Joi.string().optional().messages({
       'string.base': messages.title.base,
-      'string.empty': messages.title.empty,
-      'any.required': messages.title.required
     }),
-    carModel: Joi.number().required().messages({
+    carModel: Joi.number().optional().messages({
       'number.base': messages.carModel.number,
-      'any.required': messages.carModel.required
     }),
 
-    licensePlateNumber: Joi.string().required().messages({
+    licensePlateNumber: Joi.string().optional().messages({
       'string.base': messages.licensePlateNumber.string,
-      'any.required': messages.licensePlateNumber.required
     }),
 
-    freeKilometers: Joi.number().required().messages({
+    freeKilometers: Joi.number().optional().messages({
       'number.base': messages.freeKilometers.number,
-      'any.required': messages.freeKilometers.required
     }),
-    odoMeter: Joi.number().required().messages({
+    odoMeter: Joi.number().optional().messages({
       'number.base': messages.odoMeter.number,
-      'any.required': messages.odoMeter.required
     }),
-    pricePerFreeKilometer: Joi.number().required().messages({
+    pricePerFreeKilometer: Joi.number().optional().messages({
       'number.base': messages.pricePerFreeKilometer.number,
-      'any.required': messages.pricePerFreeKilometer.required
     }),
 
-    pricePerExtraKilometer: Joi.number().required().messages({
+    pricePerExtraKilometer: Joi.number().optional().messages({
       'number.base': messages.pricePerExtraKilometer.number,
-      'any.required': messages.pricePerExtraKilometer.required
     }),
 
-    city: Joi.string().required().messages({
+    city: Joi.string().optional().messages({
       'string.base': messages.city.string,
-      'any.required': messages.city.required
     }),
 
-    area: Joi.string().required().messages({
+    area: Joi.string().optional().messages({
       'string.base': messages.area.string,
-      'any.required': messages.area.required
     }),
 
-    carDescription: Joi.string().required().messages({
+    carDescription: Joi.string().optional().messages({
       'string.base': messages.carDescription.string,
-      'any.required': messages.carDescription.required
     }),
 
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
-    })
+    }),
+    imagesToDelete: Joi.array()
+      .items(Joi.string().uri())
+      .optional()
+      .messages({
+        'array.base': 'imagesToDelete يجب أن تكون قائمة.',
+        'string.uri': 'كل عنصر في imagesToDelete يجب أن يكون رابطًا صحيحًا.'
+      })
   });
 }
 const rentToOwnUpdateSchema = (lang = "en") => {
@@ -262,10 +255,8 @@ const rentToOwnUpdateSchema = (lang = "en") => {
   return Joi.object({
     rentalType: Joi.string()
       .valid("rent to own")
-      .required()
+      .optional()
       .messages({
-        'any.required': messages.rentalType.required,
-        'any.only': messages.rentalType.only,
         'string.base': messages.rentalType.string
       }),
 
@@ -277,77 +268,69 @@ const rentToOwnUpdateSchema = (lang = "en") => {
       'array.base': messages.images.base
     }),
     ownershipPeriod: Joi.string()
-      .required()
+      .optional()
       .messages({
-        'any.required':messages.ownershipPeriod.required,
-        'string.base':messages.ownershipPeriod.base
+        'string.base': messages.ownershipPeriod.base
       }),
 
-    carName: Joi.string().required().messages({
+    carName: Joi.string().optional().messages({
       'string.base': messages.carName.string,
-      'any.required': messages.carName.required
     }),
 
-    carType: Joi.string().required().messages({
+    carType: Joi.string().optional().messages({
       'string.base': messages.carType.string,
-      'any.required': messages.carType.required
     }),
-     title: Joi.string().required().messages({
+    title: Joi.string().optional().messages({
       'string.base': messages.title.base,
-      'string.empty': messages.title.empty,
-      'any.required': messages.title.required
     }),
-    carModel: Joi.number().required().messages({
+    carModel: Joi.number().optional().messages({
       'number.base': messages.carModel.number,
-      'any.required': messages.carModel.required
     }),
 
-    licensePlateNumber: Joi.string().required().messages({
+    licensePlateNumber: Joi.string().optional().messages({
       'string.base': messages.licensePlateNumber.string,
-      'any.required': messages.licensePlateNumber.required
     }),
 
-    totalKilometers: Joi.number().required().messages({
+    totalKilometers: Joi.number().optional().messages({
       'number.base': messages.totalKilometers.number,
-      'any.required': messages.totalKilometers.required
     }),
 
-    carPrice: Joi.number().required().messages({
+    carPrice: Joi.number().optional().messages({
       'number.base': messages.carPrice.number,
-      'any.required': messages.carPrice.required
     }),
 
-    monthlyPayment: Joi.number().required().messages({
+    monthlyPayment: Joi.number().optional().messages({
       'number.base': messages.monthlyPayment.number,
-      'any.required': messages.monthlyPayment.required
     }),
 
-    finalPayment: Joi.number().required().messages({
+    finalPayment: Joi.number().optional().messages({
       'number.base': messages.finalPayment.number,
-      'any.required': messages.finalPayment.required
     }),
 
-    city: Joi.string().required().messages({
+    city: Joi.string().optional().messages({
       'string.base': messages.city.string,
-      'any.required': messages.city.required
     }),
 
-    area: Joi.string().required().messages({
+    area: Joi.string().optional().messages({
       'string.base': messages.area.string,
-      'any.required': messages.area.required
     }),
 
-    carDescription: Joi.string().required().messages({
+    carDescription: Joi.string().optional().messages({
       'string.base': messages.carDescription.string,
-      'any.required': messages.carDescription.required
     }),
-    odoMeter: Joi.number().required().messages({
+    odoMeter: Joi.number().optional().messages({
       'number.base': messages.odoMeter.number,
-      'any.required': messages.odoMeter.required
     }),
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
-    })
+    }),
+    imagesToDelete: Joi.array()
+      .items(Joi.string().uri())
+      .optional()
+      .messages({
+        'array.base': messages.imagesToDelete.base,
+        'string.uri': messages.imagesToDelete.uri
+      })
   });
 };
 

@@ -1,5 +1,5 @@
 const carRental = require("../models/carRental");
-const { carRentalWeeklyValiditionSchema, rentToOwnSchema } = require("../validation/carRentalValidition");
+const { carRentalWeeklyValiditionSchema, rentToOwnSchema,carRentalWeeklyValiditionUpdateSchema,rentToOwnUpdateSchema } = require("../validation/carRentalValidition");
 const getMessages = require("../configration/getmessages");
 const path = require("path");
 const fs = require("fs");
@@ -205,8 +205,8 @@ const updateCar = async (req, res, next) => {
     const rentalType = req.body.rentalType || car.rentalType;
 
     const schema = rentalType === "weekly/daily"
-      ? carRentalWeeklyValiditionSchema(lang)
-      : rentToOwnSchema(lang);
+      ? carRentalWeeklyValiditionUpdateSchema(lang)
+      : rentToOwnUpdateSchema(lang);
 
     const { error } = schema.validate({ ...req.body, images: updatedImages });
     if (error) {

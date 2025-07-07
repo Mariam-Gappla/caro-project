@@ -11,7 +11,7 @@ const messages = {
       base: "الصور يجب أن تكون في مصفوفة",
       uri: "رابط الصورة غير صحيح"
     },
-    
+
     carName: {
       required: "اسم السيارة مطلوب",
       string: "اسم السيارة يجب أن يكون نصًا"
@@ -40,7 +40,7 @@ const messages = {
       required: "سعر الكيلو الزائد مطلوب",
       number: "سعر الكيلو الزائد يجب أن يكون رقمًا"
     },
-    
+
     city: {
       required: "اسم المدينة مطلوب",
       string: "اسم المدينة يجب أن يكون نصًا"
@@ -65,8 +65,11 @@ const messages = {
       empty: 'العنوان لا يمكن أن يكون فارغًا',
       required: 'العنوان مطلوب'
     },
-    
-    
+    imagesToDelete: {
+      base: 'imagesToDelete يجب أن تكون قائمة (Array).',
+      uri: 'كل عنصر في imagesToDelete يجب أن يكون رابطًا صحيحًا.'
+    }
+
   },
 
   en: {
@@ -125,13 +128,16 @@ const messages = {
     odoMeter: {
       required: "odoMeter is required",
       number: "odoMeter must be number"
-    }, 
+    },
     title: {
       base: 'Title must be a string',
       empty: 'Title cannot be empty',
       required: 'Title is required'
     },
-    
+    imagesToDelete: {
+      base: 'imagesToDelete must be an array.',
+      uri: 'Each item in imagesToDelete must be a valid URL.'
+    }
 
   }
 };

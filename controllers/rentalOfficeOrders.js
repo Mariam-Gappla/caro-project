@@ -234,7 +234,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
             data: {
                 orders: formattedOrders,
                 pagination: {
-                    page,
+                    currentPage:page,
                     totalPages: Math.ceil(totalOrders / limit),
                 }
             }
@@ -622,7 +622,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                 data: {
                     orders: [],
                     pagination: {
-                        page,
+                        currentPage:page,
                         totalPages: 0
                     }
                 }
@@ -669,7 +669,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             data: {
                 orders: formattedOrders,
                 pagination: {
-                    page,
+                    currentPage:page,
                     totalPages: Math.ceil(totalOrders / limit),
                 }
             }
