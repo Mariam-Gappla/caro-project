@@ -30,9 +30,11 @@ const messages = {
       valid: "Payment method must be a valid value",
     },
     pickupLocation: {
-      base: "Pickup location must be an object",
+      base: "Invalid location format",
       lat: "Latitude must be a number",
       long: "Longitude must be a number",
+      requiredLat: "Latitude is required when delivery is selected",
+      requiredLong: "Longitude is required when delivery is selected"
     },
     deliveryType: {
       required: "Delivery type is required",
@@ -80,9 +82,11 @@ const messages = {
       valid: "طريقة الدفع غير صحيحة",
     },
     pickupLocation: {
-      base: "موقع الاستلام يجب أن يكون كائن يحتوي على lat و long",
-      lat: "خط العرض يجب أن يكون رقمًا",
-      long: "خط الطول يجب أن يكون رقمًا",
+      base: "تنسيق الموقع غير صحيح",
+      lat: "يجب أن يكون خط العرض رقمًا",
+      long: "يجب أن يكون خط الطول رقمًا",
+      requiredLat: "يجب إدخال خط العرض عند اختيار التوصيل",
+      requiredLong: "يجب إدخال خط الطول عند اختيار التوصيل"
     },
     deliveryType: {
       required: "نوع الاستلام مطلوب",

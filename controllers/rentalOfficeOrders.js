@@ -1,7 +1,7 @@
 const rentalOfficeOrders = require("../models/rentalOfficeOrders");
 const CarRental = require("../models/carRental");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
-const rentalOfficeOrderSchema = require("../validation/rentalOfficeOrders");
+const {rentalOfficeOrderSchema,rentToOwnOrderSchema} = require("../validation/rentalOfficeOrders");
 const Revenu = require("../models/invoice");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
@@ -9,136 +9,159 @@ const path = require("path");
 const mongoose = require('mongoose');
 const fs = require("fs");
 const addOrder = async (req, res, next) => {
-    try {
-        const userId = req.user.id;
-        const carId = req.params.id;
-        const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang);
-        const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+  try {
+    const userId = req.user.id;
+    const carId = req.params.id;
+    const lang = req.headers['accept-language'] || 'en';
+    const messages = getMessages(lang);
+    const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-
-        // معالجة اللوكيشن
-        req.body.pickupLocation = {
-            lat: Number(req.body['pickupLocation.lat']),
-            long: Number(req.body['pickupLocation.long'])
-        };
-        delete req.body['pickupLocation.lat'];
-        delete req.body['pickupLocation.long'];
-
-        // التحقق من صحة البيانات
-        const { error } = rentalOfficeOrderSchema(lang).validate({
-            userId,
-            carId,
-            ...req.body
-        });
-        if (error) {
-            return res.status(400).send({
-                code: 400,
-                status: false,
-                message: error.details[0].message
-            });
-        }
-
-        // تأكد من وجود السيارة
-        const existCar = await CarRental.findById(carId);
-        if (!existCar) {
-            return res.status(400).send({
-                code: 400,
-                status: false,
-                message: messages.rentalCar.existCar
-            });
-        }
-
-        const rentalOfficeId = existCar.rentalOfficeId;
-
-        // التحقق من التداخل مع حجوزات أخرى لنفس السيارة
-        const { startDate, endDate } = req.body;
-        const overlappingOrder = await rentalOfficeOrders.findOne({
-            carId,
-            $or: [
-                {
-                    startDate: { $lte: endDate },
-                    endDate: { $gte: startDate }
-                }
-            ]
-        });
-
-        if (overlappingOrder) {
-            return res.status(400).send({
-                code: 400,
-                status: false,
-                message: lang == "en" ? "The selected period is already booked" : "الفترة المختارة غير متاحة للحجز"
-            });
-        }
-
-        // التحقق من صورة الرخصة
-        const imageFiles = req.files.filter(f => f.fieldname === "licenseImage");
-        console.log(messages.order.licenseImageRequired)
-        if (imageFiles.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.order.licenseImageRequired
-            });
-        }
-
-        if (imageFiles.length > 1) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.licenseImage.onlyOne
-            });
-        }
-
-        const file = imageFiles[0];
-        const allowedImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-
-        if (!allowedImageTypes.includes(file.mimetype)) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.order.licenseImage
-            });
-        }
-
-        // حفظ صورة الرخصة
-        const fileName = `${Date.now()}-${file.originalname}`;
-        const saveDir = path.join(__dirname, '../images');
-        const filePath = path.join(saveDir, fileName);
-
-        if (!fs.existsSync(saveDir)) {
-            fs.mkdirSync(saveDir, { recursive: true });
-        }
-
-        fs.writeFileSync(filePath, file.buffer);
-
-        const fileUrl = `${BASE_URL}/images/${fileName}`;
-
-        // إنشاء الطلب
-        const order = await rentalOfficeOrders.create({
-            userId,
-            rentalOfficeId,
-            carId,
-            startDate,
-            endDate,
-            priceType: req.body.priceType,
-            licenseImage: fileUrl,
-            paymentMethod: req.body.paymentMethod,
-            pickupLocation: req.body.pickupLocation,
-            deliveryType: req.body.deliveryType,
-            priceType: req.body.priceType,
-            totalCost: req.body.totalCost
-        });
-
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            message: messages.order.addOrder,
-        });
-
-    } catch (err) {
-        next(err);
+    // ✅ جلب بيانات السيارة
+    const car = await CarRental.findById(carId);
+    if (!car) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: messages.rentalCar.existCar
+      });
     }
+
+    // ✅ معالجة موقع الاستلام (لو موجود)
+    if (req.body['pickupLocation.lat'] && req.body['pickupLocation.long']) {
+      req.body.pickupLocation = {
+        lat: Number(req.body['pickupLocation.lat']),
+        long: Number(req.body['pickupLocation.long'])
+      };
+      delete req.body['pickupLocation.lat'];
+      delete req.body['pickupLocation.long'];
+    }
+
+    // ✅ تحديد نوع السكيمة حسب نوع السيارة
+    const schema = car.rentalType === "weekly/daily"
+      ? rentalOfficeOrderSchema(lang)
+      : rentToOwnOrderSchema(lang);
+
+    const { error } = schema.validate({
+      userId,
+      carId,
+      ...req.body
+    });
+
+    if (error) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: error.details[0].message
+      });
+    }
+
+    // ✅ التحقق من التداخل في الحجز
+    let overlappingOrder = null;
+
+    if (car.rentalType === "weekly/daily") {
+      const { startDate, endDate } = req.body;
+
+      overlappingOrder = await rentalOfficeOrders.findOne({
+        carId,
+        ended: false, // ✅ استبعاد الطلبات المنتهية
+        $or: [
+          {
+            startDate: { $lte: endDate },
+            endDate: { $gte: startDate }
+          }
+        ]
+      });
+    } else {
+      // ✅ نوع منتهي بالتمليك: ممنوع يتكرر حجزه
+      overlappingOrder = await rentalOfficeOrders.findOne({ carId });
+    }
+
+    if (overlappingOrder) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: lang == "en"
+          ? "The selected period is already booked"
+          : "الفترة المختارة غير متاحة للحجز"
+      });
+    }
+
+    // ✅ التحقق من رفع صورة الرخصة
+    const imageFiles = req.files?.filter(f => f.fieldname === "licenseImage") || [];
+
+    if (imageFiles.length === 0) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: messages.order.licenseImageRequired
+      });
+    }
+
+    if (imageFiles.length > 1) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: messages.licenseImage.onlyOne
+      });
+    }
+
+    const file = imageFiles[0];
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+
+    if (!allowedImageTypes.includes(file.mimetype)) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: messages.order.licenseImage
+      });
+    }
+
+    // ✅ حفظ الصورة فعليًا
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const saveDir = path.join(__dirname, '../images');
+    const filePath = path.join(saveDir, fileName);
+
+    if (!fs.existsSync(saveDir)) {
+      fs.mkdirSync(saveDir, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, file.buffer);
+    const fileUrl = `${BASE_URL}/images/${fileName}`;
+
+    // ✅ تجهيز بيانات الطلب
+    const rentalOfficeId = car.rentalOfficeId;
+
+    const orderData = {
+      userId,
+      rentalOfficeId,
+      carId,
+      licenseImage: fileUrl,
+      paymentMethod: req.body.paymentMethod,
+      deliveryType: req.body.deliveryType,
+      pickupLocation: req.body.deliveryType === "delivery" ? req.body.pickupLocation : undefined,
+      totalCost: req.body.totalCost
+    };
+
+    if (car.rentalType === "weekly/daily") {
+      orderData.startDate = req.body.startDate;
+      orderData.endDate = req.body.endDate;
+      orderData.priceType = req.body.priceType;
+    } else {
+      orderData.startDate = req.body.startDate;
+    }
+
+    // ✅ إنشاء الطلب
+    await rentalOfficeOrders.create(orderData);
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: messages.order.addOrder
+    });
+
+  } catch (err) {
+    next(err);
+  }
 };
 const updateOrderStatuses = async (orders) => {
     const now = new Date();
@@ -207,20 +230,22 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
             const { carId, ...rest } = order;
             if (carId?.rentalType === "weekly/daily") {
                 return {
+                    id:rest._id,
                     title: carId.title,
                     startDate: rest.startDate,
                     endDate: rest.endDate,
                     rentalType: carId.rentalType,
                     city: carId.city,
-                    totalCost:rest.totalCost,
+                    totalCost: rest.totalCost,
                     paymentStatus: order.paymentStatus,
                 };
             } else {
                 return {
+                     id:rest._id,
                     title: carId.title,
                     ownershipPeriod: carId.ownershipPeriod,
                     rentalType: carId.rentalType,
-                    totalCost:rest.totalCost,
+                    totalCost: rest.totalCost,
                     city: carId.city,
                     paymentStatus: order.paymentStatus
                 };
@@ -234,7 +259,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
             data: {
                 orders: formattedOrders,
                 pagination: {
-                    currentPage:page,
+                    currentPage: page,
                     totalPages: Math.ceil(totalOrders / limit),
                 }
             }
@@ -348,7 +373,7 @@ const getOrderById = async (req, res, next) => {
         if (carId.rentalType == "weekly/daily") {
             formattedOrder = {
                 title: carId.title,
-                images:carId.images,
+                images: carId.images,
                 carDescription: carId.carDescription,
                 carModel: carId.carModel,
                 city: carId.city,
@@ -364,10 +389,18 @@ const getOrderById = async (req, res, next) => {
         }
         else if (carId.rentalType == "rent to own") {
             formattedOrder = {
-                order: {
-                    rest,
-                    car: carId
-                }
+                 title: carId.title,
+                images: carId.images,
+                carDescription: carId.carDescription,
+                ownershipPeriod: carId.ownershipPeriod,
+                carPrice:carId.carPrice,
+                finalPayment:carId.finalPayment,
+                carModel: carId.carModel,
+                city: carId.city,
+                odoMeter: carId.odoMeter,
+                licensePlateNumber: carId.licensePlateNumber,
+                startDate: rest.startDate,
+                licenseImage: rest.licenseImage
             }
         }
         return res.status(200).send({
@@ -623,7 +656,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                 data: {
                     orders: [],
                     pagination: {
-                        currentPage:page,
+                        currentPage: page,
                         totalPages: 0
                     }
                 }
@@ -670,7 +703,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             data: {
                 orders: formattedOrders,
                 pagination: {
-                    currentPage:page,
+                    currentPage: page,
                     totalPages: Math.ceil(totalOrders / limit),
                 }
             }

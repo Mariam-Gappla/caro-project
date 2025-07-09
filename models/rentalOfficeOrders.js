@@ -22,7 +22,6 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-    required: true
   },
   licenseImage: {
     type: String,
