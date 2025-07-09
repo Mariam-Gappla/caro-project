@@ -1,118 +1,83 @@
 const messages = {
   en: {
-    providerIdRequired: "Provider ID is required",
-    providerIdString: "Provider ID must be a string",
-
-    serviceTypeRequired: "Service type is required",
-    serviceTypeString: "Service type must be a string",
-
-    fullNameRequired: "Full name is required",
-    fullNameString: "Full name must be a string",
-
-    nationalityRequired: "Nationality is required",
-    nationalityString: "Nationality must be a string",
-
-    nationalIdRequired: "National ID is required",
-    nationalIdString: "National ID must be a string",
-
-    birthDateRequired: "Birth date is required",
-    birthDateDate: "Birth date must be a valid date",
-
-    emailRequired: "Email is required",
-    emailString: "Email must be a string",
-    emailInvalid: "Email must be a valid email",
-
-    ibanRequired: "IBAN is required",
-    ibanString: "IBAN must be a string",
-
-    bankAccountNameRequired: "Bank account name is required",
-    bankAccountNameString: "Bank account name must be a string",
-
-    winchTypeRequired: "Winch type is required",
-    winchTypeString: "Winch type must be a string",
-
-    carPlateNumberRequired: "Car plate number is required",
-    carPlateNumberString: "Car plate number must be a string",
-
-    profileImageRequired: "Profile image is required",
-    profileImageString: "Profile image must be a string",
-
-    nationalIdImageRequired: "National ID image is required",
-    nationalIdImageString: "National ID image must be a string",
-
-    licenseImageRequired: "License image is required",
-    licenseImageString: "License image must be a string",
-
-    carRegistrationImageRequired: "Car registration image is required",
-    carRegistrationImageString: "Car registration image must be a string",
-
-    carImageRequired: "Car image is required",
-    carImageString: "Car image must be a string",
-
-    notesRequired: "Notes are required",
+    providerIdRequired: "Provider ID is required.",
+    fullNameRequired: "Full name is required.",
+    fullNameString: "Full name must be a string.",
+    nationalityRequired: "Nationality is required.",
+    nationalityString: "Nationality must be a string.",
+    nationalIdRequired: "National ID is required.",
+    nationalIdString: "National ID must be a string.",
+    birthDateRequired: "Birth date is required.",
+    birthDateDate: "Birth date must be a valid date.",
+    emailRequired: "Email is required.",
+    emailString: "Email must be a string.",
+    emailInvalid: "Email format is invalid.",
+    ibanRequired: "IBAN is required.",
+    ibanString: "IBAN must be a string.",
+    bankAccountNameRequired: "Bank account name is required.",
+    bankAccountNameString: "Bank account name must be a string.",
+    winchTypeRequired: "Winch type is required.",
+    winchTypeString: "Winch type must be a string.",
+    carPlateNumberRequired: "Car plate number is required.",
+    carPlateNumberString: "Car plate number must be a string.",
+    profileImageRequired: "Profile image is required.",
+    profileImageString: "Profile image must be a valid string.",
+    nationalIdImageRequired: "National ID image is required.",
+    nationalIdImageString: "National ID image must be a valid string.",
+    licenseImageRequired: "Driver’s license image is required.",
+    licenseImageString: "Driver’s license image must be a valid string.",
+    carRegistrationImageRequired: "Car registration image is required.",
+    carRegistrationImageString: "Car registration image must be a valid string.",
+    carImageRequired: "Car image is required.",
+    carImageString: "Car image must be a valid string.",
+    notesRequired: "Notes field is required",
     notesString: "Notes must be a string",
     notesEmpty: "Notes cannot be empty",
     notesMin: "Notes must be at least 5 characters",
-    notesMax: "Notes must be at most 100 characters"
+    notesMax: "Notes cannot be more than 100 characters",
   },
 
   ar: {
-    providerIdRequired: "معرّف مقدم الخدمة مطلوب",
-    providerIdString: "معرّف مقدم الخدمة يجب أن يكون نصًا",
-
-    serviceTypeRequired: "نوع الخدمة مطلوب",
-    serviceTypeString: "نوع الخدمة يجب أن يكون نصًا",
-
-    fullNameRequired: "الاسم الكامل مطلوب",
-    fullNameString: "الاسم الكامل يجب أن يكون نصًا",
-
-    nationalityRequired: "الجنسية مطلوبة",
-    nationalityString: "الجنسية يجب أن تكون نصًا",
-
-    nationalIdRequired: "رقم الهوية الوطنية مطلوب",
-    nationalIdString: "رقم الهوية الوطنية يجب أن يكون نصًا",
-
-    birthDateRequired: "تاريخ الميلاد مطلوب",
-    birthDateDate: "تاريخ الميلاد يجب أن يكون تاريخًا صالحًا",
-
-    emailRequired: "البريد الإلكتروني مطلوب",
-    emailString: "البريد الإلكتروني يجب أن يكون نصًا",
-    emailInvalid: "البريد الإلكتروني يجب أن يكون بصيغة صحيحة",
-
-    ibanRequired: "رقم الآيبان مطلوب",
-    ibanString: "رقم الآيبان يجب أن يكون نصًا",
-
-    bankAccountNameRequired: "اسم صاحب الحساب البنكي مطلوب",
-    bankAccountNameString: "اسم صاحب الحساب البنكي يجب أن يكون نصًا",
-
-    winchTypeRequired: "نوع الونش مطلوب",
-    winchTypeString: "نوع الونش يجب أن يكون نصًا",
-
-    carPlateNumberRequired: "رقم لوحة السيارة مطلوب",
-    carPlateNumberString: "رقم لوحة السيارة يجب أن يكون نصًا",
-
-    profileImageRequired: "الصورة الشخصية مطلوبة",
-    profileImageString: "مسار الصورة الشخصية يجب أن يكون نصًا",
-
-    nationalIdImageRequired: "صورة الهوية مطلوبة",
-    nationalIdImageString: "مسار صورة الهوية يجب أن يكون نصًا",
-
-    licenseImageRequired: "صورة الرخصة مطلوبة",
-    licenseImageString: "مسار صورة الرخصة يجب أن يكون نصًا",
-
-    carRegistrationImageRequired: "صورة الاستمارة مطلوبة",
-    carRegistrationImageString: "مسار صورة الاستمارة يجب أن يكون نصًا",
-
-    carImageRequired: "صورة السيارة مطلوبة",
-    carImageString: "مسار صورة السيارة يجب أن يكون نصًا",
-
-    notesRequired: "الملاحظات مطلوبة",
-    notesString: "الملاحظات يجب أن تكون نصًا",
-    notesEmpty: "الملاحظات لا يمكن أن تكون فارغة",
-    notesMin: "الملاحظات يجب ألا تقل عن 5 أحرف",
-    notesMax: "الملاحظات يجب ألا تزيد عن 100 حرف"
+    providerIdRequired: "معرّف المزود مطلوب.",
+    fullNameRequired: "الاسم الكامل مطلوب.",
+    fullNameString: "يجب أن يكون الاسم الكامل نصًا.",
+    nationalityRequired: "الجنسية مطلوبة.",
+    nationalityString: "يجب أن تكون الجنسية نصًا.",
+    nationalIdRequired: "رقم الهوية مطلوب.",
+    nationalIdString: "يجب أن يكون رقم الهوية نصًا.",
+    birthDateRequired: "تاريخ الميلاد مطلوب.",
+    birthDateDate: "يجب أن يكون تاريخ الميلاد تاريخًا صالحًا.",
+    emailRequired: "البريد الإلكتروني مطلوب.",
+    emailString: "يجب أن يكون البريد الإلكتروني نصًا.",
+    emailInvalid: "صيغة البريد الإلكتروني غير صالحة.",
+    ibanRequired: "رقم الآيبان مطلوب.",
+    ibanString: "يجب أن يكون الآيبان نصًا.",
+    bankAccountNameRequired: "اسم الحساب البنكي مطلوب.",
+    bankAccountNameString: "يجب أن يكون اسم الحساب البنكي نصًا.",
+    winchTypeRequired: "نوع الونش مطلوب.",
+    winchTypeString: "يجب أن يكون نوع الونش نصًا.",
+    carPlateNumberRequired: "رقم لوحة السيارة مطلوب.",
+    carPlateNumberString: "يجب أن يكون رقم لوحة السيارة نصًا.",
+    profileImageRequired: "الصورة الشخصية مطلوبة.",
+    profileImageString: "يجب أن تكون الصورة الشخصية رابطًا صالحًا.",
+    nationalIdImageRequired: "صورة الهوية مطلوبة.",
+    nationalIdImageString: "يجب أن تكون صورة الهوية رابطًا صالحًا.",
+    licenseImageRequired: "صورة الرخصة مطلوبة.",
+    licenseImageString: "يجب أن تكون صورة الرخصة رابطًا صالحًا.",
+    carRegistrationImageRequired: "صورة الاستمارة مطلوبة.",
+    carRegistrationImageString: "يجب أن تكون صورة الاستمارة رابطًا صالحًا.",
+    carImageRequired: "صورة السيارة مطلوبة.",
+    carImageString: "يجب أن تكون صورة السيارة رابطًا صالحًا.",
+    notesRequired: "حقل الملاحظات مطلوب",
+    notesString: "يجب أن تكون الملاحظات نصًا",
+    notesEmpty: "لا يمكن ترك الملاحظات فارغة",
+    notesMin: "يجب ألا تقل الملاحظات عن 5 أحرف",
+    notesMax: "يجب ألا تزيد الملاحظات عن 100 حرف",
   }
 };
+
+module.exports = messages;
+
 
 const getMessages = (lang = 'en') => messages[lang] || messages.en;
 

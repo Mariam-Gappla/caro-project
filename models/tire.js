@@ -6,10 +6,6 @@ const tireVerificationSchema = new mongoose.Schema({
     ref: 'serviceProvider', // الربط بالمستخدم
     required: true
   },
-  serviceType:{
-     type: String,
-    required: true
-  },
   fullName: {
     type: String,
     required: true
@@ -40,7 +36,6 @@ const tireVerificationSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    required: true
   },
   status: {
     type: String,

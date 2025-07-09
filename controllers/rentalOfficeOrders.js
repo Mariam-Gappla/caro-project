@@ -348,6 +348,7 @@ const getOrderById = async (req, res, next) => {
         if (carId.rentalType == "weekly/daily") {
             formattedOrder = {
                 title: carId.title,
+                images:carId.images,
                 carDescription: carId.carDescription,
                 carModel: carId.carModel,
                 city: carId.city,

@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const getMessages= require('../locales/schemaValiditionMessages/verificationAccountMessages');
+const getMessages = require('../locales/schemaValiditionMessages/verificationAccountMessages');
 
 const tireSchema = (lang = 'en') => {
     const messages = getMessages(lang);
@@ -11,14 +11,6 @@ const tireSchema = (lang = 'en') => {
                 'any.required': messages.providerIdRequired,
                 'string.base': messages.providerIdRequired,
             }),
-
-        serviceType: Joi.string()
-            .required()
-            .messages({
-                'any.required': messages.serviceTypeRequired,
-                'string.base': messages.serviceTypeString,
-            }),
-
         fullName: Joi.string()
             .required()
             .messages({
@@ -69,6 +61,12 @@ const tireSchema = (lang = 'en') => {
                 'any.required': messages.bankAccountNameRequired,
                 'string.base': messages.bankAccountNameString,
             }),
+    });
+};
+const tireImagesSchema=(lang = 'en') => {
+    const messages = getMessages(lang);
+
+    return Joi.object({
         notes: Joi.string()
             .min(5)       // مثال على الحد الأدنى (ممكن تغير الرقم حسب الحاجة)
             .max(100)     // مثال على الحد الأقصى
@@ -85,8 +83,9 @@ const tireSchema = (lang = 'en') => {
             .messages({
                 'any.required': messages.profileImageRequired,
                 'string.base': messages.profileImageString,
+                'string.empty': messages.profileImageRequired,
             }),
-    });
-};
+    })
+}
 
-module.exports = tireSchema;
+module.exports = {tireSchema,tireImagesSchema};

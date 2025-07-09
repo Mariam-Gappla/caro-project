@@ -1,8 +1,6 @@
 const Joi = require("joi");
 const mongoose = require("mongoose");
 const getMessages=require("../locales/schemaValiditionMessages/tweetValiditionMessages")
-
-// التحقق من صحة الـ ObjectId
 const isValidObjectId = (value, helpers) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
     return helpers.error("any.invalid");
@@ -10,20 +8,19 @@ const isValidObjectId = (value, helpers) => {
   return value;
 };
 const tweetValidationSchema = (lang = "en") => {
-  const messages=getMessages(lang);
+  const messages = getMessages(lang);
   return Joi.object({
     title: Joi.string().required().messages({
-        "string.base": messages.title.base,
-        "any.required": messages.title.required,
-        "string.empty": messages.title.required
+      "string.base": messages.title.base,
+      "any.required": messages.title.required,
+      "string.empty": messages.title.required
     }),
-    content: Joi.string()
-      .required()
-      .messages({
-        "string.base": messages.content.base,
-        "any.required": messages.content.required,
-        "string.empty": messages.content.required
-      }),
+
+    content: Joi.string().required().messages({
+      "string.base": messages.content.base,
+      "any.required": messages.content.required,
+      "string.empty": messages.content.required
+    }),
 
     userId: Joi.string()
       .custom(isValidObjectId, "ObjectId Validation")
@@ -37,7 +34,7 @@ const tweetValidationSchema = (lang = "en") => {
     likedBy: Joi.array()
       .items(
         Joi.string().custom(isValidObjectId, "ObjectId Validation").messages({
-          "string.base":messages.likedBy.base,
+          "string.base": messages.likedBy.base,
           "any.invalid": messages.likedBy.invalid
         })
       )
@@ -45,16 +42,26 @@ const tweetValidationSchema = (lang = "en") => {
       .messages({
         "array.base": messages.likedBy.arraybase
       }),
-      image:Joi.string().optional().messages({
-        "string.base": messages.image.base,
-      }),
-    
-    createdAt: Joi.date()
+
+    images: Joi.array()
+      .items(Joi.string().messages({
+        "string.base": messages.images?.base
+      }))
+      .max(3)
       .optional()
       .messages({
-        "date.base": messages.createdAt.base
-      })
+        "array.base": messages.images.arraybase,
+        "array.max": messages.images.max 
+      }),
+
+    video: Joi.string().optional().messages({
+      "string.base": messages.video.base 
+    }),
+
+    createdAt: Joi.date().optional().messages({
+      "date.base": messages.createdAt.base
+    })
   });
-}
+};
 
 module.exports = { tweetValidationSchema };

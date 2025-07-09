@@ -55,7 +55,7 @@ module.exports = {
     licenseImage:"Only image files are allowed.",
     licenseImageRequired:"licenseImage is required"
   },
-  replyOnComment: {
+ replyOnComment: {
   addReplay: "Reply added successfully",
   getreplies:"Replies fetched successfully"
 },

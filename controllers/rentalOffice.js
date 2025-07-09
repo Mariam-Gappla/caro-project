@@ -138,7 +138,7 @@ const getRentalOfficeProfile = async (req, res, next) => {
                 followers: followersCount,
                 cars:formatedCars,
                 pagination: {
-                    page,
+                    currentPage:page,
                     totalPages: Math.ceil(totalCars / limit)
                 }
             }

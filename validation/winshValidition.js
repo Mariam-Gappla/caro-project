@@ -1,7 +1,7 @@
 const Joi = require('joi');
-const getMessages= require('../locales/schemaValiditionMessages/verificationAccountMessages');
+const getMessages = require('../locales/schemaValiditionMessages/verificationAccountMessages');
 
-const winchSchema = (lang = 'en') => {
+const winshSchema = (lang = 'en') => {
     const messages = getMessages(lang);
 
     return Joi.object({
@@ -10,13 +10,6 @@ const winchSchema = (lang = 'en') => {
             .messages({
                 'any.required': messages.providerIdRequired,
                 'string.base': messages.providerIdRequired,
-            }),
-
-        serviceType: Joi.string()
-            .required()
-            .messages({
-                'any.required': messages.serviceTypeRequired,
-                'string.base': messages.serviceTypeString,
             }),
 
         fullName: Joi.string()
@@ -83,12 +76,17 @@ const winchSchema = (lang = 'en') => {
                 'any.required': messages.carPlateNumberRequired,
                 'string.base': messages.carPlateNumberString,
             }),
-
+        })
+};
+const winshImagesSchema = (lang = 'en') => {
+    const messages = getMessages(lang);
+    return Joi.object({
         profileImage: Joi.string()
             .required()
             .messages({
                 'any.required': messages.profileImageRequired,
                 'string.base': messages.profileImageString,
+                'string.empty': messages.profileImageRequired,
             }),
 
         nationalIdImage: Joi.string()
@@ -96,6 +94,7 @@ const winchSchema = (lang = 'en') => {
             .messages({
                 'any.required': messages.nationalIdImageRequired,
                 'string.base': messages.nationalIdImageString,
+                'string.empty': messages.nationalIdImageRequired,
             }),
 
         licenseImage: Joi.string()
@@ -103,6 +102,7 @@ const winchSchema = (lang = 'en') => {
             .messages({
                 'any.required': messages.licenseImageRequired,
                 'string.base': messages.licenseImageString,
+                'string.empty': messages.licenseImageRequired,
             }),
 
         carRegistrationImage: Joi.string()
@@ -110,26 +110,16 @@ const winchSchema = (lang = 'en') => {
             .messages({
                 'any.required': messages.carRegistrationImageRequired,
                 'string.base': messages.carRegistrationImageString,
+                'string.empty': messages.carRegistrationImageRequired,
             }),
-        notes: Joi.string()
-            .min(5)       // مثال على الحد الأدنى (ممكن تغير الرقم حسب الحاجة)
-            .max(100)     // مثال على الحد الأقصى
-            .messages({
-                'any.required': messages.notesRequired,
-                'string.base': messages.notesString,
-                'string.empty': messages.notesEmpty,
-                'string.min': messages.notesMin,
-                'string.max': messages.notesMax
-            }),
-
 
         carImage: Joi.string()
             .required()
             .messages({
                 'any.required': messages.carImageRequired,
                 'string.base': messages.carImageString,
+                'string.empty': messages.carImageRequired,
             }),
-    });
-};
-
-module.exports = winchSchema;
+    })
+}
+module.exports = {winshSchema,winshImagesSchema};

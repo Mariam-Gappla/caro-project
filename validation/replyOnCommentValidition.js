@@ -19,13 +19,15 @@ const replyOnCommentValiditionSchema = (lang="en")=>{
       "string.base": messages.userId.base
     }),
 
-  tweetId: Joi.string().custom(isValidObjectId, "ObjectId validation")
-    .required()
-    .messages({
-      "any.required": messages.tweetId.required,
-      "any.invalid": messages.tweetId.invalid,
-      "string.base": messages.tweetId.base
-    }),
+  tweetId: Joi.string()
+  .trim()
+  .custom(isValidObjectId, "ObjectId validation")
+  .required()
+  .messages({
+    "any.required": messages.tweetId.required,
+    "any.invalid": messages.tweetId.invalid,
+    "string.base": messages.tweetId.base
+  }),
 
   commentId: Joi.string().custom(isValidObjectId, "ObjectId validation")
     .required()

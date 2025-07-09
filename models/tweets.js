@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const tweetSchema = new mongoose.Schema({
-  title:{
+  title: {
     type: String,
     required: true,
   },
@@ -19,8 +19,11 @@ const tweetSchema = new mongoose.Schema({
       ref: 'User'
     }
   ],
-  image:{
-    type:String
+  images: {
+    type: [String]
+  },
+  video: {
+    type: String
   },
   createdAt: {
     type: Date,
@@ -28,4 +31,4 @@ const tweetSchema = new mongoose.Schema({
   }
 });
 const Tweet = mongoose.model('Tweet', tweetSchema);
-module.exports=Tweet;
+module.exports = Tweet;
