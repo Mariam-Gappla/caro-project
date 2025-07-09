@@ -384,6 +384,7 @@ const getOrderById = async (req, res, next) => {
                 pickupLocation: rest.pickupLocation,
                 licenseImage: rest.licenseImage,
                 priceType: rest.priceType,
+                 paymentStatus:rest.paymentStatus,
                 price: rest.priceType == "open_km" ? carId.pricePerExtraKilometer : carId.pricePerFreeKilometer
             }
         }
@@ -400,6 +401,7 @@ const getOrderById = async (req, res, next) => {
                 odoMeter: carId.odoMeter,
                 licensePlateNumber: carId.licensePlateNumber,
                 startDate: rest.startDate,
+                 paymentStatus:rest.paymentStatus,
                 licenseImage: rest.licenseImage
             }
         }
