@@ -25,6 +25,8 @@ const contactUsRoutes = require("./routes/contactUsroutes.js");
 const invoiceRoutes = require("./routes/invoiceroutes.js");
 const ratingForOrderRoutes = require("./routes/raitingForOrder.js");
 const verificationRoutes = require("./routes/verificationAccount.js");
+const namesRoutes=require("./routes/carNameroutes.js");
+const modelsRoutes=require("./routes/carModelroutes.js");
 const chatRoutes = require("./routes/chat.js");
 const otp = require("./routes/otproutes.js");
 const notificationRoutes=require("./routes/notification.js");
@@ -77,6 +79,8 @@ app.use("/ratingForOrder", ratingForOrderRoutes);
 app.use("/verification", verificationRoutes);
 app.use("/chat", chatRoutes);
 app.use("/notification",notificationRoutes);
+app.use("/carModels",modelsRoutes);
+app.use("/carNames",namesRoutes)
 
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {

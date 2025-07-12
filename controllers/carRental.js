@@ -100,7 +100,7 @@ const addCar = async (req, res, next) => {
         return res.status(200).send({
             code: 200,
             status: true,
-            message: lang == "en" ? "تم اضافه السياره بنجاح" : "car added successfully"
+            message: lang == "ar" ? "تم اضافه السياره بنجاح" : "car added successfully"
         });
     } catch (err) {
         next(err);
