@@ -20,7 +20,7 @@ const rentalOfficeSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        default: `${process.env.BASE_URL}/images/rentalOffice.png`,
+        default: `${process.env.BASE_URL}images/rentalOffice.png`,
     },
     resetOtp: {
         type: Number

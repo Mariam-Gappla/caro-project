@@ -15,7 +15,7 @@ const addCar = async (req, res, next) => {
         const fileInfos = imageBuffers.map(file => {
             const fileName = `${Date.now()}-${file.originalname}`;
             const filePath = path.join(__dirname, '../images', fileName);
-            imagePaths.push(BASE_URL + fileName);
+            imagePaths.push(`${BASE_URL}images/${fileName}`);
             return { fileName, filePath, buffer: file.buffer };
         });
         console.log(imagePaths);
