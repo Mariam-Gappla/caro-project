@@ -1,5 +1,5 @@
 const multer = require('multer');
-const storage = multer.memoryStorage(); // مؤقت في الرام
+const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'];
   if (allowedTypes.includes(file.mimetype)) {
@@ -8,6 +8,14 @@ const fileFilter = (req, file, cb) => {
     cb(new Error('صيغة الملف غير مدعومة'), false);
   }
 };
+const limits = {
+  fileSize: 100 * 1024 * 1024 // 100MB
+};
 
-const upload = multer({ storage, fileFilter });
-module.exports=upload;
+const upload = multer({
+  storage,
+  fileFilter,
+  limits
+});
+
+module.exports = upload;
