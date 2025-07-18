@@ -78,123 +78,159 @@ const register = async (req, res, next) => {
     }
 }
 const login = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang);
-        console.log(req.body)
-        const { error } = loginSchema(lang).validate(req.body);
-        if (error) {
-            return res.status(400).send({
-                code: 400,
-                status: false,
-                message: error.details[0].message
-            })
-        }
-        const { phone, password, role } = req.body;
-        if (role == "rentalOffice") {
-            const existRentalOffice = await rentalOffice.findOne({ phone: phone });
-            if (existRentalOffice) {
-                const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
-                return res.status(200).send({
-                    code: 200,
-                    status: true,
-                    message: messages.login.success,
-                    data: {
-                        user: existRentalOffice,
-                        token: token
-                    },
-                })
-            }
-            const existUser = await User.findOne({ phone: phone });
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const messages = getMessages(lang);
 
-            const match = await bcrypt.compare(password, existUser.password);
-            if (!match) {
-                return res.status(400).send({
-                    status: false,
-                    code: 400,
-                    message: messages.login.incorrectData
-                });
-            }
-            const Office = await rentalOffice.create({
-                username: existUser.username,
-                phone: existUser.phone,
-                password: existUser.password
-            })
-            const token = jwt.sign({ id: Office._id, role: "rentalOffice" }, "mysecret");
-            res.status(200).send({
-                status: true,
-                code: 200,
-                message: messages.login.success,
-                data: {
-                    user: Office,
-                    token: token
-                },
-            })
-
-        }
-        else if (role == "serviceProvider") {
-            const existServiceProvider = await serviceProvider.findOne({ phone });
-            if (!existServiceProvider) {
-                return res.status(400).send({
-                    status: false,
-                    code: 400,
-                    message: messages.login.emailExists.serviceProvider
-                })
-            }
-            const match = await bcrypt.compare(password, existServiceProvider.password);
-            if (!match) {
-                return res.status(400).send({
-                    code: 400,
-                    status: false,
-                    message: messages.login.incorrectData
-                });
-            }
-            const token = jwt.sign({ id: existServiceProvider._id, role: "serviceProvider" }, "mysecret");
-            res.status(200).send({
-                status: true,
-                code: 200,
-                message: messages.success,
-                data: {
-                    user: existServiceProvider,
-                    token: token
-
-                },
-            })
-
-        }
-        else if (role == "user") {
-            const existUser = await User.findOne({ phone });
-            if (!existUser) {
-                return res.status(400).send({
-                    status: false,
-                    code: 400,
-                    message: messages.login.emailExists.user
-                })
-            }
-            const match = await bcrypt.compare(password, existUser.password);
-            if (!match) {
-                return res.status(400).send({
-                    code: 400,
-                    status: false,
-                    message: messages.login.incorrectData
-                });
-            }
-            const token = jwt.sign({ id: existUser._id, role: "user" }, "mysecret");
-            res.status(200).send({
-                status: true,
-                code: 200,
-                message: messages.login.success,
-                data: {
-                    user: existUser,
-                    token: token
-                },
-            })
-        }
+    const { error } = loginSchema(lang).validate(req.body);
+    if (error) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: error.details[0].message
+      });
     }
-    catch (err) {
-        next(err)
+
+    const { phone, password, role } = req.body;
+
+    // ----------------------
+    // الحالة: Rental Office
+    // ----------------------
+    if (role === "rentalOffice") {
+      let existRentalOffice = await rentalOffice.findOne({ phone });
+
+      if (!existRentalOffice) {
+        // المستخدم ماعندوش حساب rentalOffice لكن ممكن يكون عنده حساب user
+        const existUser = await User.findOne({ phone });
+        if (!existUser) {
+          return res.status(400).send({
+            code: 400,
+            status: false,
+            message: messages.login.emailExists.rentalOffice || "رقم الهاتف غير مسجل"
+          });
+        }
+
+        // تحقق من الباسورد
+        const match = await bcrypt.compare(password, existUser.password);
+        if (!match) {
+          return res.status(400).send({
+            code: 400,
+            status: false,
+            message: messages.login.incorrectData
+          });
+        }
+
+        // إنشاء حساب rentalOffice من user
+        existRentalOffice = await rentalOffice.create({
+          username: existUser.username,
+          phone: existUser.phone,
+          password: existUser.password // مفيش داعي لعمل hash لأنه متخزن فعلاً كـ hash
+        });
+      } else {
+        // تحقق من الباسورد مباشرة
+        const match = await bcrypt.compare(password, existRentalOffice.password);
+        if (!match) {
+          return res.status(400).send({
+            code: 400,
+            status: false,
+            message: messages.login.incorrectData
+          });
+        }
+      }
+
+      const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
+      return res.status(200).send({
+        code: 200,
+        status: true,
+        message: messages.login.success,
+        data: {
+          user: existRentalOffice,
+          token
+        }
+      });
     }
-}
+
+    // ----------------------
+    // الحالة: Service Provider
+    // ----------------------
+    if (role === "serviceProvider") {
+      const existServiceProvider = await serviceProvider.findOne({ phone });
+      if (!existServiceProvider) {
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: messages.login.emailExists.serviceProvider
+        });
+      }
+
+      const match = await bcrypt.compare(password, existServiceProvider.password);
+      if (!match) {
+        return res.status(400).send({
+          code: 400,
+          status: false,
+          message: messages.login.incorrectData
+        });
+      }
+
+      const token = jwt.sign({ id: existServiceProvider._id, role: "serviceProvider" }, process.env.JWT_SECRET);
+      return res.status(200).send({
+        code: 200,
+        status: true,
+        message: messages.login.success,
+        data: {
+          user: existServiceProvider,
+          token
+        }
+      });
+    }
+
+    // ----------------------
+    // الحالة: User
+    // ----------------------
+    if (role === "user") {
+      const existUser = await User.findOne({ phone });
+      if (!existUser) {
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: messages.login.emailExists.user
+        });
+      }
+
+      const match = await bcrypt.compare(password, existUser.password);
+      if (!match) {
+        return res.status(400).send({
+          code: 400,
+          status: false,
+          message: messages.login.incorrectData
+        });
+      }
+
+      const token = jwt.sign({ id: existUser._id, role: "user" }, process.env.JWT_SECRET);
+      return res.status(200).send({
+        code: 200,
+        status: true,
+        message: messages.login.success,
+        data: {
+          user: existUser,
+          token
+        }
+      });
+    }
+
+    // ----------------------
+    // الحالة: دور غير معروف
+    // ----------------------
+    return res.status(400).send({
+      code: 400,
+      status: false,
+      message: lang === "en" ? "Invalid role" : "الدور غير صالح"
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
 const requestResetPassword = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
@@ -250,7 +286,7 @@ const resetPassword = async (req, res, next) => {
     // تحديد الموديل بناءً على الـ role
     let Model;
     switch (role) {
-      case 'User':
+      case 'user':
         Model = User;
         break;
       case 'serviceProvider':
@@ -282,15 +318,30 @@ const resetPassword = async (req, res, next) => {
     }
 
     // تحديث الباسورد (مع افتراض وجود bcrypt في pre-save)
-    user.password = newPassword;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password =  hashedPassword;
     user.resetOtp = undefined;
     user.resetOtpExpires = undefined;
 
     await user.save();
 
     res.status(200).send({
+        code:200,
       status: true,
       message: lang=="en"?"Password reset successfully":"تم تحديث الباسورد بنجاح"
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+const logout = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en" ? "Logged out successfully" : "تم تسجيل الخروج بنجاح"
     });
   } catch (err) {
     next(err);
@@ -302,5 +353,6 @@ module.exports = {
     register,
     login,
     requestResetPassword,
-    resetPassword
+    resetPassword,
+    logout
 }
