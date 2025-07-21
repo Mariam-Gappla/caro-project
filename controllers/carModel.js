@@ -33,7 +33,7 @@ const getModels = async (req, res, next) => {
 
     const models = modelsRaw.map((m) => ({
       id: m._id,
-      model: m.modelName // ← غيّري 'name' لو عندك اسم مختلف للحقل
+      text: m.modelName // ← غيّري 'name' لو عندك اسم مختلف للحقل
     }));
 
     return res.send({

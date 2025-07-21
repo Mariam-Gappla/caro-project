@@ -32,7 +32,7 @@ const getNames = async (req, res, next) => {
     // تغيير شكل النتائج
     const names = rawNames.map((n) => ({
       id: n._id,
-      name: n.carName, // لو اسم الحقل مختلف غيره هنا
+      text: n.carName, // لو اسم الحقل مختلف غيره هنا
     }));
 
     return res.send({

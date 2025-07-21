@@ -1,4 +1,5 @@
 const { replyOnCommentValiditionSchema } = require("../validation/replyOnCommentValidition");
+const Comment = require("../models/comments");
 const replyOnComment = require("../models/replyOnComments");
 const mongoose=require('mongoose');
 const getMessages = require("../configration/getmessages");
@@ -37,35 +38,48 @@ const addReply = async (req, res, next) => {
     }
 }
 const getRepliesOnComment = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang);
-        const { commentId, tweetId } = req.params;
-        if (
-            !mongoose.Types.ObjectId.isValid(commentId) ||
-            !mongoose.Types.ObjectId.isValid(tweetId)
-        ) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.invalid.commentIdAndTweetId
-            });
-        }
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const messages = getMessages(lang);
+    const { commentId, tweetId } = req.params;
 
-        const replies = await replyOnComment.find({ commentId, tweetId })
-            .populate("userId", "name")
-            .sort({ date: -1 });
-
-        return res.status(200).send({
-            code:200,
-            status:true,
-            message: messages.replyOnComment.getreplies,
-            data:replies
-        });
-    } catch (error) {
-        next(error);
+    if (
+      !mongoose.Types.ObjectId.isValid(commentId) ||
+      !mongoose.Types.ObjectId.isValid(tweetId)
+    ) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: messages.invalid.commentIdAndTweetId
+      });
     }
+
+    const replies = await replyOnComment
+      .find({ commentId, tweetId })
+      .populate("userId", "username email image")
+      .sort({ date: -1 })
+      .lean();
+
+    const repliesWithUserData = replies.map(reply => {
+      const { userId, ...rest } = reply;
+      return {
+        ...rest,
+        userData: userId,
+      };
+    });
+
+    return res.status(200).send({
+      code: 200,
+      status: true,
+      message: messages.replyOnComment.getreplies,
+      data: repliesWithUserData
+    });
+  } catch (error) {
+    next(error);
+  }
 };
+
+
 
 module.exports = {
     addReply,

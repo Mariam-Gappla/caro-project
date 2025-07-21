@@ -271,18 +271,34 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
 const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId })
-        const lang = req.headers['accept-language'] || 'en'
-        if (!orders) {
-            return res.status(200).send({
-                status: true,
-                code: 200,
-                message: messages.order.existOrders
-            })
-        }
+        const lang = req.headers['accept-language'] || 'en';
+
+        // جلب عدد الطلبات الكلي
+        const fullOrders = await rentalOfficeOrder.find({ rentalOfficeId });
+        const cars = await CarRental.find({ rentalOfficeId });
+        const rating = await Rating.find({ rentalOfficeId });
+
+        // الإيرادات
+        const revenueResult = await rentalOfficeOrder.aggregate([
+            {
+                $match: {
+                    rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId))
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalCost" }
+                }
+            }
+        ]);
+        const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+
+        // إحصائيات الطلبات حسب أيام الأسبوع
         const result = await rentalOfficeOrder.aggregate([
             {
                 $match: {
+                    rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId)),
                     date: {
                         $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
                         $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
@@ -314,27 +330,19 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
             6: "Friday",
             7: "Saturday"
         };
-        const fullOrders = await rentalOfficeOrders.find({ rentalOfficeId });
-        const cars = await CarRental.find({ rentalOfficeId });
-        const revenueResult = await rentalOfficeOrder.aggregate([
-            {
-                $match: {
-                    rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId))
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalRevenue: { $sum: "$totalCost" }
-                }
-            }
-        ]);
-        const totalRevenue = revenueResult[0]?.totalRevenue || 0;
-        const rating = await Rating.find({ rentalOfficeId })
-        const stats = result.map(r => ({
-            day: days[r._id],
-            count: r.count
+
+        // نحول النتيجة إلى كائن للتسهيل
+        const statsMap = {};
+        result.forEach(r => {
+            statsMap[r._id] = r.count;
+        });
+
+        // نرجع كل الأيام من 1 إلى 7، ونضع 0 لو مش موجود في aggregate
+        const stats = Object.entries(days).map(([key, value]) => ({
+            day: value,
+            count: statsMap[key] || 0
         }));
+
         res.status(200).send({
             status: true,
             code: 200,
@@ -345,16 +353,14 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
                 cars: cars.length,
                 rating: rating.length,
                 revenu: totalRevenue
-
             }
-        })
+        });
 
+    } catch (err) {
+        next(err);
+    }
+};
 
-    }
-    catch (err) {
-        next(err)
-    }
-}
 const getOrderById = async (req, res, next) => {
     try {
         const orderId = req.params.orderId;
@@ -412,7 +418,7 @@ const getOrderById = async (req, res, next) => {
             code: 200,
             message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: {
-                order: formattedOrder
+                ...formattedOrder
 
             }
         })
@@ -674,7 +680,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                 const diffInDays = Math.ceil((new Date(rest.endDate) - new Date(rest.startDate)) / (1000 * 60 * 60 * 24));
                 return {
                     id: rest._id,
-                    rentalType: carId.rentalType,
+                    orderType: nonOwnership,
                     title: carId.title,
                     image: carId.images[0],
                     licensePlateNumber: carId.licensePlateNumber,
@@ -690,7 +696,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             else {
                 return {
                     id: rest._id,
-                    rentalType: carId.rentalType,
+                    orderType: Ownership,
                     title: carId.title,
                     image: carId.images[0],
                     licensePlateNumber: carId.licensePlateNumber,
