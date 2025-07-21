@@ -43,7 +43,7 @@ const getModels = async (req, res, next) => {
         ? "Your request has been completed successfully"
         : "تمت معالجة الطلب بنجاح",
       data: {
-        models,
+        content:models,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),

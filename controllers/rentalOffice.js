@@ -3,9 +3,11 @@ const getMessages = require("../configration/getmessages")
 const followersForRentalOffice = require("../models/followersForRentalOffice");
 const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
+const Name = require("../models/carName");
+const Model = require("../models/carModel");
 const getAllRentallOffice = async (req, res, next) => {
     try {
-         const lang = req.headers['accept-language'] || 'en';
+        const lang = req.headers['accept-language'] || 'en';
         const allRentalOffice = await rentalOffice.find();
         return res.status(200).send({
             code: 200,
@@ -89,16 +91,34 @@ const getRentalOfficeProfile = async (req, res, next) => {
 
         const totalCars = await carRental.countDocuments(carFilter);
         const cars = await carRental.find(carFilter).skip(skip).limit(limit);
-        const formatedCars=cars.map((car)=>{
-            return{
-                title:car.title,
-                carDescription:car.carDescription,
-                city:car.city,
-                odoMeter:car.odoMeter,
-                price:car.pricePerFreeKilometer ?? car.pricePerExtraKilometer
+        const formatedCars = await Promise.all(
+            cars.map(async (car) => {
+                const name = await Name.findOne({ _id: car.nameId });
+                const model = await Model.findOne({ _id: car.modelId });
 
-            }
-        })
+                let title;
+                if (car.rentalType === "weekly/daily") {
+                    title =
+                        lang === "ar"
+                            ? `تأجير سيارة ${name?.carName || ""} ${model?.modelName || ""}`
+                            : `Renting a car ${name?.carName || ""} ${model?.modelName || ""}`;
+                } else {
+                    title =
+                        lang === "ar"
+                            ? `تملك سيارة ${name?.carName || ""} ${model?.modelName || ""}`
+                            : `Owning a car ${name?.carName || ""} ${model?.modelName || ""}`;
+                }
+
+                return {
+                    title,
+                    carDescription: car.carDescription,
+                    city: car.city,
+                    odoMeter: car.odoMeter,
+                    price: car.pricePerFreeKilometer ?? car.pricePerExtraKilometer,
+                };
+            })
+        );
+
 
         // لايكات
         const likes = existRentalOffice.likedBy.length;
@@ -136,9 +156,9 @@ const getRentalOfficeProfile = async (req, res, next) => {
                 rating: averageRating,
                 likes: likes,
                 followers: followersCount,
-                cars:formatedCars,
+                cars: formatedCars,
                 pagination: {
-                    currentPage:page,
+                    currentPage: page,
                     totalPages: Math.ceil(totalCars / limit)
                 }
             }

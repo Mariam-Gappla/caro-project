@@ -43,7 +43,7 @@ const getNames = async (req, res, next) => {
           ? "Your request has been completed successfully"
           : "تمت معالجة الطلب بنجاح",
       data: {
-        names,
+        content:names,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),

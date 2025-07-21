@@ -15,6 +15,14 @@ const messages = {
       string: "Payment method must be a string",
       required: "Payment method is required"
     },
+    nameId: {
+      required: "Name ID is required",
+      string: "Name ID must be a string"
+    },
+    modelId: {
+      required: "Model ID is required",
+      string: "Model ID must be a string"
+    },
     pickupType: {
       string: "Pickup type must be a string",
       required: "Pickup type is required"
@@ -56,6 +64,14 @@ const messages = {
     deliveryLocation: {
       string: "موقع التوصيل يجب أن يكون نصًا",
       required: "موقع التوصيل مطلوب"
+    },
+    nameId: {
+      required: "معرّف الاسم مطلوب",
+      string: "معرّف الاسم يجب أن يكون نصًا"
+    },
+    modelId: {
+      required: "معرّف الموديل مطلوب",
+      string: "معرّف الموديل يجب أن يكون نصًا"
     }
   }
 };

@@ -99,3 +99,4 @@ server.listen(port, async () => {
   console.log(`✅ Server is running on port ${port}`);
   socketConnection(server); // ← تفعيل socket.io هنا
 });
+server.setTimeout(300000);

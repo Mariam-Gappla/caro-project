@@ -70,6 +70,14 @@ const rentToOwnMessages = {
       number: "odoMeter must be a number",
       required: "odoMeter is required"
     },
+    nameId: {
+      required: "Name ID is required",
+      string: "Name ID must be a string"
+    },
+    modelId: {
+      required: "Model ID is required",
+      string: "Model ID must be a string"
+    }
 
   },
 
@@ -143,6 +151,14 @@ const rentToOwnMessages = {
       number: "عداد السياره مطلوب",
       required: "عداد السياره مطلوب"
     },
+    nameId: {
+      required: "معرّف الاسم مطلوب",
+      string: "معرّف الاسم يجب أن يكون نصًا"
+    },
+    modelId: {
+      required: "معرّف الموديل مطلوب",
+      string: "معرّف الموديل يجب أن يكون نصًا"
+    }
   }
 };
 

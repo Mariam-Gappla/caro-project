@@ -1,6 +1,8 @@
 const carRental = require("../models/carRental");
 const { carRentalWeeklyValiditionSchema, rentToOwnSchema,carRentalWeeklyValiditionUpdateSchema,rentToOwnUpdateSchema } = require("../validation/carRentalValidition");
 const getMessages = require("../configration/getmessages");
+const Name=require("../models/carName");
+const Model=require("../models/carModel");
 const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {
@@ -36,9 +38,9 @@ const addCar = async (req, res, next) => {
             await carRental.create({
                 rentalType: req.body.rentalType,
                 images: imagePaths,
-                carName: req.body.carName,
+                nameId:req.body.nameId,
+                modelId:req.body.modelId,
                 carType: req.body.carType,
-                carModel: req.body.carModel,
                 licensePlateNumber: req.body.licensePlateNumber,
                 freeKilometers: req.body.freeKilometers,
                 pricePerFreeKilometer: req.body.pricePerFreeKilometer,
@@ -48,7 +50,6 @@ const addCar = async (req, res, next) => {
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
                 odoMeter: req.body.odoMeter,
-                title: req.body.title,
                 rentalOfficeId: req.user.id
             });
 
@@ -68,9 +69,9 @@ const addCar = async (req, res, next) => {
             await carRental.create({
                 rentalType: req.body.rentalType,
                 images: imagePaths,
-                carName: req.body.carName,
+                nameId:req.body.nameId,
+                modelId:req.body.modelId,
                 carType: req.body.carType,
-                carModel: req.body.carModel,
                 licensePlateNumber: req.body.licensePlateNumber,
                 carPrice: req.body.carPrice,
                 monthlyPayment: req.body.monthlyPayment,
@@ -81,7 +82,6 @@ const addCar = async (req, res, next) => {
                 carDescription: req.body.carDescription,
                 deliveryOption: req.body.deliveryOption,
                 ownershipPeriod: req.body.ownershipPeriod,
-                title: req.body.title,
                 rentalOfficeId: req.user.id
             });
         }
@@ -106,7 +106,6 @@ const addCar = async (req, res, next) => {
         next(err);
     }
 }
-
 const getCarsByRentalOfficeForUser = async (req, res, next) => {
     try {
         const id = req.params.id;
@@ -136,11 +135,13 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
 }
 const getCarById = async (req, res, next) => {
     try {
+      console.log("order")
         const user = req.user.id;
         const carId = req.params.id;
         const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang)
+        const messages = getMessages(lang);
         const car = await carRental.find({ _id: carId });
+        console.log(car)
         if (!car) {
             return res.status(400).send({
                 code: 400,
@@ -148,10 +149,17 @@ const getCarById = async (req, res, next) => {
                 message: messages.rentalCar.existCar
             })
         }
+        const name=Name.findOne({_id:car[0].nameId});
+        console.log(name)
+        const model=Model.findOne({_id:car[0].modelId});
+        const formatedData={
+          ...car,
+          title:lang=="ar"?`تأجير سياره ${name.carName+" "+model.modelName}`:`Renting a car ${name.carName+" "+model.modelName}`,
+        }
         return res.status(200).send({
             status: 200,
             message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
-            data: car
+            data: formatedData
         })
     }
     catch (err) {

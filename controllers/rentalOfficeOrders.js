@@ -5,6 +5,8 @@ const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation
 const Revenu = require("../models/invoice");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
+const Name = require("../models/carName");
+const Model = require("../models/carModel");
 const path = require("path");
 const mongoose = require('mongoose');
 const fs = require("fs");
@@ -226,31 +228,43 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
             .limit(limit)
             .lean();
 
-        const formattedOrders = ordersupdated.map((order) => {
-            const { carId, ...rest } = order;
-            if (carId?.rentalType === "weekly/daily") {
-                return {
-                    id: rest._id,
-                    title: carId.title,
-                    startDate: rest.startDate,
-                    endDate: rest.endDate,
-                    rentalType: carId.rentalType,
-                    city: carId.city,
-                    totalCost: rest.totalCost,
-                    paymentStatus: order.paymentStatus,
-                };
-            } else {
-                return {
-                    id: rest._id,
-                    title: carId.title,
-                    ownershipPeriod: carId.ownershipPeriod,
-                    rentalType: carId.rentalType,
-                    totalCost: rest.totalCost,
-                    city: carId.city,
-                    paymentStatus: order.paymentStatus
-                };
-            }
-        });
+        const formattedOrders = await Promise.all(
+            ordersupdated.map(async (order) => {
+                const { carId, ...rest } = order;
+
+                // تأكد من أن name و model يتم جلبهم بشكل صحيح
+                const name = await Name.findOne({ _id: carId.nameId });
+                const model = await Model.findOne({ _id: carId.modelId });
+
+                if (carId?.rentalType === "weekly/daily") {
+                    return {
+                        id: rest._id,
+                        title: lang === "ar"
+                            ? `تأجير سيارة ${name?.carName || ""} ${model?.modelName || ""}`
+                            : `Renting a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                        startDate: rest.startDate,
+                        endDate: rest.endDate,
+                        rentalType: carId.rentalType,
+                        city: carId.city,
+                        totalCost: rest.totalCost,
+                        paymentStatus:order.ended==true? "ended": order.paymentStatus,
+                    };
+                } else {
+                    return {
+                        id: rest._id,
+                        title: lang === "ar"
+                            ? `تملك سيارة ${name?.carName || ""} ${model?.modelName || ""}`
+                            : `Owning a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                        ownershipPeriod: carId.ownershipPeriod,
+                        rentalType: carId.rentalType,
+                        totalCost: rest.totalCost,
+                        city: carId.city,
+                        paymentStatus:order.ended==true? "ended": order.paymentStatus,
+                    };
+                }
+            })
+        );
+
 
         return res.status(200).send({
             status: true,
@@ -376,9 +390,12 @@ const getOrderById = async (req, res, next) => {
         const rawComments = await rentalOfficeOrder.findById({ _id: orderId }).populate('carId');
         let formattedOrder
         const { carId, ...rest } = rawComments.toObject();
+        const name = await Name.findOne({ _id: carId.nameId });
+        console.log(name)
+        const model = await Model.findOne({ _id: carId.modelId });
         if (carId.rentalType == "weekly/daily") {
             formattedOrder = {
-                title: carId.title,
+                title: lang == "ar" ? `تأجير سياره ${name.carName + " " + model.modelName}` : `Renting a car ${name.carName + " " + model.modelName}`,
                 rentalType: carId.rentalType,
                 images: carId.images,
                 carDescription: carId.carDescription,
@@ -391,13 +408,13 @@ const getOrderById = async (req, res, next) => {
                 pickupLocation: rest.pickupLocation,
                 licenseImage: rest.licenseImage,
                 priceType: rest.priceType,
-                paymentStatus: rest.paymentStatus,
+                paymentStatus:rest.ended==true? "ended": rest.paymentStatus,
                 price: rest.priceType == "open_km" ? carId.pricePerExtraKilometer : carId.pricePerFreeKilometer
             }
         }
         else if (carId.rentalType == "rent to own") {
             formattedOrder = {
-                title: carId.title,
+                title: lang === "ar" ? `تملك سيارة ${name.carName} ${model.modelName}` : `Owning a car ${name.carName} ${model.modelName}`,
                 rentalType: carId.rentalType,
                 images: carId.images,
                 carDescription: carId.carDescription,
@@ -409,7 +426,7 @@ const getOrderById = async (req, res, next) => {
                 odoMeter: carId.odoMeter,
                 licensePlateNumber: carId.licensePlateNumber,
                 startDate: rest.startDate,
-                paymentStatus: rest.paymentStatus,
+                paymentStatus:rest.ended==true? "ended": rest.paymentStatus,
                 licenseImage: rest.licenseImage
             }
         }
@@ -657,7 +674,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             .skip(skip)
             .limit(limit)
             .lean();
-
+        console.log(orders)
         if (orders.length === 0) {
             return res.status(200).send({
                 status: true,
@@ -674,41 +691,57 @@ const getOrdersByRentalOffice = async (req, res, next) => {
         }
 
         // تحويل carId → carDetails
-        const formattedOrders = orders.map(order => {
-            const { carId, ...rest } = order;
-            if (carId.rentalType == "weekly/daily") {
-                const diffInDays = Math.ceil((new Date(rest.endDate) - new Date(rest.startDate)) / (1000 * 60 * 60 * 24));
-                return {
-                    id: rest._id,
-                    orderType: "nonOwnership",
-                    title: carId.title,
-                    image: carId.images[0],
-                    licensePlateNumber: carId.licensePlateNumber,
-                    rentalDays: diffInDays,
-                    startDate: rest.startDate,
-                    endDate: rest.endDate,
-                    priceType: rest.priceType,
-                    price: rest.priceType == "open_km" ? carId.freeKilometers * carId.pricePerFreeKilometer : carId.pricePerExtraKilometer,
-                    deliveryType: rest.deliveryType,
-                    paymentMethod: rest.paymentMethod
-                };
-            }
-            else {
-                return {
-                    id: rest._id,
-                    orderType: "Ownership",
-                    title: carId.title,
-                    image: carId.images[0],
-                    licensePlateNumber: carId.licensePlateNumber,
-                    monthlyPayment: carId.monthlyPayment,
-                    finalPayment: carId.finalPayment,
-                    carName: carId.carName,
-                    carType: carId.carType,
-                    carModel: carId.carModel,
-                    odoMeter: carId.odoMeter
-                };
-            }
-        });
+        const formattedOrders = await Promise.all(
+            orders.map(async order => {
+                const { carId, ...rest } = order;
+
+                const name = await Name.findOne({ _id: carId.nameId });
+                const model = await Model.findOne({ _id: carId.modelId });
+
+                if (carId.rentalType == "weekly/daily") {
+                    const diffInDays = Math.ceil(
+                        (new Date(rest.endDate) - new Date(rest.startDate)) / (1000 * 60 * 60 * 24)
+                    );
+
+                    return {
+                        id: rest._id,
+                        title: lang === "ar"
+                            ? `تأجير سيارة ${name?.carName || ""} ${model?.modelName || ""}`
+                            : `Renting a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                        orderType: "nonOwnership",
+                        image: carId.images?.[0],
+                        licensePlateNumber: carId.licensePlateNumber,
+                        rentalDays: diffInDays,
+                        startDate: rest.startDate,
+                        endDate: rest.endDate,
+                        priceType: rest.priceType,
+                        price:
+                            rest.priceType === "open_km"
+                                ? carId.freeKilometers * carId.pricePerFreeKilometer
+                                : carId.pricePerExtraKilometer,
+                        deliveryType: rest.deliveryType,
+                        paymentMethod: rest.paymentMethod
+                    };
+                } else {
+                    return {
+                        id: rest._id,
+                        title: lang === "ar"
+                            ? `تملك سيارة ${name?.carName || ""} ${model?.modelName || ""}`
+                            : `Owning a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                        orderType: "Ownership",
+                        image: carId.images?.[0],
+                        licensePlateNumber: carId.licensePlateNumber,
+                        monthlyPayment: carId.monthlyPayment,
+                        finalPayment: carId.finalPayment,
+                        carName: carId.carName,
+                        carType: carId.carType,
+                        carModel: carId.carModel,
+                        odoMeter: carId.odoMeter
+                    };
+                }
+            })
+        );
+
 
         return res.status(200).send({
             status: true,
