@@ -680,7 +680,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                 const diffInDays = Math.ceil((new Date(rest.endDate) - new Date(rest.startDate)) / (1000 * 60 * 60 * 24));
                 return {
                     id: rest._id,
-                    orderType: nonOwnership,
+                    orderType: "nonOwnership",
                     title: carId.title,
                     image: carId.images[0],
                     licensePlateNumber: carId.licensePlateNumber,
@@ -696,7 +696,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             else {
                 return {
                     id: rest._id,
-                    orderType: Ownership,
+                    orderType: "Ownership",
                     title: carId.title,
                     image: carId.images[0],
                     licensePlateNumber: carId.licensePlateNumber,
