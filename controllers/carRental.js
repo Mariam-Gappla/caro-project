@@ -2,7 +2,7 @@ const carRental = require("../models/carRental");
 const { carRentalWeeklyValiditionSchema, rentToOwnSchema,carRentalWeeklyValiditionUpdateSchema,rentToOwnUpdateSchema } = require("../validation/carRentalValidition");
 const getMessages = require("../configration/getmessages");
 const Name=require("../models/carName");
-const Model=require("../models/carModel");
+const Model=require("../models/carType");
 const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {

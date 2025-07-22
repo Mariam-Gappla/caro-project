@@ -6,7 +6,7 @@ const Revenu = require("../models/invoice");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
-const Model = require("../models/carModel");
+const Model = require("../models/carType");
 const path = require("path");
 const mongoose = require('mongoose');
 const fs = require("fs");
@@ -409,7 +409,8 @@ const getOrderById = async (req, res, next) => {
                 licenseImage: rest.licenseImage,
                 priceType: rest.priceType,
                 paymentStatus:rest.ended==true? "ended": rest.paymentStatus,
-                price: rest.priceType == "open_km" ? carId.pricePerExtraKilometer : carId.pricePerFreeKilometer
+                price: rest.priceType == "open_km" ? carId.pricePerExtraKilometer : carId.pricePerFreeKilometer,
+                video:carId.videoCar?carId.videoCar:""
             }
         }
         else if (carId.rentalType == "rent to own") {
@@ -427,7 +428,8 @@ const getOrderById = async (req, res, next) => {
                 licensePlateNumber: carId.licensePlateNumber,
                 startDate: rest.startDate,
                 paymentStatus:rest.ended==true? "ended": rest.paymentStatus,
-                licenseImage: rest.licenseImage
+                licenseImage: rest.licenseImage,
+                video:carId.videoCar?carId.videoCar:""
             }
         }
         return res.status(200).send({

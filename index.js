@@ -80,7 +80,7 @@ app.use("/ratingForOrder", ratingForOrderRoutes);
 app.use("/verification", verificationRoutes);
 app.use("/chat", chatRoutes);
 app.use("/notification",notificationRoutes);
-app.use("/carModels",modelsRoutes);
+app.use("/carTypes",modelsRoutes);
 app.use("/carNames",namesRoutes)
 
 // ❌ Global Error Handler

@@ -1,10 +1,11 @@
-const carModel = require("../models/carModel");
+const carModel = require("../models/carType");
 const addModel=async(req,res,next)=>{
  try {
         const lang = req.headers['accept-language'] || 'en';
-        const { model } = req.body;
+        const { model,nameId } = req.body;
         await carModel.create({
-            modelName: model
+            modelName: model,
+            nameId:nameId
         });
         return res.send({
             status: true,
@@ -21,15 +22,15 @@ const addModel=async(req,res,next)=>{
 const getModels = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-
+    const { nameId } = req.body;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
-    const totalCount = await carModel.countDocuments();
+   
+    const totalCount = await carModel.countDocuments({nameId:nameId});
 
     // جلب البيانات ثم تحويل الشكل
-    const modelsRaw = await carModel.find().skip(skip).limit(limit);
+    const modelsRaw = await carModel.find({nameId:nameId}).skip(skip).limit(limit);
 
     const models = modelsRaw.map((m) => ({
       id: m._id,

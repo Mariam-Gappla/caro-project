@@ -4,7 +4,7 @@ const followersForRentalOffice = require("../models/followersForRentalOffice");
 const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
 const Name = require("../models/carName");
-const Model = require("../models/carModel");
+const Model = require("../models/carType");
 const getAllRentallOffice = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
