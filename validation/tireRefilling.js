@@ -61,9 +61,17 @@ const tireSchema = (lang = 'en') => {
                 'any.required': messages.bankAccountNameRequired,
                 'string.base': messages.bankAccountNameString,
             }),
+        serviceType: Joi.string()
+            .valid('winch', 'tire Filling', 'battery Jumpstart', 'tire Filling and battery Jumpstart')
+            .required()
+            .messages({
+                'any.required': messages.serviceTypeRequired,
+                'any.only': messages.serviceTypeInvalid,
+                'string.base': messages.serviceTypeString,
+            }),
     });
 };
-const tireImagesSchema=(lang = 'en') => {
+const tireImagesSchema = (lang = 'en') => {
     const messages = getMessages(lang);
 
     return Joi.object({
@@ -88,4 +96,4 @@ const tireImagesSchema=(lang = 'en') => {
     })
 }
 
-module.exports = {tireSchema,tireImagesSchema};
+module.exports = { tireSchema, tireImagesSchema };

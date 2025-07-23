@@ -76,7 +76,17 @@ const winshSchema = (lang = 'en') => {
                 'any.required': messages.carPlateNumberRequired,
                 'string.base': messages.carPlateNumberString,
             }),
-        })
+
+        serviceType: Joi.string()
+            .valid('winch', 'tire Filling', 'battery Jumpstart', 'tire Filling and battery Jumpstart')
+            .required()
+            .messages({
+                'any.required': messages.serviceTypeRequired,
+                'any.only': messages.serviceTypeInvalid,
+                'string.base': messages.serviceTypeString,
+            }),
+    })
+
 };
 const winshImagesSchema = (lang = 'en') => {
     const messages = getMessages(lang);
@@ -122,4 +132,4 @@ const winshImagesSchema = (lang = 'en') => {
             }),
     })
 }
-module.exports = {winshSchema,winshImagesSchema};
+module.exports = { winshSchema, winshImagesSchema };

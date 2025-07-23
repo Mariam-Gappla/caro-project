@@ -35,6 +35,10 @@ const messages = {
     notesEmpty: "Notes cannot be empty",
     notesMin: "Notes must be at least 5 characters",
     notesMax: "Notes cannot be more than 100 characters",
+    serviceTypeRequired: 'Service type is required.',
+    serviceTypeString: 'Service type must be a string.',
+    serviceTypeInvalid:
+      'Invalid service type. Valid values are: winch, tire Filling, battery Jumpstart, or tire Filling and battery Jumpstart.'
   },
 
   ar: {
@@ -73,12 +77,12 @@ const messages = {
     notesEmpty: "لا يمكن ترك الملاحظات فارغة",
     notesMin: "يجب ألا تقل الملاحظات عن 5 أحرف",
     notesMax: "يجب ألا تزيد الملاحظات عن 100 حرف",
+    serviceTypeRequired: 'نوع الخدمة مطلوب.',
+    serviceTypeString: 'نوع الخدمة يجب أن يكون نصًا.',
+    serviceTypeInvalid:
+      'نوع الخدمة غير صالح. القيم المسموحة هي: winch, tire Filling, battery Jumpstart أو tire Filling and battery Jumpstart.',
   }
 };
-
-module.exports = messages;
-
-
 const getMessages = (lang = 'en') => messages[lang] || messages.en;
 
 module.exports = getMessages;

@@ -8,7 +8,8 @@ const accountVerificationSchema = new mongoose.Schema({
   },
   serviceType:{
      type: String,
-    required: true
+    required: true,
+    enum: ['winch', 'tire Filling', 'battery Jumpstart','tire Filling and battery Jumpstart']
   },
   fullName: {
     type: String,

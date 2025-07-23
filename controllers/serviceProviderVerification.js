@@ -16,7 +16,6 @@ const saveImage = (file, folder = 'images') => {
   fs.writeFileSync(filePath, file.buffer);
   return `/images/${fileName}`;
 };
-
 const submitWinchVerification = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -31,6 +30,20 @@ const submitWinchVerification = async (req, res, next) => {
       });
     }
 
+    // ✅ تحقق هل قدم بالفعل
+    const existing = await winsh.findOne({ providerId });
+    if (existing) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message:
+          lang === "en"
+            ? "You have already submitted a verification request."
+            : "لقد قمت بالفعل بتقديم طلب تحقق.",
+      });
+    }
+
+    // ✅ التحقق من البيانات
     const { error } = winshSchema(lang).validate({
       providerId,
       ...req.body
@@ -44,6 +57,7 @@ const submitWinchVerification = async (req, res, next) => {
       });
     }
 
+    // ✅ إنشاء الطلب
     const verification = await winsh.create({
       providerId,
       fullName: req.body.fullName,
@@ -53,6 +67,7 @@ const submitWinchVerification = async (req, res, next) => {
       email: req.body.email,
       iban: req.body.iban,
       bankAccountName: req.body.bankAccountName,
+      serviceType: req.body.serviceType,
       winchType: req.body.winchType,
       carPlateNumber: req.body.carPlateNumber,
     });
@@ -60,8 +75,12 @@ const submitWinchVerification = async (req, res, next) => {
     res.status(200).send({
       status: true,
       code: 200,
-      message: lang === "en" ? "Verification request submitted successfully." : "تم ارسال طلبك بنجاح",
+      message:
+        lang === "en"
+          ? "Verification request submitted successfully."
+          : "تم إرسال طلب التحقق بنجاح",
     });
+
   } catch (error) {
     next(error);
   }
@@ -82,6 +101,37 @@ const uploadWinchImages = async (req, res, next) => {
       });
     }
 
+    // تحقق أن الطلب موجود
+    const existingWinch = await winsh.findOne({ providerId });
+    if (!existingWinch) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en"
+          ? "You must submit your verification details before uploading images."
+          : "يجب إرسال بيانات التحقق أولًا قبل رفع الصور.",
+      });
+    }
+
+    // ❌ تحقق إن الصور مش مرفوعة قبل كده
+    const alreadyUploaded =
+      existingWinch.profileImage ||
+      existingWinch.nationalIdImage ||
+      existingWinch.licenseImage ||
+      existingWinch.carRegistrationImage ||
+      existingWinch.carImage;
+
+    if (alreadyUploaded) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en"
+          ? "You have already uploaded your images."
+          : "لقد قمت برفع الصور بالفعل.",
+      });
+    }
+
+    // تجهيز الروابط المؤقتة للفحص
     const tempUrls = {
       profileImage: files?.profileImage?.[0] ? `${BASE_URL}/images/${files.profileImage[0].filename}` : "",
       nationalIdImage: files?.nationalIdImage?.[0] ? `${BASE_URL}/images/${files.nationalIdImage[0].filename}` : "",
@@ -90,6 +140,7 @@ const uploadWinchImages = async (req, res, next) => {
       carImage: files?.carImage?.[0] ? `${BASE_URL}/images/${files.carImage[0].filename}` : "",
     };
 
+    // فحص الصور بـ Joi
     const { error } = winshImagesSchema(lang).validate(tempUrls);
     if (error) {
       return res.status(400).send({
@@ -99,6 +150,7 @@ const uploadWinchImages = async (req, res, next) => {
       });
     }
 
+    // حفظ الروابط النهائية
     const savedUrls = {
       profileImage: files?.profileImage?.[0] ? BASE_URL + saveImage(files.profileImage[0]) : "",
       nationalIdImage: files?.nationalIdImage?.[0] ? BASE_URL + saveImage(files.nationalIdImage[0]) : "",
@@ -107,19 +159,13 @@ const uploadWinchImages = async (req, res, next) => {
       carImage: files?.carImage?.[0] ? BASE_URL + saveImage(files.carImage[0]) : "",
     };
 
-    const winch = await winsh.findOneAndUpdate(
-      { providerId },
-      {
-        providerId,
-        ...savedUrls,
-      },
-      { upsert: true, new: true }
-    );
+    await winsh.updateOne({ providerId }, { $set: savedUrls });
 
     res.status(200).send({
       status: true,
       code: 200,
       message: lang === "en" ? "Images uploaded successfully" : "تم رفع الصور بنجاح",
+      data: savedUrls,
     });
   } catch (error) {
     next(error);
@@ -128,17 +174,32 @@ const uploadWinchImages = async (req, res, next) => {
 const uploadTireImages = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
-    const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+    const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const files = req.files;
     const role = req.user.role;
+    const providerId = req.user.id;
+
     if (role !== "serviceProvider") {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang === "en" ? "Not allowed for you" : "غير مسموح لك"
+        message: lang === "en" ? "Not allowed for you" : "غير مسموح لك",
       });
     }
-    // ✅ تجهيز الرابط بدون حفظ فعلي
+
+    // ✅ تحقق من وجود صورة مرفوعة مسبقًا
+    const existing = await tire.findOne({ providerId });
+    if (existing?.profileImage) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en"
+          ? "You have already uploaded the image."
+          : "لقد قمت برفع الصورة بالفعل.",
+      });
+    }
+
+    // ✅ تجهيز الرابط المؤقت بدون حفظ فعلي
     const tempUrl = files?.profileImage?.[0]
       ? `${BASE_URL}/images/${files.profileImage[0].filename}`
       : "";
@@ -160,20 +221,23 @@ const uploadTireImages = async (req, res, next) => {
     const savedImagePath = saveImage(files.profileImage[0]);
     const profileImageUrl = BASE_URL + savedImagePath;
 
-    // ✅ حفظ الرابط في قاعدة البيانات
-    const Tire = await tire.findOneAndUpdate(
-      { providerId: req.user.id },
+    // ✅ تحديث السجل الموجود
+    await tire.findOneAndUpdate(
+      { providerId },
       {
         profileImage: profileImageUrl,
         ...(req.body.notes && { notes: req.body.notes }),
       },
-      { upsert: true, new: true }
+      { new: true }
     );
 
-    res.status(200).send({
+    return res.status(200).send({
       status: true,
       code: 200,
-      message: lang == "en" ? "Image uploaded and saved successfully" : "تم الرفع الصوره بنجاح",
+      message:
+        lang === "en"
+          ? "Image uploaded and saved successfully"
+          : "تم رفع الصورة بنجاح",
     });
   } catch (error) {
     next(error);
@@ -193,6 +257,19 @@ const submitTireVerification = async (req, res, next) => {
       });
     }
 
+    // ✅ التحقق من وجود تحقق سابق لنفس المزود
+    const existingVerification = await tire.findOne({ providerId });
+    if (existingVerification) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en"
+          ? "You have already submitted your verification request."
+          : "لقد قمت بإرسال طلب التحقق بالفعل.",
+      });
+    }
+
+    // ✅ التحقق من البيانات باستخدام Joi
     const { error } = tireSchema(lang).validate({
       providerId,
       ...req.body
@@ -206,7 +283,8 @@ const submitTireVerification = async (req, res, next) => {
       });
     }
 
-    const verification = await tire.create({
+    // ✅ إنشاء الطلب الجديد
+    await tire.create({
       providerId,
       serviceType: req.body.serviceType,
       fullName: req.body.fullName,
@@ -218,16 +296,19 @@ const submitTireVerification = async (req, res, next) => {
       bankAccountName: req.body.bankAccountName,
     });
 
-    res.status(200).send({
+    return res.status(200).send({
       status: true,
       code: 200,
-      message: lang === "en" ? "Verification request submitted successfully." : "تم إرسال طلبك بنجاح",
+      message: lang === "en"
+        ? "Verification request submitted successfully."
+        : "تم إرسال طلبك بنجاح",
     });
 
   } catch (error) {
     next(error);
   }
 };
+
 
 module.exports = {
   submitWinchVerification,
