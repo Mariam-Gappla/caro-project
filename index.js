@@ -33,6 +33,7 @@ const chatRoutes = require("./routes/chat.js");
 const otp = require("./routes/otproutes.js");
 const notificationRoutes=require("./routes/notification.js");
 const serviceProviderOrders= require("./routes/serviceProviderOrders.js");
+const providerRatingRoutes = require("./routes/providerRating.js");
 
 // 🟢 Middleware
 app.use(express.json());
@@ -88,6 +89,7 @@ app.use("/carNames",namesRoutes);
 app.use("/vehicleType", vehicleTypeRoutes);
 app.use("/nationality", nationalityRoutes);
 app.use("/serviceProviderOrders",serviceProviderOrders);
+app.use("/providerRating", providerRatingRoutes);
 
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {

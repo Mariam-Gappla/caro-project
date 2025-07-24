@@ -12,13 +12,15 @@ const saveImage = (file, folder = 'images') => {
     }
 
     fs.writeFileSync(filePath, file.buffer);
-    return `/images/${fileName}`;
+    return `images/${fileName}`;
 };
 const addWinchOrder = async (req, res, next) => {
     try {
+        console.log("req.body", req.body);
         const lang = req.headers['accept-language'] || 'en';
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
         const file = req.file;
+        console.log("req.file", req.file);
         const image = file ? `${BASE_URL}/images/${file.filename}` : "";
         req.body.location = {
             lat: Number(req.body['location.lat']),
@@ -56,11 +58,13 @@ const addWinchOrder = async (req, res, next) => {
             });
         }
         const savedImagePath = saveImage(file); // مثل: "abc.jpg"
-        formatedData.image = `${BASE_URL}/images/${savedImagePath}`;
+        console.log(savedImagePath);
+        formatedData.image = BASE_URL+savedImagePath;
+        console.log(formatedData)
         await serviceProviderOrder.create(formatedData);
-        return res.status(200).json({
+        return res.status(200).send({
             status: true,
-            code: 201,
+            code: 200,
             message: lang === 'ar' ? "تم إنشاء الطلب بنجاح" : "Order created successfully",
         });
     } catch (err) {
@@ -93,11 +97,12 @@ const addTireOrder = async (req, res, next) => {
             });
         }
         const savedImagePath = saveImage(file); // مثل: "abc.jpg"
-        formatedData.image = `${BASE_URL}/images/${savedImagePath}`;
+        console.log(savedImagePath);
+        formatedData.image = BASE_URL+savedImagePath;
         await serviceProviderOrder.create(formatedData);
         return res.status(200).json({
             status: true,
-            code: 201,
+            code: 200,
             message: lang === 'ar' ? "تم إنشاء الطلب بنجاح" : "Order created successfully",
         });
     } catch (err) {

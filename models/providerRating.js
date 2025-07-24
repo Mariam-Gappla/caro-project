@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const providerRatingSchema = new mongoose.Schema({
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
