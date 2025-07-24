@@ -752,7 +752,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             data: {
                 orders: formattedOrders,
                 pagination: {
-                    currentPage: page,
+                    page: page,
                     totalPages: Math.ceil(totalOrders / limit),
                 }
             }

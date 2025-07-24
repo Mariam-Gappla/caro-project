@@ -45,7 +45,7 @@ const getNames = async (req, res, next) => {
       data: {
         content:names,
         pagination: {
-          currentPage: page,
+          page: page,
           totalPages: Math.ceil(totalCount / limit),
         },
       },

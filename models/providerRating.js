@@ -1,10 +1,10 @@
 const providerRatingSchema = new mongoose.Schema({
-  serviceProvider: {
+  serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',
     required: true
   },
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true

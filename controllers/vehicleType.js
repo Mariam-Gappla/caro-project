@@ -46,18 +46,48 @@ const addVehicleType = async (req, res, next) => {
 };
 
 const getVehicleType = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const vehicleTypes = await vehicle.find({}, { _id: 1, name: 1 });
-        res.status(200).json({
-            code: 200,
-            status: true,
-            message: lang == "en" ? "Vehicle types retrieved successfully" : "تم استرجاع أنواع المركبات بنجاح",
-            data: vehicleTypes
-        });
+  try {
+    const lang = req.headers['accept-language'] || 'en';
 
-    } catch (err) {
-        next(err);
-    }
-}
+    // قراءة page و limit من الـ query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // عدد كل العناصر
+    const total = await vehicle.countDocuments();
+
+    // جلب العناصر مع pagination
+    const vehicleTypes = await vehicle
+      .find({}, { _id: 1, name: 1 })
+      .skip(skip)
+      .limit(limit);
+
+    // تعديل شكل البيانات
+    const formatted = vehicleTypes.map((item) => ({
+      id: item._id,
+      text: item.name,
+    }));
+
+    // إرسال الـ response
+    res.status(200).json({
+      code: 200,
+      status: true,
+      message:
+        lang === 'en'
+          ? 'Vehicle types retrieved successfully'
+          : 'تم استرجاع أنواع المركبات بنجاح',
+      data: {
+       content: formatted,
+       pagination: {
+          page: page,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = { addVehicleType, getVehicleType };
