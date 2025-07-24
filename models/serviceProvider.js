@@ -16,6 +16,14 @@ const serviceProviderSchema = new mongoose.Schema({
         type: "string",
         required: true,
     },
+    location:{
+        lat: {
+            type: Number
+        },
+        long: {
+            type: Number
+        }
+    },
     resetOtp: {
         type: Number
     },
