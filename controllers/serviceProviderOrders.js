@@ -99,6 +99,7 @@ const addTireOrder = async (req, res, next) => {
         const savedImagePath = saveImage(file); // مثل: "abc.jpg"
         console.log(savedImagePath);
         formatedData.image = BASE_URL+savedImagePath;
+        console.log(formatedData)
         await serviceProviderOrder.create(formatedData);
         return res.status(200).json({
             status: true,
