@@ -68,9 +68,8 @@ const getVehicleType = async (req, res, next) => {
         lang === 'en'
           ? 'Vehicle types retrieved successfully'
           : 'تم استرجاع أنواع المركبات بنجاح',
-      data: {
-       content: formatted,
-      },
+      data: formatted,
+      
     });
   } catch (err) {
     next(err);

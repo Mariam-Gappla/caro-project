@@ -64,9 +64,8 @@ const getNationality = async (req, res, next) => {
         lang === 'en'
           ? 'Nationalities retrieved successfully'
           : 'تم استرجاع الجنسيات بنجاح',
-      data: {
-        content: formatted
-      }
+      data: formatted
+      
     });
   } catch (err) {
     next(err);
