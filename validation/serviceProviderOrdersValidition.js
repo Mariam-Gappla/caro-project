@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const getMessages= require('../locales/schemaValiditionMessages/serviceProviderOrdersMessages');
+const getMessages = require('../locales/schemaValiditionMessages/serviceProviderOrdersMessages');
 
 const serviceWinchValidationSchema = (lang = 'en') => {
   const messages = getMessages(lang);
@@ -12,6 +12,20 @@ const serviceWinchValidationSchema = (lang = 'en') => {
         'any.required': messages.serviceTypeRequired,
         'any.only': messages.serviceTypeInvalid,
         'string.base': messages.serviceTypeInvalid,
+      }),
+    userId: Joi.string()
+      .required()
+      .messages({
+        'any.required': messages.userIdRequired,
+        'string.base': messages.userIdRequired,
+      }),
+    price: Joi.number()
+      .positive()
+      .required()
+      .messages({
+        'any.required': messages.priceRequired,
+        'number.base': messages.priceInvalid,
+        'number.positive': messages.priceMustBePositive,
       }),
 
     image: Joi.string()
@@ -90,6 +104,13 @@ const serviceTireValidationSchema = (lang = 'en') => {
         'any.only': messages.serviceTypeInvalid,
         'string.base': messages.serviceTypeInvalid,
       }),
+    userId: Joi.string()
+      .required()
+      .messages({
+        'any.required': messages.userIdRequired,
+        'string.base': messages.userIdRequired,
+      }),
+
 
     image: Joi.string()
       .uri()
@@ -130,4 +151,4 @@ const serviceTireValidationSchema = (lang = 'en') => {
   });
 };
 
-module.exports = { serviceWinchValidationSchema,serviceTireValidationSchema };
+module.exports = { serviceWinchValidationSchema, serviceTireValidationSchema };

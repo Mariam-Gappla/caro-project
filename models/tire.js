@@ -1,9 +1,15 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const tireVerificationSchema = new mongoose.Schema({
   providerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'serviceProvider', // الربط بالمستخدم
+    required: true
+  },
+  serviceType:{
+    type: String,
+    enum: ['tire Filling', 'battery Jumpstart', 'tire Filling and battery Jumpstart'],
     required: true
   },
   fullName: {

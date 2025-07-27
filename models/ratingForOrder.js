@@ -8,12 +8,13 @@ const reviewSchema = new mongoose.Schema({
   },
   targetId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true
+    required: true,
+    refPath: 'targetType'  // 👈 الربط الديناميكي
   },
   targetType: {
     type: String,
-    enum: ['rentalOffice', 'serviceProvider'],
-    required: true
+    required: true,
+    enum: ['rentalOffice', 'serviceProvider']
   },
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -34,5 +35,6 @@ const reviewSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
 
 module.exports = mongoose.model('Review', reviewSchema);

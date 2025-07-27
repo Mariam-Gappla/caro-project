@@ -62,7 +62,7 @@ const tireSchema = (lang = 'en') => {
                 'string.base': messages.bankAccountNameString,
             }),
         serviceType: Joi.string()
-            .valid('winch', 'tire Filling', 'battery Jumpstart', 'tire Filling and battery Jumpstart')
+            .valid('tire Filling', 'battery Jumpstart', 'tire Filling and battery Jumpstart')
             .required()
             .messages({
                 'any.required': messages.serviceTypeRequired,

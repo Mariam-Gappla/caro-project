@@ -1,5 +1,7 @@
 const messages = {
   en: {
+    providerIdRequired: 'Provider ID is required',
+    userIdRequired: 'User ID is required',
     serviceTypeRequired: "Service type is required",
     serviceTypeInvalid: "Invalid service type",
 
@@ -29,9 +31,15 @@ const messages = {
     dropoffLatInvalid: "Drop-off latitude must be a number",
     dropoffLongRequired: "Drop-off longitude is required",
     dropoffLongInvalid: "Drop-off longitude must be a number",
+    priceRequired: "Price is required",
+    priceInvalid: "Price must be a valid number",
+    priceMustBePositive: "Price must be greater than zero"
+
   },
 
   ar: {
+    providerIdRequired: 'مطلوب إدخال معرف مقدم الخدمة',
+    userIdRequired: 'مطلوب إدخال معرف المستخدم',
     serviceTypeRequired: "نوع الخدمة مطلوب",
     serviceTypeInvalid: "نوع الخدمة غير صالح",
 
@@ -61,9 +69,13 @@ const messages = {
     dropoffLatInvalid: "خط العرض لموقع النزول يجب أن يكون رقمًا",
     dropoffLongRequired: "خط الطول لموقع النزول مطلوب",
     dropoffLongInvalid: "خط الطول لموقع النزول يجب أن يكون رقمًا",
+    priceRequired: "السعر مطلوب",
+    priceInvalid: "السعر يجب أن يكون رقمًا صحيحًا",
+    priceMustBePositive: "السعر يجب أن يكون أكبر من صفر"
+
   },
 };
 
 const getMessages = (lang = 'en') => messages[lang] || messages.en;
 
-module.exports =getMessages;
+module.exports = getMessages;

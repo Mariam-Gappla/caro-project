@@ -210,7 +210,7 @@ const login = async (req, res, next) => {
           message: messages.login.incorrectData
         });
       }
-       const { location, ...userWithoutLocation } = existServiceProvider.toObject();
+       const { location,resetOtp,resetOtpExpires, ...userWithoutLocation } = existServiceProvider.toObject();
       const token = jwt.sign({ id: existServiceProvider._id, role: "serviceProvider" }, process.env.JWT_SECRET);
       return res.status(200).send({
         code: 200,
@@ -277,7 +277,7 @@ const requestResetPassword = async (req, res, next) => {
     let Model;
 
     switch (role) {
-      case 'User':
+      case 'user':
         Model = User;
         break;
       case 'serviceProvider':

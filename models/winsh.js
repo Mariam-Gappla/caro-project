@@ -5,6 +5,11 @@ const winshVerificationSchema = new mongoose.Schema({
         ref: 'serviceProvider', // الربط بالمستخدم
         required: true
     },
+    serviceType:{
+    type: String,
+    enum: ['winch'],
+    default: 'winch',
+  },
     fullName: {
         type: String,
         required: true

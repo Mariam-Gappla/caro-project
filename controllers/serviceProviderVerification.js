@@ -165,7 +165,6 @@ const uploadWinchImages = async (req, res, next) => {
       status: true,
       code: 200,
       message: lang === "en" ? "Images uploaded successfully" : "تم رفع الصور بنجاح",
-      data: savedUrls,
     });
   } catch (error) {
     next(error);

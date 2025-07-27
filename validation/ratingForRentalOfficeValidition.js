@@ -8,11 +8,6 @@ const ratingSchemaValidation = (lang='en')=>{
       'any.required': msg.orderId.required,
       'string.base': msg.orderId.string
     }),
-    targetType: Joi.string().valid('rentalOffice', 'serviceProvider').required().messages({
-      'any.required': msg.targetType.required,
-      'any.only': msg.targetType.valid,
-      'string.base': msg.targetType.string
-    }),
     rating: Joi.number().min(1).max(5).required().messages({
       'any.required': msg.rating.required,
       'number.base': msg.rating.number,

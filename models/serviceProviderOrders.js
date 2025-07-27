@@ -2,13 +2,22 @@ const mongoose = require('mongoose');
 
 const serviceProviderOrdersSchema = new mongoose.Schema(
   {
+    providerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ServiceProvider', // اسم الموديل المرتبط
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', // اسم الموديل المرتبط
+      required: true,
+    },
     serviceType: {
       type: String,
       required: true,
-      enum: ['winch', 'tire Filling', 'battery Jumpstart'], // ممكن تعدلي الأنواع حسب المشروع
+      enum: ['winch', 'tire Filling', 'battery Jumpstart'],
     },
     image: {
-      type: String, // رابط الصورة بعد الرفع
+      type: String,
       required: true,
     },
     details: {
@@ -16,39 +25,54 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
       required: true,
     },
     location: {
-     lat: {
-      type: Number,
-    },
-    long: {
-      type: Number,
-    }
+      lat: {
+        type: Number,
+      },
+      long: {
+        type: Number,
+      },
     },
     paymentType: {
       type: String,
-      enum: ['cash', 'card', 'online'], // حسب طرق الدفع المتاحة
+      enum: ['cash', 'card', 'online'],
       required: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['inprogress', 'paid'],
+      default:"inprogress"
     },
     carLocation: {
       lat: {
-      type: Number,
-    },
-    long: {
-      type: Number,
-    }
+        type: Number,
+      },
+      long: {
+        type: Number,
+      },
     },
     dropoffLocation: {
       lat: {
-      type: Number,
+        type: Number,
+      },
+      long: {
+        type: Number,
+      },
     },
-    long: {
+    price:{
       type: Number,
-    }
+      default:12
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'refused'],
+      default: 'pending',
     },
   },
   {
-    timestamps: true, // يضيف createdAt و updatedAt
+    timestamps: true,
   }
 );
+
 
 
 module.exports = mongoose.model('ServiceProviderOrders', serviceProviderOrdersSchema);

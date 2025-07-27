@@ -47,25 +47,16 @@ const getNationality = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
 
-    // 1. pagination
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    // 1. إحضار كل البيانات بدون pagination
+    const nationalities = await nationality.find({}, { _id: 1, name: 1 });
 
-    // 2. إحضار البيانات مع pagination
-    const total = await nationality.countDocuments();
-    const nationalities = await nationality
-      .find({}, { _id: 1, name: 1 })
-      .skip(skip)
-      .limit(limit);
-
-    // 3. تعديل شكل البيانات
+    // 2. تعديل شكل البيانات
     const formatted = nationalities.map((item) => ({
       id: item._id,
       text: item.name
     }));
 
-    // 4. إرسال الـ response
+    // 3. إرسال الـ response
     res.status(200).send({
       code: 200,
       status: true,
@@ -74,11 +65,7 @@ const getNationality = async (req, res, next) => {
           ? 'Nationalities retrieved successfully'
           : 'تم استرجاع الجنسيات بنجاح',
       data: {
-        content: formatted,
-         pagination: {
-          page: page,
-          totalPages: Math.ceil(total / limit),
-        },
+        content: formatted
       }
     });
   } catch (err) {

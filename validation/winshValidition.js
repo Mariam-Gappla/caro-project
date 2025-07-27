@@ -78,7 +78,7 @@ const winshSchema = (lang = 'en') => {
             }),
 
         serviceType: Joi.string()
-            .valid('winch', 'tire Filling', 'battery Jumpstart', 'tire Filling and battery Jumpstart')
+            .valid('winch')
             .required()
             .messages({
                 'any.required': messages.serviceTypeRequired,
