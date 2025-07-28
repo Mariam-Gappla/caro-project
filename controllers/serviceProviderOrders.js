@@ -1,10 +1,12 @@
 const { serviceWinchValidationSchema, serviceTireValidationSchema } = require("../validation/serviceProviderOrdersValidition");
 const serviceProviderOrder = require("../models/serviceProviderOrders");
+const User = require("../models/user");
 const providerRating = require("../models/providerRating");
 const orderRating = require("../models/ratingForOrder");
 const workSession = require("../models/workingSession");
 const serviceProvider = require("../models/serviceProvider");
 const winsh = require("../models/winsh");
+const getNextOrderNumber=require("../controllers/counter");
 const tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
@@ -65,8 +67,10 @@ const getOrdersbyServiceType = async (req, res, next) => {
     let filter = {};
     if (verificationAccount.serviceType === "tire Filling and battery Jumpstart") {
       filter.serviceType = { $in: ['tire Filling', 'battery Jumpstart'] };
+      filter.status = "pending"
     } else {
       filter.serviceType = verificationAccount.serviceType;
+      filter.status = "pending"
     }
 
     const totalOrders = await serviceProviderOrder.countDocuments(filter);
@@ -225,6 +229,7 @@ const addWinchOrder = async (req, res, next) => {
     const savedImagePath = saveImage(file); // مثل: "abc.jpg"
     console.log(savedImagePath);
     formatedData.image = BASE_URL + savedImagePath;
+    formatedData.orderNumber= await getNextOrderNumber("order");
     console.log(formatedData)
     await serviceProviderOrder.create(formatedData);
     return res.status(200).send({
@@ -266,6 +271,7 @@ const addTireOrder = async (req, res, next) => {
     const savedImagePath = saveImage(file); // مثل: "abc.jpg"
     console.log(savedImagePath);
     formatedData.image = BASE_URL + savedImagePath;
+     formatedData.orderNumber=await getNextOrderNumber("order");
     console.log(formatedData)
     await serviceProviderOrder.create(formatedData);
     return res.status(200).json({
@@ -373,8 +379,6 @@ const changeStatusForOrder = async (req, res, next) => {
     }
     else {
       if (order.status === "refused") {
-        order.status = "refused";
-        await order.save();
         return res.status(200).send({
           status: true,
           code: 200,
@@ -487,6 +491,159 @@ const reportForProvider = async (req, res, next) => {
     next(error)
   }
 }
+const getOrdersByServiceProvider = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const providerId = req.user.id;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const active = req.query.active === "true"; // بتحول 
+    console.log(active)
+
+    // حدد قيمة paymentStatus بناءً على قيمة active
+    const paymentStatusFilter = active ? "inprogress" : "paid";
+
+    const filter = {
+      providerId: providerId,
+      status: "accepted",
+      paymentStatus: paymentStatusFilter
+    };
+
+    const totalOrders = await serviceProviderOrder.countDocuments(filter);
+
+    const orders = await serviceProviderOrder
+      .find(filter)
+      .populate('userId', 'username image')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const provider = await serviceProvider.findOne({ _id: providerId });
+
+    if (!provider?.location?.lat || !provider?.location?.long) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar' ? "موقع مزود الخدمة غير متاح" : "Service provider location not available"
+      });
+    }
+
+    const enrichedOrders = await Promise.all(
+      orders.map(async (order) => {
+        let distance = null;
+
+        if (order?.location?.lat && order?.location?.long) {
+          distance = haversineDistance(
+            provider.location.lat,
+            provider.location.long,
+            order.location.lat,
+            order.location.long
+          ).toFixed(2);
+        }
+
+        // متوسط التقييم للمستخدم
+        let averageRating = null;
+        const reviews = await providerRating.find({ userId: order.userId._id });
+        if (reviews.length > 0) {
+          const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+          averageRating = (total / reviews.length).toFixed(1);
+        }
+
+        return {
+          id: order._id,
+          createdAt: order.createdAt,
+          serviceType: order.serviceType,
+          price: order.price,
+          paymentStatus: order.paymentStatus,
+          distance: distance ? `${distance} km` : "",
+          username: order.userId.username,
+          image: order.userId.image,
+          rating: averageRating || "0.0"
+
+        };
+      })
+    );
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === 'ar' ? "تم استرجاع الطلبات بنجاح" : "Orders retrieved successfully",
+      data: {
+        orders: enrichedOrders,
+        pagination: {
+          page,
+          totalPages: Math.ceil(totalOrders / limit),
+        }
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+const getOrderById = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const providerId = req.user.id;
+    const order = await serviceProviderOrder.findOne({ _id: req.params.id, providerId: providerId });
+    const user=await User.findOne({_id:order.userId});
+    if (!order) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
+      })
+    }
+    let formattedOrder={}
+    if(order.serviceType=="tire Filling" || order.serviceType=="battery Jumpstart"){
+      formattedOrder={
+        orderNumber:order.orderNumber,
+        createdAt: order.createdAt,
+        image: order.image,
+        serviceType: order.serviceType,
+        paymentStatus: order.paymentStatus,
+        price: order.price,
+        details:order.details,
+        userLocation:user.location,
+        paymentType: order.paymentType
+
+      }
+    }
+    else
+    {
+       formattedOrder={
+        createdAt: order.createdAt,
+        image: order.image,
+        paymentStatus: order.paymentStatus,
+        price: order.price,
+        details:order.details,
+        userLocation:user.location,
+        paymentType: order.paymentType,
+        dropoffLocation:order.dropoffLocation,
+        serviceType: order.serviceType
+      }
+
+    }
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "en" ? "order retrieved " : "تم استرجاع الطلب بنجاح",
+      data:formattedOrder
+    })
+
+  }
+  catch (error) {
+    next(error)
+  }
+
+}
+
+
+
+
 
 
 
@@ -498,5 +655,7 @@ module.exports = {
   getOrdersbyServiceType,
   changeStatusForOrder,
   ordersAndProfit,
-  reportForProvider
+  reportForProvider,
+  getOrdersByServiceProvider,
+  getOrderById
 }

@@ -2,6 +2,7 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { registerSchema, loginSchema } = require("../validation/registerAndLoginSchema");
+const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
@@ -95,9 +96,9 @@ const addLocationForProvider = async (req, res, next) => {
             : 'Location with lat and long is required',
         });
       }
-      
-      
-      
+
+
+
       console.log(req.body.location);
       await serviceProvider.findOneAndUpdate({ _id: providerId }, { location: req.body.location }, { new: true });
       return res.status(200).send({
@@ -201,6 +202,8 @@ const login = async (req, res, next) => {
           message: messages.login.emailExists.serviceProvider
         });
       }
+      const lastSession = await workSession.findOne({ providerId: existServiceProvider._id })
+        .sort({ createdAt: -1 });
 
       const match = await bcrypt.compare(password, existServiceProvider.password);
       if (!match) {
@@ -210,14 +213,18 @@ const login = async (req, res, next) => {
           message: messages.login.incorrectData
         });
       }
-       const { location,resetOtp,resetOtpExpires, ...userWithoutLocation } = existServiceProvider.toObject();
+      const { resetOtp, resetOtpExpires, ...user } = existServiceProvider.toObject();
       const token = jwt.sign({ id: existServiceProvider._id, role: "serviceProvider" }, process.env.JWT_SECRET);
       return res.status(200).send({
         code: 200,
         status: true,
         message: messages.login.success,
         data: {
-          user: userWithoutLocation,
+          user: {
+            ...user,
+            active: lastSession ? lastSession.isWorking : false,
+            location: user.location || null
+          },
           token
         }
       });

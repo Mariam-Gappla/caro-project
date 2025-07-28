@@ -6,6 +6,10 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ServiceProvider', // اسم الموديل المرتبط
     },
+    orderNumber:{
+     type: Number,
+      required: true
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User', // اسم الموديل المرتبط

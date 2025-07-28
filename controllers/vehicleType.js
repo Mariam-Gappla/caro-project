@@ -44,7 +44,6 @@ const addVehicleType = async (req, res, next) => {
         next(err);
     }
 };
-
 const getVehicleType = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
