@@ -27,13 +27,10 @@ const getNotifications = async (req, res, next) => {
         }));
 
         if (notifications.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message:
-                    lang === "en"
-                        ? "No notifications found"
-                        : "لا توجد إشعارات حاليًا"
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                data:[]
             });
         }
 

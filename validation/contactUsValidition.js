@@ -4,25 +4,31 @@ const getMessages = require('../locales/schemaValiditionMessages/contactUsValidi
 const contactUsSchema = (lang = 'en') => {
   const messages = getMessages(lang);
 
-  return Joi.object({
-    name: Joi.string().min(2).max(100).required().messages({
-      'string.empty': messages.name.required,
-      'string.min': messages.name.min,
-      'string.max': messages.name.max,
-      'any.required': messages.name.required,
+    return Joi.object({
+    name: Joi.string().required().messages({
+      'any.required': m.name,
+      'string.empty': m.name
     }),
-    phone: Joi.string().min(6).max(20).required().messages({
-      'string.empty': messages.phone.required,
-      'string.min': messages.phone.min,
-      'string.max': messages.phone.max,
-      'any.required': messages.phone.required,
+    phone: Joi.string().required().messages({
+      'any.required': m.phone,
+      'string.empty': m.phone
     }),
-    message: Joi.string().min(5).required().messages({
-      'string.empty': messages.message.required,
-      'string.min': messages.message.min,
-      'any.required': messages.message.required,
+    message: Joi.string().required().messages({
+      'any.required': m.message,
+      'string.empty': m.message
     }),
+    senderType: Joi.string().valid('user', 'serviceProvider', 'rentalOffice').required().messages({
+      'any.required': m.senderType,
+      'any.only': m.senderType,
+      'string.empty': m.senderType
+    }),
+    senderId: Joi.string().required().messages({
+      'any.required': m.senderId,
+      'string.empty': m.senderId
+    })
   });
+
+
 };
 
-module.exports = {contactUsSchema};
+module.exports = contactUsSchema;
