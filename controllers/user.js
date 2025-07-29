@@ -1,7 +1,8 @@
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { registerSchema, loginSchema } = require("../validation/registerAndLoginSchema");
+const Otp = require("../models/otp");
+const { registerSchema, loginSchema, registerProviderSchema } = require("../validation/registerAndLoginSchema");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
@@ -10,42 +11,23 @@ const register = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const messages = getMessages(lang);
-    const { error } = registerSchema(lang).validate(req.body);
-    if (error) {
-      return res.status(400).send({
-        status: false,
-        code: 400,
-        message: error.details[0].message
-      })
-    }
+
     const token = req.headers.authorization?.split(" ")[1];
     decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { identifier } = decoded;
-    const { username, email, password, phone, role } = req.body;
+    const { password, phone, role } = req.body;
     console.log(req.body)
     const hashedPassword = await bcrypt.hash(password, 10);
-    if (role == "serviceProvider") {
-      const existServiceProvider = await serviceProvider.findOne({ phone });
-      if (existServiceProvider) {
+    if (role == "user") {
+      const { error } = registerSchema(lang).validate(req.body);
+      if (error) {
         return res.status(400).send({
-          code: 400,
           status: false,
-          message: messages.register.emailExists.serviceProvider
+          code: 400,
+          message: error.details[0].message
         })
       }
-      await serviceProvider.create({
-        username,
-        email,
-        password: hashedPassword,
-        phone
-      });
-      return res.status(200).send({
-        status: true,
-        code: 200,
-        message: messages.register.createdSuccessfully
-      });
-    }
-    else if (role == "user") {
+      const { username, email, password, phone, role } = req.body;
       const existUser = await User.findOne({ phone });
       if (existUser) {
         return res.status(400).send({
@@ -195,40 +177,98 @@ const login = async (req, res, next) => {
     // ----------------------
     if (role === "serviceProvider") {
       const existServiceProvider = await serviceProvider.findOne({ phone });
-      if (!existServiceProvider) {
-        return res.status(400).send({
-          status: false,
-          code: 400,
-          message: messages.login.emailExists.serviceProvider
-        });
-      }
-      const lastSession = await workSession.findOne({ providerId: existServiceProvider._id })
-        .sort({ createdAt: -1 });
 
-      const match = await bcrypt.compare(password, existServiceProvider.password);
-      if (!match) {
+      if (existServiceProvider) {
+        // التحقق من حالة الطلب
+        if (existServiceProvider.status === "refused") {
+          return res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang === "en" ? "Your request has been refused" : "تم رفض الطلب"
+          });
+        }
+
+        if (existServiceProvider.status === "pending") {
+          return res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang === "en" ? "Your request is under review" : "جارى مراجعه الطلب"
+          });
+        }
+
+        // الحالة مقبولة، التحقق من كلمة المرور وتسجيل الدخول
+        if (existServiceProvider.status === "accepted") {
+          const match = await bcrypt.compare(password, existServiceProvider.password);
+          if (!match) {
+            return res.status(400).send({
+              code: 400,
+              status: false,
+              message: messages.login.incorrectData
+            });
+          }
+
+          const lastSession = await workSession.findOne({ providerId: existServiceProvider._id })
+            .sort({ createdAt: -1 });
+
+          const { resetOtp, resetOtpExpires, ...user } = existServiceProvider.toObject();
+          const token = jwt.sign(
+            { id: existServiceProvider._id, role: "serviceProvider" },
+            process.env.JWT_SECRET
+          );
+
+          return res.status(200).send({
+            code: 200,
+            status: true,
+            message: messages.login.success,
+            data: {
+              user: {
+                ...user,
+                active: lastSession ? lastSession.isWorking : false,
+                location: user.location || null
+              },
+              token
+            }
+          });
+        }
+
+        // في حالة كانت الحالة غير معروفة
         return res.status(400).send({
-          code: 400,
           status: false,
-          message: messages.login.incorrectData
+          code: 400,
+          message: lang === "en" ? "Unknown request status" : "حالة الطلب غير معروفة"
+        });
+
+      } else {
+        // المستخدم غير موجود، إنشاء حساب جديد
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await serviceProvider.create({
+          password: hashedPassword,
+          phone
+        });
+
+        const otp = 1111;
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+        await Otp.create({
+          phone,
+          otp,
+          expiresAt
+        });
+
+        return res.status(200).send({
+          status: true,
+          code: 200,
+          message: messages.sendCode.success
         });
       }
-      const { resetOtp, resetOtpExpires, ...user } = existServiceProvider.toObject();
-      const token = jwt.sign({ id: existServiceProvider._id, role: "serviceProvider" }, process.env.JWT_SECRET);
-      return res.status(200).send({
-        code: 200,
-        status: true,
-        message: messages.login.success,
-        data: {
-          user: {
-            ...user,
-            active: lastSession ? lastSession.isWorking : false,
-            location: user.location || null
-          },
-          token
-        }
-      });
     }
+
+
+
+
+
+
 
     // ----------------------
     // الحالة: User

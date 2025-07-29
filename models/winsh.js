@@ -66,6 +66,11 @@ const winshVerificationSchema = new mongoose.Schema({
     carImage:{
        type: String
     },
+    status:{
+       type: String,
+       enum:["pending","accepted","refused"],
+       default:"pending"
+    },
     createdAt: {
         type: Date,
         default: Date.now

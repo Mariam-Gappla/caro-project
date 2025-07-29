@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const serviceProviderSchema = new mongoose.Schema({
     username: {
-        required: true,
         type: "string",
     },
     email: {
@@ -15,6 +14,12 @@ const serviceProviderSchema = new mongoose.Schema({
     password: {
         type: "string",
         required: true,
+    },
+    status:{
+        type:String,
+        enum:["pending","accepted","refused"],
+        default:"pending"
+
     },
     location:{
         lat: {

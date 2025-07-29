@@ -62,7 +62,39 @@ const loginSchema = (lang = "en") => {
       })
   });
 }
+const registerProviderSchema=(lang="en")=>{
+   const messages = getMessages(lang);
+  return joi.object({
+    username: joi.string().min(3).max(30).required().messages({
+      "string.min": messages.register.username.min,
+      "string.max": messages.register.username.max
+    }),
+
+    email: joi.string().email().messages({
+      'string.email': messages.register.email.invalid
+    }),
+    phone:joi.string().min(3).required().messages({
+      'string.empty': messages.register.password.required,
+      'string.min': messages.register.password.min,
+      'any.required': messages.register.password.required,
+    }),
+    password: joi.string().min(3).required().messages({
+      'string.empty': messages.register.password.required,
+      'string.min': messages.register.password.min,
+      'any.required': messages.register.password.required,
+    }),
+    role: joi.string()
+      .valid("rentalOffice", "serviceProvider", "user")
+      .required()
+      .messages({
+        'any.only': messages.register.role.required,
+        'string.empty': messages.register.role.required,
+        'any.required': messages.register.role.valid
+      })
+  });
+}
 module.exports = {
   registerSchema,
-  loginSchema
+  loginSchema,
+  registerProviderSchema
 }
