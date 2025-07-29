@@ -35,6 +35,7 @@ const notificationRoutes=require("./routes/notification.js");
 const serviceProviderOrders= require("./routes/serviceProviderOrders.js");
 const providerRatingRoutes = require("./routes/providerRating.js");
 const workSessionRoutes = require("./routes/workSessionroutes.js");
+const howToUseCaro=require("./routes/howToUseCaro.js");
 
 // 🟢 Middleware
 app.use(express.json());
@@ -92,6 +93,7 @@ app.use("/nationality", nationalityRoutes);
 app.use("/serviceProviderOrders",serviceProviderOrders);
 app.use("/providerRating", providerRatingRoutes);
 app.use("/workSession", workSessionRoutes);
+app.use("/HowToUseCaro",howToUseCaro);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
