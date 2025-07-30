@@ -66,6 +66,10 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
       type: Number,
       default:12
     },
+    ended:{
+      type:Boolean,
+      default:false
+    },
     status: {
       type: String,
       enum: ['pending', 'accepted', 'refused'],

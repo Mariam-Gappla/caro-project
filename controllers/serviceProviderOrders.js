@@ -6,7 +6,7 @@ const orderRating = require("../models/ratingForOrder");
 const workSession = require("../models/workingSession");
 const serviceProvider = require("../models/serviceProvider");
 const winsh = require("../models/winsh");
-const getNextOrderNumber=require("../controllers/counter");
+const getNextOrderNumber = require("../controllers/counter");
 const tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
@@ -68,9 +68,11 @@ const getOrdersbyServiceType = async (req, res, next) => {
     if (verificationAccount.serviceType === "tire Filling and battery Jumpstart") {
       filter.serviceType = { $in: ['tire Filling', 'battery Jumpstart'] };
       filter.status = "pending"
+      filter.ended = false
     } else {
       filter.serviceType = verificationAccount.serviceType;
       filter.status = "pending"
+      filter.ended = false
     }
 
     const totalOrders = await serviceProviderOrder.countDocuments(filter);
@@ -229,7 +231,7 @@ const addWinchOrder = async (req, res, next) => {
     const savedImagePath = saveImage(file); // مثل: "abc.jpg"
     console.log(savedImagePath);
     formatedData.image = BASE_URL + savedImagePath;
-    formatedData.orderNumber= await getNextOrderNumber("order");
+    formatedData.orderNumber = await getNextOrderNumber("order");
     console.log(formatedData)
     await serviceProviderOrder.create(formatedData);
     return res.status(200).send({
@@ -271,7 +273,7 @@ const addTireOrder = async (req, res, next) => {
     const savedImagePath = saveImage(file); // مثل: "abc.jpg"
     console.log(savedImagePath);
     formatedData.image = BASE_URL + savedImagePath;
-     formatedData.orderNumber=await getNextOrderNumber("order");
+    formatedData.orderNumber = await getNextOrderNumber("order");
     console.log(formatedData)
     await serviceProviderOrder.create(formatedData);
     return res.status(200).json({
@@ -340,14 +342,15 @@ const changeStatusForOrder = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const providerId = req.user.id;
     const role = req.user.role;
+
     if (role != "serviceProvider") {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang == "en" ? "not allow for you role should be serviceProvider" : "غير مسموح لك الدور يجب ان يكون موفر خدمه"
-      })
-
+        message: lang == "en" ? "Not allowed, role should be serviceProvider" : "غير مسموح لك، يجب أن يكون الدور موفر خدمة"
+      });
     }
+
     const { orderId, status } = req.body;
 
     if (!orderId || !status) {
@@ -360,24 +363,41 @@ const changeStatusForOrder = async (req, res, next) => {
 
     const order = await serviceProviderOrder.findById(orderId);
     if (!order) {
-      return res.status(404).json({
+      return res.status(400).json({
         status: false,
-        code: 404,
+        code: 400,
         message: lang === 'ar' ? "الطلب غير موجود" : "Order not found"
       });
     }
-    if (status == "accepted") {
+
+    if (status === "accepted") {
+      // ✅ تحقق مما إذا كان لدى الموفر طلب غير منتهي
+      const activeOrder = await serviceProviderOrder.findOne({
+        providerId: providerId,
+        ended: false,
+        status: "accepted"
+      });
+
+      if (activeOrder) {
+        return res.status(400).json({
+          status: false,
+          code: 400,
+          message: lang === 'ar'
+            ? "لا يمكنك قبول طلب جديد قبل إنهاء الطلب الحالي"
+            : "You can't accept a new order before ending the current one"
+        });
+      }
+
       order.status = "accepted";
-      order.providerId = providerId; // تعيين معرف الموفر
+      order.providerId = providerId;
       await order.save();
+
       return res.status(200).json({
         status: true,
         code: 200,
-        message: lang === 'ar' ? "تم موافقه على الطلب بنجاح" : "Order accepted successfully"
+        message: lang === 'ar' ? "تم قبول الطلب بنجاح" : "Order accepted successfully"
       });
-
-    }
-    else {
+    } else {
       if (order.status === "refused") {
         return res.status(200).send({
           status: true,
@@ -385,13 +405,7 @@ const changeStatusForOrder = async (req, res, next) => {
           message: lang === 'ar' ? "تم رفض الطلب" : "Order refused successfully"
         });
       }
-
     }
-
-
-
-
-
   } catch (err) {
     next(err);
   }
@@ -589,7 +603,7 @@ const getOrderById = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const providerId = req.user.id;
     const order = await serviceProviderOrder.findOne({ _id: req.params.id, providerId: providerId });
-    const user=await User.findOne({_id:order.userId});
+    const user = await User.findOne({ _id: order.userId });
     if (!order) {
       return res.status(400).send({
         status: false,
@@ -597,32 +611,31 @@ const getOrderById = async (req, res, next) => {
         message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
       })
     }
-    let formattedOrder={}
-    if(order.serviceType=="tire Filling" || order.serviceType=="battery Jumpstart"){
-      formattedOrder={
-        orderNumber:order.orderNumber,
+    let formattedOrder = {}
+    if (order.serviceType == "tire Filling" || order.serviceType == "battery Jumpstart") {
+      formattedOrder = {
+        orderNumber: order.orderNumber,
         createdAt: order.createdAt,
         image: order.image,
         serviceType: order.serviceType,
         paymentStatus: order.paymentStatus,
         price: order.price,
-        details:order.details,
-        userLocation:user.location,
+        details: order.details,
+        userLocation: user.location,
         paymentType: order.paymentType
 
       }
     }
-    else
-    {
-       formattedOrder={
+    else {
+      formattedOrder = {
         createdAt: order.createdAt,
         image: order.image,
         paymentStatus: order.paymentStatus,
         price: order.price,
-        details:order.details,
-        userLocation:user.location,
+        details: order.details,
+        userLocation: user.location,
         paymentType: order.paymentType,
-        dropoffLocation:order.dropoffLocation,
+        dropoffLocation: order.dropoffLocation,
         serviceType: order.serviceType
       }
 
@@ -631,7 +644,7 @@ const getOrderById = async (req, res, next) => {
       status: true,
       code: 200,
       message: lang == "en" ? "order retrieved " : "تم استرجاع الطلب بنجاح",
-      data:formattedOrder
+      data: formattedOrder
     })
 
   }
@@ -640,6 +653,74 @@ const getOrderById = async (req, res, next) => {
   }
 
 }
+const endOrder = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const providerId = req.user.id;
+    const role = req.user.role;
+
+    if (role !== "serviceProvider") {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar'
+          ? "غير مصرح لك، يجب أن تكون موفر خدمة"
+          : "Not authorized, must be a service provider"
+      });
+    }
+
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar'
+          ? "يرجى توفير معرف الطلب"
+          : "Please provide order ID"
+      });
+    }
+
+    const order = await serviceProviderOrder.findOne({
+      _id: orderId,
+      providerId: providerId
+    });
+
+    if (!order) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar'
+          ? "الطلب غير موجود"
+          : "Order not found"
+      });
+    }
+
+    if (order.status !== "accepted" || order.ended === true) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar'
+          ? "لا يمكن إنهاء هذا الطلب"
+          : "This order cannot be ended"
+      });
+    }
+
+    order.ended = true;
+    await order.save();
+
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      message: lang === 'ar'
+        ? "تم إنهاء الطلب بنجاح"
+        : "Order ended successfully"
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 
@@ -657,5 +738,6 @@ module.exports = {
   ordersAndProfit,
   reportForProvider,
   getOrdersByServiceProvider,
-  getOrderById
+  getOrderById,
+  endOrder
 }
