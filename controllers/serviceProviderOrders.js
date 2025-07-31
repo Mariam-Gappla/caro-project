@@ -605,8 +605,8 @@ const getOrderById = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const providerId = req.user.id;
+    console.log(providerId)
     const order = await serviceProviderOrder.findOne({ _id: req.params.id, providerId: providerId });
-    const user = await User.findOne({ _id: order.userId });
     if (!order) {
       return res.status(400).send({
         status: false,
@@ -614,6 +614,7 @@ const getOrderById = async (req, res, next) => {
         message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
       })
     }
+    const user = await User.findOne({ _id: order.userId });
     let formattedOrder = {}
     if (order.serviceType == "tire Filling" || order.serviceType == "battery Jumpstart") {
       formattedOrder = {
