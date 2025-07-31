@@ -618,6 +618,7 @@ const getOrderById = async (req, res, next) => {
     if (order.serviceType == "tire Filling" || order.serviceType == "battery Jumpstart") {
       formattedOrder = {
         orderNumber: order.orderNumber,
+        userId:order.userId,
         createdAt: order.createdAt,
         image: order.image,
         serviceType: order.serviceType,
@@ -631,8 +632,10 @@ const getOrderById = async (req, res, next) => {
     }
     else {
       formattedOrder = {
+         orderNumber: order.orderNumber,
         createdAt: order.createdAt,
         image: order.image,
+        userId:order.userId,
         paymentStatus: order.paymentStatus,
         price: order.price,
         details: order.details,
