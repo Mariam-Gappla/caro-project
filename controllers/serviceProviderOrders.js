@@ -709,7 +709,7 @@ const endOrder = async (req, res, next) => {
     }
 
     if (order.status !== "accepted" || order.ended === true) {
-      return res.status(400).sen({
+      return res.status(400).send({
         status: false,
         code: 400,
         message: lang === 'ar'
