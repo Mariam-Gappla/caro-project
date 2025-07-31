@@ -573,6 +573,7 @@ const getOrdersByServiceProvider = async (req, res, next) => {
           id: order._id,
           createdAt: order.createdAt,
           serviceType: order.serviceType,
+          userId:order.userId._id,
           price: order.price,
           paymentStatus: order.paymentStatus,
           distance: distance ? `${distance} km` : "",
