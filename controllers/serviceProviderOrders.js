@@ -126,6 +126,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
 
         formattedOrders.push({
           id: order._id,
+          userId: order.userId._id,
           username: order.userId.username,
           image: order.userId.image,
           serviceType: order.serviceType,
@@ -154,6 +155,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
         formattedOrders.push({
           id: order._id,
           username: order.userId.username,
+          userId: order.userId._id,
           image: order.userId.image,
           serviceType: order.serviceType,
           payment: order.payment,
@@ -621,6 +623,7 @@ const getOrderById = async (req, res, next) => {
       formattedOrder = {
         orderNumber: order.orderNumber,
         userId:order.userId,
+        location:order.location,
         createdAt: order.createdAt,
         image: order.image,
         serviceType: order.serviceType,
@@ -638,6 +641,7 @@ const getOrderById = async (req, res, next) => {
         createdAt: order.createdAt,
         image: order.image,
         userId:order.userId,
+        location:order.location,
         paymentStatus: order.paymentStatus,
         price: order.price,
         details: order.details,
