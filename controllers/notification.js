@@ -30,7 +30,14 @@ const getNotifications = async (req, res, next) => {
             return res.status(200).send({
                 status: true,
                 code: 200,
-                data:[]
+                data:{
+                notifications: [],
+                pagination: {
+                    page,
+                    totalPages: Math.ceil(totalNotifications / limit),
+                }
+              }
+                
             });
         }
 
