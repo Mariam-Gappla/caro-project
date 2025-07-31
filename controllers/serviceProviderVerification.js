@@ -2,9 +2,9 @@ const winsh = require("../models/winsh");
 const tire = require("../models/tire");
 const { winshSchema, winshImagesSchema } = require("../validation/winshValidition");
 const { tireSchema, tireImagesSchema } = require("../validation/tireRefilling");
-const serviceProvider=require("../models/serviceProvider");
+const serviceProvider = require("../models/serviceProvider");
 const path = require("path");
-const jwt=require("jsonwebtoken")
+const jwt = require("jsonwebtoken")
 const fs = require("fs");
 const saveImage = (file, folder = 'images') => {
   const fileName = `${Date.now()}-${file.originalname}`;
@@ -25,9 +25,9 @@ const submitWinchVerification = async (req, res, next) => {
     // ✅ استخراج التوكن من الهيدر
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      return res.status(401).json({
+      return res.status(400).json({
         status: false,
-        code: 401,
+        code: 400,
         message: lang === "en" ? "Token not provided" : "لم يتم تقديم التوكن"
       });
     }
@@ -38,26 +38,25 @@ const submitWinchVerification = async (req, res, next) => {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     } catch (err) {
-      return res.status(401).json({
+      return res.status(400).json({
         status: false,
-        code: 401,
+        code: 400,
         message: lang === "en" ? "Invalid token" : "توكن غير صالح"
       });
     }
 
     const phone = decoded.identifier; // ← كده عندك رقم التليفون
-    const provider=await serviceProvider.findOne({phone});
-    if(!provider)
-    {
+    const provider = await serviceProvider.findOne({ phone });
+    if (!provider) {
       return res.status(400).send({
-        status:false,
-        code:400,
-        message:lang=="en"?"this provider does not exist":"موفر الخدمه غير  موجود"
+        status: false,
+        code: 400,
+        message: lang == "en" ? "this provider does not exist" : "موفر الخدمه غير  موجود"
       })
     }
 
     // ✅ تحقق هل قدم بالفعل
-    const existing = await winsh.findOne({ providerId:provider._id });
+    const existing = await winsh.findOne({ providerId: provider._id });
     if (existing) {
       await serviceProvider.findOneAndUpdate(
         { _id: provider._id },
@@ -77,7 +76,7 @@ const submitWinchVerification = async (req, res, next) => {
 
     // ✅ التحقق من البيانات
     const { error } = winshSchema(lang).validate({
-      providerId:(provider._id).toString(),
+      providerId: (provider._id).toString(),
       ...req.body
     });
 
@@ -91,7 +90,7 @@ const submitWinchVerification = async (req, res, next) => {
 
     // ✅ إنشاء الطلب
     const verification = await winsh.create({
-      providerId:provider._id,
+      providerId: provider._id,
       fullName: req.body.fullName,
       nationality: req.body.nationality,
       nationalId: req.body.nationalId,
@@ -120,21 +119,42 @@ const submitWinchVerification = async (req, res, next) => {
 const uploadWinchImages = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
-    const providerId = req.user.id;
-    const role = req.user.role;
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const files = req.files;
 
-    if (role !== "serviceProvider") {
+    // ✅ استخراج التوكن من الهيدر
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Token not provided" : "لم يتم تقديم التوكن"
+      });
+    }
+    console.log(token)
+    // ✅ فك التوكن واستخراج رقم التليفون
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    } catch (err) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Invalid token" : "توكن غير صالح"
+      });
+    }
+    const phone = decoded.identifier; // ← كده عندك رقم التليفون
+    const provider = await serviceProvider.findOne({ phone });
+    if (!provider) {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang === "en" ? "Not allowed for you" : "غير مسموح لك",
-      });
+        message: lang == "en" ? "this provider does not exist" : "موفر الخدمه غير  موجود"
+      })
     }
-
     // تحقق أن الطلب موجود
-    const existingWinch = await winsh.findOne({ providerId });
+    const existingWinch = await winsh.findOne({ providerId:provider._id });
     if (!existingWinch) {
       return res.status(400).send({
         status: false,
@@ -191,7 +211,7 @@ const uploadWinchImages = async (req, res, next) => {
       carImage: files?.carImage?.[0] ? BASE_URL + saveImage(files.carImage[0]) : "",
     };
 
-    await winsh.updateOne({ providerId }, { $set: savedUrls });
+    await winsh.updateOne({ providerId:provider._id }, { $set: savedUrls });
 
     res.status(200).send({
       status: true,
@@ -206,20 +226,42 @@ const uploadTireImages = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-    const files = req.files;
-    const role = req.user.role;
-    const providerId = req.user.id;
+     const files = req.files;
 
-    if (role !== "serviceProvider") {
+    // ✅ استخراج التوكن من الهيدر
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Token not provided" : "لم يتم تقديم التوكن"
+      });
+    }
+    console.log(token)
+    // ✅ فك التوكن واستخراج رقم التليفون
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    } catch (err) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Invalid token" : "توكن غير صالح"
+      });
+    }
+    const phone = decoded.identifier; // ← كده عندك رقم التليفون
+    const provider = await serviceProvider.findOne({ phone });
+    if (!provider) {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang === "en" ? "Not allowed for you" : "غير مسموح لك",
-      });
+        message: lang == "en" ? "this provider does not exist" : "موفر الخدمه غير  موجود"
+      })
     }
 
     // ✅ تحقق من وجود صورة مرفوعة مسبقًا
-    const existing = await tire.findOne({ providerId });
+    const existing = await tire.findOne({ providerId:provider._id });
     if (existing?.profileImage) {
       return res.status(400).send({
         status: false,
@@ -254,7 +296,7 @@ const uploadTireImages = async (req, res, next) => {
 
     // ✅ تحديث السجل الموجود
     await tire.findOneAndUpdate(
-      { providerId },
+      { providerId:provider._id },
       {
         profileImage: profileImageUrl,
         ...(req.body.notes && { notes: req.body.notes }),
@@ -277,7 +319,7 @@ const uploadTireImages = async (req, res, next) => {
 const submitTireVerification = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-     const token = req.headers.authorization?.split(" ")[1];
+    const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({
         status: false,
@@ -300,20 +342,19 @@ const submitTireVerification = async (req, res, next) => {
     }
 
     const phone = decoded.identifier; // ← كده عندك رقم التليفون
-    const provider=await serviceProvider.findOne({phone});
-    if(!provider)
-    {
+    const provider = await serviceProvider.findOne({ phone });
+    if (!provider) {
       return res.status(400).send({
-        status:false,
-        code:400,
-        message:lang=="en"?"this provider does not exist":"موفر الخدمه غير  موجود"
+        status: false,
+        code: 400,
+        message: lang == "en" ? "this provider does not exist" : "موفر الخدمه غير  موجود"
       })
     }
 
     // ✅ التحقق من وجود تحقق سابق لنفس المزود
-    const existingVerification = await tire.findOne({ providerId: provider._id});
+    const existingVerification = await tire.findOne({ providerId: provider._id });
     if (existingVerification) {
-        const provider=await serviceProvider.findOneAndUpdate({_id:provider._id},{username:req.body.fullName,email:req.body.email},{new:true})
+      const provider = await serviceProvider.findOneAndUpdate({ _id: provider._id }, { username: req.body.fullName, email: req.body.email }, { new: true })
       return res.status(400).send({
         status: false,
         code: 400,
@@ -325,7 +366,7 @@ const submitTireVerification = async (req, res, next) => {
 
     // ✅ التحقق من البيانات باستخدام Joi
     const { error } = tireSchema(lang).validate({
-      providerId:(provider._id).toString(),
+      providerId: (provider._id).toString(),
       ...req.body
     });
 
@@ -339,7 +380,7 @@ const submitTireVerification = async (req, res, next) => {
 
     // ✅ إنشاء الطلب الجديد
     await tire.create({
-      providerId:provider._id,
+      providerId: provider._id,
       serviceType: req.body.serviceType,
       fullName: req.body.fullName,
       nationality: req.body.nationality,
