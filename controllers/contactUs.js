@@ -1,4 +1,4 @@
-const { contactUsSchema } = require("../validation/contactUsValidition");
+const contactUsSchema = require("../validation/contactUsValidition");
 const contactUs = require("../models/contactUs");
 const getMessages = require("../configration/getmessages");
 const addcontactUs = async (req, res, next) => {
