@@ -398,7 +398,10 @@ const changeStatusForOrder = async (req, res, next) => {
         message: lang === 'ar' ? "تم قبول الطلب بنجاح" : "Order accepted successfully"
       });
     } else {
-      if (order.status === "refused") {
+      if (status === "refused") {
+        order.status = "refused";
+        order.providerId = providerId;
+        await order.save();
         return res.status(200).send({
           status: true,
           code: 200,
@@ -697,7 +700,7 @@ const endOrder = async (req, res, next) => {
     }
 
     if (order.status !== "accepted" || order.ended === true) {
-      return res.status(400).send({
+      return res.status(400).sen({
         status: false,
         code: 400,
         message: lang === 'ar'
