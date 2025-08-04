@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const carRentalSchema = new mongoose.Schema({
-  nameId: { type: mongoose.Schema.Types.ObjectId, ref: "Car", required: true },
-  modelId: { type: mongoose.Schema.Types.ObjectId, ref: "Model", required: true },
+  nameId: { type: mongoose.Schema.Types.ObjectId, ref: "CarName", required: true },
+  modelId: { type: mongoose.Schema.Types.ObjectId, ref: "CarModel", required: true },
   rentalType: { type: String, required: true,enum:["weekly/daily","rent to own"]},           
   images: [{ type: String }],                               
-  carType: { type: String, required: true },                            
+  carTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'CarType', required: true },                            
   licensePlateNumber: { type: String, required: true },   
   freeKilometers: { type: Number}, 
   odoMeter:{type:Number},  

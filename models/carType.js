@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
-const modelCarSchema = new mongoose.Schema({
-  TypeName: { type: String, required: true },
-  nameId:{ type: mongoose.Schema.Types.ObjectId, ref: "CarName", required: true },
+const carTypeSchema = new mongoose.Schema({
+  type: { type: String, required: true, unique: true } // "SUV"
 });
 
-module.exports = mongoose.model("TypeCar", modelCarSchema);
+
+module.exports = mongoose.model("carType", carTypeSchema);

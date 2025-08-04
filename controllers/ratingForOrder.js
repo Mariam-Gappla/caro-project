@@ -154,10 +154,11 @@ const getratingbyrentalOffice = async (req, res, next) => {
             .sort({ createdAt: -1 });
         console.log(ratings)
         if (!ratings || ratings.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.rentalOffice.ratingNotFound
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: messages.rentalOffice.ratingNotFound,
+                data:[]
             });
         }
 
@@ -206,10 +207,11 @@ const getRatingByUser = async (req, res, next) => {
             .limit(limit)
             .sort({ createdAt: -1 });
         if (!ratings || ratings.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.rating.ratingUser
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: messages.rating.ratingUser,
+                data:[]
             });
         }
         const totalCount = await review.countDocuments({
@@ -268,10 +270,11 @@ const getRatingByServiceProvider = async (req, res, next) => {
             .sort({ createdAt: -1 });
         console.log(ratings)
         if (!ratings || ratings.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang == "en"?"No ratings found for this service provider.": "لا توجد تقييمات لهذا الموفر للخدمة."
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: lang == "en"?"No ratings found for this service provider.": "لا توجد تقييمات لهذا الموفر للخدمة.",
+                data:[]
             });
         }
 

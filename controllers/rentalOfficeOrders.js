@@ -1,5 +1,6 @@
 const rentalOfficeOrders = require("../models/rentalOfficeOrders");
 const CarRental = require("../models/carRental");
+const CarType=require("../models/carType");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
 const Revenu = require("../models/invoice");
@@ -392,7 +393,9 @@ const getOrderById = async (req, res, next) => {
         const { carId, ...rest } = rawComments.toObject();
         const name = await Name.findOne({ _id: carId.nameId });
         console.log(name)
+        console.log(carId)
         const model = await Model.findOne({ _id: carId.modelId });
+        console.log(model)
         if (carId.rentalType == "weekly/daily") {
             formattedOrder = {
                 title: lang == "ar" ? `تأجير سياره ${name.carName + " " + model.modelName}` : `Renting a car ${name.carName + " " + model.modelName}`,
@@ -725,6 +728,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                         paymentMethod: rest.paymentMethod
                     };
                 } else {
+                    const type= await CarType.findOne({_id:carId.carTypeId})
                     return {
                         id: rest._id,
                         title: lang === "ar"
@@ -736,7 +740,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                         monthlyPayment: carId.monthlyPayment,
                         finalPayment: carId.finalPayment,
                         carName: carId.carName,
-                        carType: carId.carType,
+                        carType: type,
                         carModel: carId.carModel,
                         odoMeter: carId.odoMeter
                     };
@@ -797,13 +801,6 @@ const isAvailable = async (req, res, next) => {
         next(error)
     }
 }
-
-
-
-
-
-
-
 
 module.exports = {
     addOrder,

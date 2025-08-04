@@ -1,62 +1,93 @@
-const carModel = require("../models/carType");
-const addModel=async(req,res,next)=>{
- try {
-        const lang = req.headers['accept-language'] || 'en';
-        const { model,nameId } = req.body;
-        await carModel.create({
-            modelName: model,
-            nameId:nameId
-        });
-        return res.send({
-            status: true,
-            code: 200,
-            message: lang == "ar" ? "تم اضافه اسم السياره بنجاح" : "car name added successfully"
-        })
+const carModel = require("../models/carModel");
+const carName = require('../models/carName');
+const CarType = require('../models/carType');
 
+const addModel = async (req, res,next) => {
+  try {
+    const { model, nameId, carTypeId } = req.body;
+    const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
 
+    if (!model || !nameId || !carTypeId) {
+      const message = lang === 'ar'
+        ? 'الاسم، اسم السيارة، ونوع السيارة مطلوبين.'
+        : 'Name, car name, and car type are required.';
+      return res.status(400).send({ status: false,code:400, message });
     }
-    catch (error) {
-        next(error)
+
+    const car = await carName.findOne({_id:nameId});
+    if (!car) {
+      const message = lang === 'ar'
+        ? 'اسم السيارة غير موجود.'
+        : 'Car brand not found.';
+      return res.status(400).json({ code:400, status: false, message });
     }
-}
+
+    const type = await CarType.findOne({_id:carTypeId});
+    if (!type) {
+      const message = lang === 'ar'
+        ? 'نوع السيارة غير موجود.'
+        : 'Car type not found.';
+      return res.status(400).send({ status: false,code:400 ,message });
+    }
+
+    const existingModel = await carModel.findOne({ name:model, carNameId:nameId, carTypeId:carTypeId });
+    if (existingModel) {
+      const message = lang === 'ar'
+        ? 'هذا الموديل مضاف بالفعل لنفس الاسم والنوع.'
+        : 'This model already exists for the selected car and type.';
+      return res.status(400).send({ status: false,code:400, message });
+    }
+
+    const newModel = await carModel.create({ name:model, carNameId:nameId, carTypeId:carTypeId });
+    const message = lang === 'ar'
+      ? 'تم إضافة الموديل بنجاح.'
+      : 'Model added successfully.';
+    return res.status(200).send({ 
+      status: true,
+      code:200,
+       message, 
+      });
+
+  } catch (err) {
+    next(err)
+  }
+};
 const getModels = async (req, res, next) => {
   try {
-    const lang = req.headers['accept-language'] || 'en';
-    const { nameId } = req.body;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-   
-    const totalCount = await carModel.countDocuments({nameId:nameId});
+    const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
 
-    // جلب البيانات ثم تحويل الشكل
-    const modelsRaw = await carModel.find({nameId:nameId}).skip(skip).limit(limit);
+    const { brandId, carTypeId } = req.body;
 
-    const models = modelsRaw.map((m) => ({
-      id: m._id,
-      text: m.modelName // ← غيّري 'name' لو عندك اسم مختلف للحقل
+    if (!brandId || !carTypeId) {
+      const message = lang === 'ar'
+        ? 'يجب إرسال اسم السيارة ونوع السيارة.'
+        : 'Car name and car type are required.';
+      return res.status(400).json({ status: false, code: 400, message });
+    }
+
+    const models = await carModel.find({ brandId, carTypeId });
+
+    const formattedModels = models.map(model => ({
+      id: model._id,
+      text: model.name
     }));
 
-    return res.send({
+    const message = lang === 'ar'
+      ? 'تم جلب الموديلات بنجاح.'
+      : 'Models fetched successfully.';
+
+    return res.status(200).json({
       status: true,
-      code: 200,
-      message: lang === "en"
-        ? "Your request has been completed successfully"
-        : "تمت معالجة الطلب بنجاح",
-      data: {
-        content:models,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        },
-      },
+      message,
+      data: formattedModels
     });
-  } catch (error) {
-    next(error);
+
+  } catch (err) {
+    next(err);
   }
 };
 
-module.exports={
-   addModel,
-    getModels
+module.exports = {
+  addModel,
+  getModels
 }

@@ -175,6 +175,7 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
     const totalTweets = await Tweet.countDocuments();
 
     const result = await Tweet.aggregate([
+      // جلب التعليقات المرتبطة بالتغريدة
       {
         $lookup: {
           from: 'comments',
@@ -183,6 +184,7 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           as: 'comments'
         }
       },
+      // جلب الردود على التعليقات
       {
         $lookup: {
           from: 'replyoncomments',
@@ -191,11 +193,22 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           as: 'replies'
         }
       },
+      // حساب عدد التعليقات + الردود + اللايكات
       {
         $addFields: {
-          totalComments: { $add: [{ $size: '$comments' }, { $size: '$replies' }] }
+          totalComments: {
+            $add: [{ $size: '$comments' }, { $size: '$replies' }]
+          },
+          likesCount: {
+            $cond: {
+              if: { $isArray: '$likedBy' },
+              then: { $size: '$likedBy' },
+              else: 0
+            }
+          }
         }
       },
+      // جلب بيانات صاحب التغريدة
       {
         $lookup: {
           from: 'users',
@@ -210,6 +223,7 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
+      // تحديد البيانات التي سيتم عرضها
       {
         $project: {
           title: 1,
@@ -218,6 +232,7 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           video: 1,
           createdAt: 1,
           totalComments: 1,
+          likesCount: 1,
           'user.username': 1,
           'user.image': 1
         }
@@ -248,7 +263,6 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
     next(err);
   }
 };
-
 const getTweetWithCommentsAndReplies = async (req, res, next) => {
   try {
     const tweetId = req.params.id;
@@ -267,7 +281,6 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
       {
         $match: { _id: new mongoose.Types.ObjectId(tweetId) }
       },
-      // جلب بيانات صاحب التويتة
       {
         $lookup: {
           from: 'users',
@@ -277,8 +290,6 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
         }
       },
       { $unwind: { path: '$userData', preserveNullAndEmptyArrays: true } },
-
-      // جلب التعليقات
       {
         $lookup: {
           from: 'comments',
@@ -287,14 +298,7 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
           as: 'comments'
         }
       },
-      {
-        $unwind: {
-          path: '$comments',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // بيانات مستخدم التعليق
+      { $unwind: { path: '$comments', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: 'users',
@@ -303,14 +307,7 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
           as: 'commentUser'
         }
       },
-      {
-        $unwind: {
-          path: '$commentUser',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // الردود على التعليق
+      { $unwind: { path: '$commentUser', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: 'replyoncomments',
@@ -319,14 +316,7 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
           as: 'replies'
         }
       },
-      {
-        $unwind: {
-          path: '$replies',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // بيانات مستخدم الرد
+      { $unwind: { path: '$replies', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: 'users',
@@ -335,14 +325,7 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
           as: 'replyUser'
         }
       },
-      {
-        $unwind: {
-          path: '$replyUser',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // تجميع الردود داخل كل تعليق
+      { $unwind: { path: '$replyUser', preserveNullAndEmptyArrays: true } },
       {
         $group: {
           _id: {
@@ -354,19 +337,28 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
           commentUser: { $first: '$commentUser' },
           replies: {
             $push: {
-              _id: '$replies._id',
-              content: '$replies.content',
-              createdAt: '$replies.createdAt',
-              userData: {
-                username: '$replyUser.username',
-                image: '$replyUser.image'
-              }
+              $cond: [
+                { $ifNull: ['$replies._id', false] },
+                {
+                  _id: '$replies._id',
+                  content: '$replies.content',
+                  createdAt: '$replies.createdAt',
+                  userData: {
+                    username: '$replyUser.username',
+                    image: '$replyUser.image'
+                  }
+                },
+                '$$REMOVE'
+              ]
+            }
+          },
+          repliesCount: {
+            $sum: {
+              $cond: [{ $ifNull: ['$replies._id', false] }, 1, 0]
             }
           }
         }
       },
-
-      // تجميع التعليقات داخل التويتة
       {
         $group: {
           _id: '$_id.tweetId',
@@ -385,15 +377,35 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
                     username: '$commentUser.username',
                     image: '$commentUser.image'
                   },
-                  replies: '$replies'
+                  replies: '$replies',
+                  repliesCount: '$repliesCount'
                 }
               ]
             }
           }
         }
       },
-
-      // عرض النتيجة النهائية
+      {
+        $addFields: {
+          totalCommentsCount: { $size: '$comments' },
+          totalCommentsAndRepliesCount: {
+            $sum: {
+              $map: {
+                input: '$comments',
+                as: 'comment',
+                in: {
+                  $add: [1, { $ifNull: ['$$comment.repliesCount', 0] }]
+                }
+              }
+            }
+          },
+          likesCount: {
+            $size: {
+              $ifNull: ['$tweet.likedBy', []]
+            }
+          }
+        }
+      },
       {
         $project: {
           _id: 0,
@@ -409,7 +421,16 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
               image: '$tweetUser.image'
             }
           },
-          comments: 1
+          comments: 1,
+          totalCommentsCount: 1,
+          totalCommentsAndRepliesCount: 1,
+          likesCount: {
+            $cond: {
+              if: { $isArray: '$tweet.likedBy' },
+              then: { $size: '$tweet.likedBy' },
+              else: 0
+            }
+          }
         }
       }
     ]);
@@ -418,17 +439,22 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang=="en"?"Tweet not found":"التويته غير موجوده"
+        message: lang === "en" ? "Tweet not found" : "التويته غير موجوده"
       });
     }
 
     return res.status(200).send({
       code: 200,
       status: true,
-      message:lang=="en"?"Tweet, comments, and replies fetched successfully":"تم جلب التويته والتعليقات والردود بنجاح",
+      message: lang === "en"
+        ? "Tweet, comments, replies, and likes fetched successfully"
+        : "تم جلب التويته والتعليقات والردود والاعجابات بنجاح",
       data: {
         tweet: result[0].tweet,
-        comments: result[0].comments
+        comments: result[0].comments,
+        totalCommentsCount: result[0].totalCommentsCount,
+        totalCommentsAndRepliesCount: result[0].totalCommentsAndRepliesCount,
+        likesCount: result[0].likesCount
       }
     });
 
@@ -436,6 +462,12 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
     next(err);
   }
 };
+
+
+
+
+
+
 
 
 

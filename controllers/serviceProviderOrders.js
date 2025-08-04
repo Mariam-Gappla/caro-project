@@ -82,10 +82,11 @@ const getOrdersbyServiceType = async (req, res, next) => {
       .populate('userId', 'username image');
     console.log(orders)
     if (!orders || orders.length === 0) {
-      return res.status(400).json({
-        status: false,
-        code: 400,
-        message: lang === 'ar' ? "لا توجد طلبات" : "No orders found"
+      return res.status(200).json({
+        status: true,
+        code: 200,
+        message: lang === 'ar' ? "لا توجد طلبات" : "No orders found",
+        data: []
       });
     }
 
@@ -127,6 +128,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
         formattedOrders.push({
           id: order._id,
           userId: order.userId._id,
+          location:order.location,
           username: order.userId.username,
           image: order.userId.image,
           serviceType: order.serviceType,
@@ -155,6 +157,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
         formattedOrders.push({
           id: order._id,
           username: order.userId.username,
+          location:order.location,
           userId: order.userId._id,
           image: order.userId.image,
           serviceType: order.serviceType,
@@ -298,9 +301,9 @@ const getUserMakeOrderandRating = async (req, res, next) => {
       .populate('userId', 'username image');
 
     if (!order) {
-      return res.status(400).send({
-        status: false,
-        code: 400,
+      return res.status(200).send({
+        status: true,
+        code: 200,
         message:
           lang === 'ar' ? 'لم يتم العثور على الطلب' : 'Order not found',
       });
@@ -575,7 +578,7 @@ const getOrdersByServiceProvider = async (req, res, next) => {
           id: order._id,
           createdAt: order.createdAt,
           serviceType: order.serviceType,
-          userId:order.userId._id,
+          userId: order.userId._id,
           price: order.price,
           paymentStatus: order.paymentStatus,
           distance: distance ? `${distance} km` : "",
@@ -621,9 +624,10 @@ const getOrderById = async (req, res, next) => {
     let formattedOrder = {}
     if (order.serviceType == "tire Filling" || order.serviceType == "battery Jumpstart") {
       formattedOrder = {
+        id: order._id,
         orderNumber: order.orderNumber,
-        userId:order.userId,
-        location:order.location,
+        userId: order.userId,
+        location: order.location,
         createdAt: order.createdAt,
         image: order.image,
         serviceType: order.serviceType,
@@ -637,11 +641,12 @@ const getOrderById = async (req, res, next) => {
     }
     else {
       formattedOrder = {
-         orderNumber: order.orderNumber,
+        id: order._id,
+        orderNumber: order.orderNumber,
         createdAt: order.createdAt,
         image: order.image,
-        userId:order.userId,
-        location:order.location,
+        userId: order.userId,
+        location: order.location,
         paymentStatus: order.paymentStatus,
         price: order.price,
         details: order.details,
