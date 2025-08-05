@@ -44,10 +44,6 @@ const getNames = async (req, res, next) => {
           : "تمت معالجة الطلب بنجاح",
       data: {
         content:names,
-        pagination: {
-          page: page,
-          totalPages: Math.ceil(totalCount / limit),
-        },
       },
     });
   } catch (error) {

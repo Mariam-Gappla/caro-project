@@ -40,7 +40,7 @@ const addCar = async (req, res, next) => {
                 images: imagePaths,
                 nameId:req.body.nameId,
                 modelId:req.body.modelId,
-                carType: req.body.carType,
+                carTypeId: req.body.carTypeId,
                 licensePlateNumber: req.body.licensePlateNumber,
                 freeKilometers: req.body.freeKilometers,
                 pricePerFreeKilometer: req.body.pricePerFreeKilometer,
@@ -71,7 +71,7 @@ const addCar = async (req, res, next) => {
                 images: imagePaths,
                 nameId:req.body.nameId,
                 modelId:req.body.modelId,
-                carType: req.body.carType,
+                carTypeId: req.body.carTypeId,
                 licensePlateNumber: req.body.licensePlateNumber,
                 carPrice: req.body.carPrice,
                 monthlyPayment: req.body.monthlyPayment,
@@ -140,7 +140,7 @@ const getCarById = async (req, res, next) => {
         const carId = req.params.id;
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang);
-        const car = await carRental.find({ _id: carId });
+        const car = await carRental.find({ _id: carId }).populate("carTypeId").populate("nameId").populate("modelId");
         console.log(car)
         if (!car) {
             return res.status(400).send({
@@ -153,7 +153,10 @@ const getCarById = async (req, res, next) => {
         console.log(name)
         const model=Model.findOne({_id:car[0].modelId});
         const formatedData={
-          ...car,
+          ...car.toObject(),
+          carType:car.carTypeId.type,
+          model:car.modelId.name,
+          carName:car.nameId.carName,
           title:lang=="ar"?`تأجير سياره ${name.carName+" "+model.modelName}`:`Renting a car ${name.carName+" "+model.modelName}`,
         }
         return res.status(200).send({

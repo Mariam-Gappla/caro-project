@@ -4,7 +4,7 @@ const addType = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const { type } = req.body;
         await carType.create({
-            carName: type
+            type: type
         });
         return res.send({
             status: true,
@@ -32,7 +32,7 @@ const getTypes = async (req, res, next) => {
         // تغيير شكل النتائج
         const types = rawTypes.map((n) => ({
             id: n._id,
-            text: n.carType, // لو اسم الحقل مختلف غيره هنا
+            text: n.type, // لو اسم الحقل مختلف غيره هنا
         }));
 
         return res.send({
@@ -43,11 +43,7 @@ const getTypes = async (req, res, next) => {
                     ? "Your request has been completed successfully"
                     : "تمت معالجة الطلب بنجاح",
             data: {
-                content: names,
-                pagination: {
-                    page: page,
-                    totalPages: Math.ceil(totalCount / limit),
-                },
+                content: types,
             },
         });
     } catch (error) {

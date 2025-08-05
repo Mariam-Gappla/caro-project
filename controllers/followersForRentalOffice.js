@@ -86,7 +86,14 @@ const getFollowersForRentalOffice = async (req, res, next) => {
             return res.status(404).send({
                 status: false,
                 code: 404,
-                message: messages.follower.noFollowers
+                message: messages.follower.noFollowers,
+                data: {
+                followers: followers,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limit),
+                }
+            }
             });
         }
 

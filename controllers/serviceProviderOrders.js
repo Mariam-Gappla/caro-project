@@ -86,7 +86,13 @@ const getOrdersbyServiceType = async (req, res, next) => {
         status: true,
         code: 200,
         message: lang === 'ar' ? "لا توجد طلبات" : "No orders found",
-        data: []
+        data: {
+          orders: [],
+          pagination: {
+            Page: page,
+            totalPages: Math.ceil(totalOrders / limit),
+          }
+        }
       });
     }
 
@@ -128,7 +134,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
         formattedOrders.push({
           id: order._id,
           userId: order.userId._id,
-          location:order.location,
+          location: order.location,
           username: order.userId.username,
           image: order.userId.image,
           serviceType: order.serviceType,
@@ -157,7 +163,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
         formattedOrders.push({
           id: order._id,
           username: order.userId.username,
-          location:order.location,
+          location: order.location,
           userId: order.userId._id,
           image: order.userId.image,
           serviceType: order.serviceType,
@@ -301,9 +307,9 @@ const getUserMakeOrderandRating = async (req, res, next) => {
       .populate('userId', 'username image');
 
     if (!order) {
-      return res.status(200).send({
-        status: true,
-        code: 200,
+      return res.status(404).send({
+        status: false,
+        code: 404,
         message:
           lang === 'ar' ? 'لم يتم العثور على الطلب' : 'Order not found',
       });
@@ -368,9 +374,9 @@ const changeStatusForOrder = async (req, res, next) => {
 
     const order = await serviceProviderOrder.findById(orderId);
     if (!order) {
-      return res.status(400).json({
+      return res.status(404).json({
         status: false,
-        code: 400,
+        code: 404,
         message: lang === 'ar' ? "الطلب غير موجود" : "Order not found"
       });
     }

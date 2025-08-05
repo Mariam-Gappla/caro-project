@@ -78,9 +78,6 @@ const getRepliesOnComment = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
 module.exports = {
     addReply,
     getRepliesOnComment

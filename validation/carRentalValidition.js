@@ -18,7 +18,7 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
     })).messages({
       'array.base': messages.images.base
     }),
-    carType: Joi.string().required().messages({
+    carTypeId: Joi.string().required().messages({
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
@@ -94,7 +94,7 @@ const rentToOwnSchema = (lang = "en") => {
         'string.base': messages.ownershipPeriod.base
       }),
 
-    carType: Joi.string().required().messages({
+   carTypeId: Joi.string().required().messages({
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
@@ -173,7 +173,7 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
       'array.base': messages.images.base
     }),
 
-    carType: Joi.string().optional().messages({
+    carTypeId: Joi.string().optional().messages({
       'string.base': messages.carType.string,
     }),
     
@@ -249,7 +249,7 @@ const rentToOwnUpdateSchema = (lang = "en") => {
       .messages({
         'string.base': messages.ownershipPeriod.base
       }),
-    carType: Joi.string().optional().messages({
+    carTypeId: Joi.string().optional().messages({
       'string.base': messages.carType.string,
     }),
     licensePlateNumber: Joi.string().optional().messages({

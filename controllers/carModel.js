@@ -56,16 +56,16 @@ const getModels = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
 
-    const { brandId, carTypeId } = req.body;
+    const { carNameId, carTypeId } = req.body;
 
-    if (!brandId || !carTypeId) {
+    if (!carNameId|| !carTypeId) {
       const message = lang === 'ar'
         ? 'يجب إرسال اسم السيارة ونوع السيارة.'
         : 'Car name and car type are required.';
       return res.status(400).json({ status: false, code: 400, message });
     }
 
-    const models = await carModel.find({ brandId, carTypeId });
+    const models = await carModel.find({ carNameId, carTypeId });
 
     const formattedModels = models.map(model => ({
       id: model._id,
@@ -78,6 +78,7 @@ const getModels = async (req, res, next) => {
 
     return res.status(200).json({
       status: true,
+      code:200,
       message,
       data: formattedModels
     });
