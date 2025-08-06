@@ -97,25 +97,40 @@ const getRentalOfficeProfile = async (req, res, next) => {
                 const model = await Model.findOne({ _id: car.modelId });
 
                 let title;
-                if (car.rentalType === "weekly/daily") {
+                if (rentalType === "weekly/daily") {
                     title =
                         lang === "ar"
-                            ? `تأجير سيارة ${name?.carName || ""} ${model?.modelName || ""}`
-                            : `Renting a car ${name?.carName || ""} ${model?.modelName || ""}`;
+                            ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
+                            : `Renting a car ${name?.carName || ""} ${model?.name || ""}`;
+                    return {
+                        title,
+                        rentalType: "weekly/daily",
+                        image: car.images[0],
+                        carDescription: car.carDescription,
+                        city: car.city,
+                        odoMeter: car.odoMeter,
+                        price: car.pricePerFreeKilometer ?? car.pricePerExtraKilometer,
+                    };
                 } else {
                     title =
                         lang === "ar"
-                            ? `تملك سيارة ${name?.carName || ""} ${model?.modelName || ""}`
-                            : `Owning a car ${name?.carName || ""} ${model?.modelName || ""}`;
+                            ? `تملك سيارة ${name?.carName || ""} ${model?.name || ""}`
+                            : `Owning a car ${name?.carName || ""} ${model?.name || ""}`;
+                    return {
+                        title,
+                         rentalType: "rent to own",
+                        image: car.images[0],
+                        model: model.name,
+                        carDescription: car.carDescription,
+                        city: car.city,
+                        odoMeter: car.odoMeter,
+                        price: car.carPrice,
+                        monthlyPayment: car.monthlyPayment,
+                        finalPayment: car.finalPayment
+                    };
                 }
 
-                return {
-                    title,
-                    carDescription: car.carDescription,
-                    city: car.city,
-                    odoMeter: car.odoMeter,
-                    price: car.pricePerFreeKilometer ?? car.pricePerExtraKilometer,
-                };
+
             })
         );
 

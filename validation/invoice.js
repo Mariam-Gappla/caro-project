@@ -18,11 +18,6 @@ const invoiceSchema = (lang = "en") => {
       "string.empty": messages.invoice.orderId.required,
       "any.required": messages.invoice.orderId.required,
     }),
-
-    amount: Joi.number().required().messages({
-      "number.base": messages.invoice.amount.number,
-      "any.required": messages.invoice.amount.required,
-    }),
     date: Joi.date().optional(), 
   });
 };

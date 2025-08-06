@@ -1,5 +1,8 @@
 const counter = require("../models/counter");
 const invoice = require("../models/invoice");
+const Name = require("../models/carName");
+const carRental=require("../models/carRental")
+const Model = require("../models/carModel");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
@@ -13,9 +16,9 @@ const addinvoice = async (req, res, next) => {
         if (error) {
             return res.status(400).send({ message: error.details[0].message });
         }
-
+        console.log(messages.invoice.invalidRentalType)
         const { userId, rentalOfficeId, orderId } = req.body;
-
+        const order=await rentalOfficeOrder.findOne({_id:orderId})
         const existingInvoice = await invoice.findOne({
             userId,
             rentalOfficeId,
@@ -54,17 +57,9 @@ const addinvoice = async (req, res, next) => {
             });
         }
 
-        // ✅ تحقق من rentalType
-        if (!["daily", "weekly"].includes(car.rentalType)) {
-            return res.status(400).send({
-                code: 400,
-                status: false,
-                message: messages.invoice.invalidRentalType,
-            });
-        }
 
         const count = await counter.findOneAndUpdate(
-            { _id: "invoice" },
+            { name: "invoice" },
             { $inc: { seq: 1 } },
             { returnDocument: "after", upsert: true }
         );
@@ -78,7 +73,7 @@ const addinvoice = async (req, res, next) => {
             userId,
             rentalOfficeId,
             orderId,
-            amount: req.body.amount,
+            amount: order.totalCost,
         });
 
         res.status(200).send({
@@ -148,28 +143,77 @@ const getRevenue = async (req, res, next) => {
         next(err);
     }
 };
-
 const getRevenueById = async (req, res, next) => {
-  try {
-    const revenuId = req.params.id;
-     const lang = req.headers["accept-language"] || "en";
-    const revenuDetails = await invoice.find({ _id: revenuId })
-      .populate({
-        path: "orderId",
-        populate: {
-          path: "carId" // 👈 دي اللي انتي عايزاها
-        }
-      });
+    try {
+        const revenuId = req.params.id;
+        const lang = req.headers["accept-language"] || "en";
+        const revenuDetails = await invoice.findOne({ _id: revenuId })
+            .populate({
+                path: "orderId",
+                populate: {
+                    path: "carId" // 👈 دي اللي انتي عايزاها
+                }
+            });
+        const name = await Name.findOne({ _id:  revenuDetails.orderId.carId.nameId });
+        const model = await Model.findOne({ carNameId:  revenuDetails.orderId.carId.nameId });
+        let formatedInvoice;
+        if (revenuDetails.orderId.carId.rentalType == "weekly/daily") {
+            formatedInvoice = {
+                rentalType: revenuDetails.orderId.carId.rentalType,
+                image: revenuDetails.orderId.carId.images[0],
+                title: lang == "ar" ? `تأجير سياره ${name.carName + " " + model.name}` : `Renting a car ${name.carName + " " + model.name}`,
+                carDescription: revenuDetails.orderId.carId.carDescription,
+                model: model.name,
+                odoMeter: revenuDetails.orderId.carId.odoMeter,
+                licensePlateNumber: revenuDetails.orderId.carId.licensePlateNumber,
+                city: revenuDetails.orderId.carId.city,
+                area: revenuDetails.orderId.carId.area,
+                revenuNumber: revenuDetails.invoiceNumber,
+                startDate: revenuDetails.orderId.startDate,
+                endDate: revenuDetails.orderId.endDate,
+                paymentStatus: revenuDetails.orderId.paymentStatus,
+                deliveryOption: revenuDetails.carId.deliveryOption,
+                totalCost: revenuDetails.orderId.totalCost,
+                price: revenuDetails.carId.priceType == "open_km" ? revenuDetails.carId.pricePerFreeKilometer : revenuDetails.carId.pricePerExtraKilometer,
 
-    return res.send({ 
-        status:true,
-        code:200,
-         message: lang === "en" ? "Invoice fetched successfully" : "تم جلب الفاتوره بنجاح",
-        data:revenuDetails
-     });
-  } catch (error) {
-    next(error);
-  }
+            }
+
+        }
+        else {
+            formatedInvoice = {
+                rentalType: revenuDetails.orderId.carId.rentalType,
+                image: revenuDetails.orderId.carId.images[0],
+                title: lang === "ar" ? `تملك سيارة ${name.carName} ${model.name}` : `Owning a car ${name.carName} ${model.name}`,
+                carDescription: revenuDetails.orderId.carId.carDescription,
+                model: model.name,
+                odoMeter: revenuDetails.orderId.carId.odoMeter,
+                city: revenuDetails.orderId.carId.city,
+                paymentStatus: revenuDetails.orderId.paymentStatus,
+                totalCost: revenuDetails.orderId.totalCost,
+                monthlyPayment: revenuDetails.orderId.monthlyPayment,
+                price: revenuDetails.orderId.carId.carPrice,
+                finalPayment: revenuDetails.orderId.carId.finalPayment,
+                licensePlateNumber: revenuDetails.orderId.carId.licensePlateNumber,
+                city: revenuDetails.orderId.carId.city,
+                area: revenuDetails.orderId.carId.area,
+                revenuNumber: revenuDetails.invoiceNumber,
+                deliveryOption: revenuDetails.orderId.carId.deliveryOption,
+                startDate: revenuDetails.orderId.startDate
+
+
+
+            }
+
+        }
+        return res.send({
+            status: true,
+            code: 200,
+            message: lang === "en" ? "Invoice fetched successfully" : "تم جلب الفاتوره بنجاح",
+            data: formatedInvoice
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 module.exports = {

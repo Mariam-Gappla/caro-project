@@ -40,12 +40,12 @@ const getOrdersbyServiceType = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const providerId = req.user.id;
-    console.log("providerId", providerId);
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const activeSession = await workSession.findOne({ providerId, isWorking: true });
 
+    const activeSession = await workSession.findOne({ providerId, isWorking: true });
     if (!activeSession) {
       return res.status(400).send({
         status: false,
@@ -53,7 +53,11 @@ const getOrdersbyServiceType = async (req, res, next) => {
         message: lang === 'ar' ? "مزود الخدمة غير نشط حالياً" : "Service provider is not currently active"
       });
     }
-    const verificationAccount = await winsh.findOne({ providerId }) || await tire.findOne({ providerId });
+
+    const verificationAccount =
+      await winsh.findOne({ providerId }) ||
+      await tire.findOne({ providerId });
+
     const provider = await serviceProvider.findOne({ _id: providerId });
 
     if (!verificationAccount) {
@@ -64,15 +68,15 @@ const getOrdersbyServiceType = async (req, res, next) => {
       });
     }
 
-    let filter = {};
+    let filter = {
+      status: "pending",
+      ended: false
+    };
+
     if (verificationAccount.serviceType === "tire Filling and battery Jumpstart") {
       filter.serviceType = { $in: ['tire Filling', 'battery Jumpstart'] };
-      filter.status = "pending"
-      filter.ended = false
     } else {
       filter.serviceType = verificationAccount.serviceType;
-      filter.status = "pending"
-      filter.ended = false
     }
 
     const totalOrders = await serviceProviderOrder.countDocuments(filter);
@@ -80,7 +84,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
       .skip(skip)
       .limit(limit)
       .populate('userId', 'username image');
-    console.log(orders)
+
     if (!orders || orders.length === 0) {
       return res.status(200).json({
         status: true,
@@ -89,8 +93,8 @@ const getOrdersbyServiceType = async (req, res, next) => {
         data: {
           orders: [],
           pagination: {
-            Page: page,
-            totalPages: Math.ceil(totalOrders / limit),
+            page,
+            totalPages: 0,
           }
         }
       });
@@ -99,9 +103,10 @@ const getOrdersbyServiceType = async (req, res, next) => {
     const formattedOrders = [];
 
     for (let order of orders) {
+      // حساب متوسط تقييم المستخدم
       const ratingDocs = await providerRating.find({ userId: order.userId._id });
       const totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
-      const avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : 0;
+      const avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
 
       let distanceToCar = null;
       let distanceToDropoff = null;
@@ -133,18 +138,21 @@ const getOrdersbyServiceType = async (req, res, next) => {
 
         formattedOrders.push({
           id: order._id,
-          userId: order.userId._id,
-          location: order.location,
-          username: order.userId.username,
+          userData:{
+            id:order.userId._id,
+             username: order.userId.username,
+             image:order.userId.image,
+             averageRating: avgRating,
+          },
           image: order.userId.image,
           serviceType: order.serviceType,
           payment: order.payment,
           paymentType: order.paymentType,
           price: order.price,
           createdAt: order.createdAt,
-          averageRating: avgRating,
           distanceToCar: distanceToCar ? `${distanceToCar} km` : "",
           distanceToDropoff: distanceToDropoff ? `${distanceToDropoff} km` : "",
+          location: order.location
         });
 
       } else {
@@ -162,17 +170,21 @@ const getOrdersbyServiceType = async (req, res, next) => {
 
         formattedOrders.push({
           id: order._id,
+         userData:{
+            id:order.userId._id,
+             username: order.userId.username,
+             image:order.userId.image,
+             averageRating: avgRating,
+          },
           username: order.userId.username,
-          location: order.location,
-          userId: order.userId._id,
           image: order.userId.image,
           serviceType: order.serviceType,
           payment: order.payment,
           paymentType: order.paymentType,
           price: order.price,
           createdAt: order.createdAt,
-          averageRating: avgRating,
           distance: distanceToCar ? `${distanceToCar} km` : "",
+          location: order.location
         });
       }
     }
@@ -184,11 +196,10 @@ const getOrdersbyServiceType = async (req, res, next) => {
       data: {
         orders: formattedOrders,
         pagination: {
-          Page: page,
+          page,
           totalPages: Math.ceil(totalOrders / limit),
         }
-
-      },
+      }
     });
 
   } catch (err) {
@@ -296,58 +307,6 @@ const addTireOrder = async (req, res, next) => {
     next(err);
   }
 }
-const getUserMakeOrderandRating = async (req, res, next) => {
-  try {
-    const lang = req.headers['accept-language'] || 'en';
-    const orderId = req.params.id;
-
-    // 1. هات الأوردر بالمستخدم
-    const order = await serviceProviderOrder
-      .findOne({ _id: orderId })
-      .populate('userId', 'username image');
-
-    if (!order) {
-      return res.status(404).send({
-        status: false,
-        code: 404,
-        message:
-          lang === 'ar' ? 'لم يتم العثور على الطلب' : 'Order not found',
-      });
-    }
-
-    // 2. احسب المتوسط من تجميعة providerRating
-    const ratingAgg = await providerRating.aggregate([
-      { $match: { userId: order.userId._id } },
-      {
-        $group: {
-          _id: '$userId',
-          averageRating: { $avg: '$rating' },
-        },
-      },
-    ]);
-
-    const avgRating = ratingAgg.length > 0 ? ratingAgg[0].averageRating : 0;
-
-    // 3. التنسيق النهائي
-    const formatedData = {
-      username: order.userId.username,
-      image: order.userId.image,
-      rating: Number(avgRating.toFixed(1)), // مثل: 4.5
-    };
-
-    return res.status(200).send({
-      status: true,
-      code: 200,
-      message:
-        lang === 'ar'
-          ? 'تم استرجاع التقييم بنجاح'
-          : 'Rating retrieved successfully',
-      data: formatedData,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
 const changeStatusForOrder = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -617,22 +576,34 @@ const getOrderById = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const providerId = req.user.id;
-    console.log(providerId)
-    const order = await serviceProviderOrder.findOne({ _id: req.params.id, providerId: providerId });
+
+    const order = await serviceProviderOrder.findOne({ _id: req.params.id, providerId });
     if (!order) {
       return res.status(400).send({
         status: false,
         code: 400,
         message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
-      })
+      });
     }
+
     const user = await User.findOne({ _id: order.userId });
-    let formattedOrder = {}
-    if (order.serviceType == "tire Filling" || order.serviceType == "battery Jumpstart") {
+
+    // ✅ حساب متوسط التقييم
+    const ratingDocs = await providerRating.find({ userId: user._id });
+    const totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
+    const avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
+
+    let formattedOrder = {};
+    if (order.serviceType === "tire Filling" || order.serviceType === "battery Jumpstart") {
       formattedOrder = {
         id: order._id,
         orderNumber: order.orderNumber,
-        userId: order.userId,
+        userData: {
+          userId: user._id,
+          image: user.image,
+          username: user.username,
+          avgRating: avgRating,
+        },
         location: order.location,
         createdAt: order.createdAt,
         image: order.image,
@@ -642,16 +613,19 @@ const getOrderById = async (req, res, next) => {
         details: order.details,
         userLocation: user.location,
         paymentType: order.paymentType
-
-      }
-    }
-    else {
+      };
+    } else {
       formattedOrder = {
         id: order._id,
         orderNumber: order.orderNumber,
         createdAt: order.createdAt,
         image: order.image,
-        userId: order.userId,
+        userData: {
+          userId: user._id,
+          image: user.image,
+          username: user.username,
+          avgRating: avgRating,
+        },
         location: order.location,
         paymentStatus: order.paymentStatus,
         price: order.price,
@@ -660,22 +634,21 @@ const getOrderById = async (req, res, next) => {
         paymentType: order.paymentType,
         dropoffLocation: order.dropoffLocation,
         serviceType: order.serviceType
-      }
-
+      };
     }
+
     return res.status(200).send({
       status: true,
       code: 200,
-      message: lang == "en" ? "order retrieved " : "تم استرجاع الطلب بنجاح",
+      message: lang === "en" ? "Order retrieved" : "تم استرجاع الطلب بنجاح",
       data: formattedOrder
-    })
+    });
 
+  } catch (error) {
+    next(error);
   }
-  catch (error) {
-    next(error)
-  }
+};
 
-}
 const endOrder = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -755,7 +728,6 @@ const endOrder = async (req, res, next) => {
 module.exports = {
   addWinchOrder,
   addTireOrder,
-  getUserMakeOrderandRating,
   getOrdersbyServiceType,
   changeStatusForOrder,
   ordersAndProfit,

@@ -22,7 +22,7 @@ const rentalOfficeOrderSchema = (lang = "en") => {
       "date.base": msg.endDate.date
     }),
 
-    paymentMethod: Joi.string().required().messages({
+    paymentMethod: Joi.string().valid("cash","online").required().messages({
       "any.required": msg.paymentMethod.required,
       "any.only": msg.paymentMethod.valid
     }),

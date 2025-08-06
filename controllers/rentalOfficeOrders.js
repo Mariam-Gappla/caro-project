@@ -1,13 +1,13 @@
 const rentalOfficeOrders = require("../models/rentalOfficeOrders");
 const CarRental = require("../models/carRental");
-const CarType=require("../models/carType");
+const CarType = require("../models/carType");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
 const Revenu = require("../models/invoice");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
-const Model = require("../models/carType");
+const Model = require("../models/carModel");
 const path = require("path");
 const mongoose = require('mongoose');
 const fs = require("fs");
@@ -203,18 +203,29 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang);
         const now = new Date();
+        const paymentStatusTranslations = {
+            en: {
+                ended: "Ended",
+                inProgress: "inProgress",
+                paid: "Paid"
+            },
+            ar: {
+                ended: "منتهي",
+                inProgress: "قيد الانتظار",
+                paid: "مدفوع"
+            }
+        };
 
         // Step 1: تحديث الحالات القديمة
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId, isAvailable: true }).populate('carId');
+        const orders = await rentalOfficeOrder.find({ rentalOfficeId }).populate('carId');
 
         updateOrderStatuses(orders)
 
         // Step 2: تجهيز الفلتر للطلبات المطلوبة
-        let filters = { rentalOfficeId, isAvailable: true };
+        let filters = { rentalOfficeId };
 
-        if (status === "pending") {
-            filters.status = "pending";
-        } else if (status === "accepted") {
+
+        if (status === "accepted") {
             filters.status = "accepted";
         } else if (status === "ended") {
             filters.ended = true;
@@ -232,7 +243,9 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         const formattedOrders = await Promise.all(
             ordersupdated.map(async (order) => {
                 const { carId, ...rest } = order;
-
+                const paymentStatus = rest.ended === true ? "ended" : rest.paymentStatus;
+                console.log(paymentStatusTranslations[lang])
+                const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
                 // تأكد من أن name و model يتم جلبهم بشكل صحيح
                 const name = await Name.findOne({ _id: carId.nameId });
                 const model = await Model.findOne({ _id: carId.modelId });
@@ -241,14 +254,15 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تأجير سيارة ${name?.carName || ""} ${model?.modelName || ""}`
-                            : `Renting a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                            ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
+                            : `Renting a car ${name?.carName || ""} ${model?.name || ""}`,
                         startDate: rest.startDate,
                         endDate: rest.endDate,
                         rentalType: carId.rentalType,
                         city: carId.city,
                         totalCost: rest.totalCost,
-                        paymentStatus:order.ended==true? "ended": order.paymentStatus,
+                        paymentStatus: order.ended == true ? "ended" : order.paymentStatus,
+                         paymentStatusText: paymentStatusText
                     };
                 } else {
                     return {
@@ -260,7 +274,8 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                         rentalType: carId.rentalType,
                         totalCost: rest.totalCost,
                         city: carId.city,
-                        paymentStatus:order.ended==true? "ended": order.paymentStatus,
+                        paymentStatus: order.ended == true ? "ended" : order.paymentStatus,
+                         paymentStatusText: paymentStatusText
                     };
                 }
             })
@@ -375,34 +390,55 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         next(err);
     }
 };
-
 const getOrderById = async (req, res, next) => {
     try {
         const orderId = req.params.orderId;
         const lang = req.headers['accept-language'] || 'en';
         const messages = getMessages(lang);
+
+        // ترجمة paymentStatus حسب اللغة
+        const paymentStatusTranslations = {
+            en: {
+                ended: "Ended",
+                inProgress: "inProgress",
+                paid: "Paid"
+            },
+            ar: {
+                ended: "منتهي",
+                inProgress: "قيد الانتظار",
+                paid: "مدفوع"
+            }
+        };
+
         if (!orderId) {
             return res.status(400).send({
                 status: false,
                 code: 400,
                 message: messages.order.orderId
-            })
+            });
         }
+
         const rawComments = await rentalOfficeOrder.findById({ _id: orderId }).populate('carId');
-        let formattedOrder
+        let formattedOrder;
+
         const { carId, ...rest } = rawComments.toObject();
         const name = await Name.findOne({ _id: carId.nameId });
-        console.log(name)
-        console.log(carId)
-        const model = await Model.findOne({ _id: carId.modelId });
-        console.log(model)
+        const model = await Model.findOne({ carNameId: carId.nameId });
+
+        // تحديد قيمة paymentStatus الفعلية
+        const paymentStatus = rest.ended === true ? "ended" : rest.paymentStatus;
+        console.log(paymentStatusTranslations[lang])
+        const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
+
         if (carId.rentalType == "weekly/daily") {
             formattedOrder = {
-                title: lang == "ar" ? `تأجير سياره ${name.carName + " " + model.modelName}` : `Renting a car ${name.carName + " " + model.modelName}`,
+                title: lang == "ar"
+                    ? `تأجير سياره ${name.carName + " " + model.name}`
+                    : `Renting a car ${name.carName + " " + model.name}`,
                 rentalType: carId.rentalType,
                 images: carId.images,
                 carDescription: carId.carDescription,
-                carModel: carId.carModel,
+                carModel: model,
                 city: carId.city,
                 odoMeter: carId.odoMeter,
                 licensePlateNumber: carId.licensePlateNumber,
@@ -411,46 +447,52 @@ const getOrderById = async (req, res, next) => {
                 pickupLocation: rest.pickupLocation,
                 licenseImage: rest.licenseImage,
                 priceType: rest.priceType,
-                paymentStatus:rest.ended==true? "ended": rest.paymentStatus,
-                price: rest.priceType == "open_km" ? carId.pricePerExtraKilometer : carId.pricePerFreeKilometer,
-                video:carId.videoCar?carId.videoCar:""
-            }
-        }
-        else if (carId.rentalType == "rent to own") {
+                paymentStatus: paymentStatus,
+                paymentStatusText: paymentStatusText,
+                price:
+                    rest.priceType == "open_km"
+                        ? carId.pricePerExtraKilometer
+                        : carId.pricePerFreeKilometer,
+                video: carId.videoCar ? carId.videoCar : ""
+            };
+        } else if (carId.rentalType == "rent to own") {
             formattedOrder = {
-                title: lang === "ar" ? `تملك سيارة ${name.carName} ${model.modelName}` : `Owning a car ${name.carName} ${model.modelName}`,
+                title: lang === "ar"
+                    ? `تملك سيارة ${name.carName} ${model.name}`
+                    : `Owning a car ${name.carName} ${model.name}`,
                 rentalType: carId.rentalType,
                 images: carId.images,
                 carDescription: carId.carDescription,
                 ownershipPeriod: carId.ownershipPeriod,
-                carPrice: carId.carPrice,
+                price: carId.carPrice,
                 finalPayment: carId.finalPayment,
                 carModel: carId.carModel,
                 city: carId.city,
                 odoMeter: carId.odoMeter,
                 licensePlateNumber: carId.licensePlateNumber,
                 startDate: rest.startDate,
-                paymentStatus:rest.ended==true? "ended": rest.paymentStatus,
+                paymentStatus: paymentStatus,
+                paymentStatusText: paymentStatusText,
                 licenseImage: rest.licenseImage,
-                video:carId.videoCar?carId.videoCar:""
-            }
+                video: carId.videoCar ? carId.videoCar : ""
+            };
         }
+
         return res.status(200).send({
             status: true,
             code: 200,
-            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+            message:
+                lang == "en"
+                    ? "Your request has been completed successfully"
+                    : "تمت معالجة الطلب بنجاح",
             data: {
-                ...formattedOrder
-
+                order: { ...formattedOrder }
             }
-        })
-
-
+        });
+    } catch (error) {
+        next(error);
     }
-    catch (error) {
-        next(error)
-    }
-}
+};
 const acceptorder = async (req, res, next) => {
     try {
         const orderId = req.params.orderId;
@@ -569,7 +611,7 @@ const getOrders = async (req, res, next) => {
         const messages = getMessages(lang);
         const rentalOfficeId = req.user.id;
         const now = new Date();
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId, isAvailable: true }).populate('carId');
+        const orders = await rentalOfficeOrder.find({ rentalOfficeId }).populate('carId');
         updateOrderStatuses(orders)
         // الطلبات التي تم تسليمها
         const deliveredOrders = await rentalOfficeOrder.find({ isDelivered: true, rentalOfficeId: rentalOfficeId });
@@ -671,10 +713,10 @@ const getOrdersByRentalOffice = async (req, res, next) => {
         const messages = getMessages(req.headers['accept-language'] || 'en');
 
         // استعلام بعدد الطلبات
-        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId, isAvailable: true });
+        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId });
 
         // جلب الطلبات ومعاها carId
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId, isAvailable: true })
+        const orders = await rentalOfficeOrder.find({ rentalOfficeId })
             .populate('carId') // جلب بيانات العربية
             .skip(skip)
             .limit(limit)
@@ -701,8 +743,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                 const { carId, ...rest } = order;
 
                 const name = await Name.findOne({ _id: carId.nameId });
-                const model = await Model.findOne({ _id: carId.modelId });
-
+                const model = await Model.findOne({ carNameId: carId.nameId });
                 if (carId.rentalType == "weekly/daily") {
                     const diffInDays = Math.ceil(
                         (new Date(rest.endDate) - new Date(rest.startDate)) / (1000 * 60 * 60 * 24)
@@ -711,8 +752,8 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تأجير سيارة ${name?.carName || ""} ${model?.modelName || ""}`
-                            : `Renting a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                            ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
+                            : `Renting a car ${name?.carName || ""} ${model?.name || ""}`,
                         orderType: "nonOwnership",
                         image: carId.images?.[0],
                         licensePlateNumber: carId.licensePlateNumber,
@@ -725,24 +766,27 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                                 ? carId.freeKilometers * carId.pricePerFreeKilometer
                                 : carId.pricePerExtraKilometer,
                         deliveryType: rest.deliveryType,
-                        paymentMethod: rest.paymentMethod
+                        paymentMethod: rest.paymentMethod,
+                        carModel: model.name
                     };
                 } else {
-                    const type= await CarType.findOne({_id:carId.carTypeId})
+                    const type = await CarType.findOne({ _id: carId.carTypeId })
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تملك سيارة ${name?.carName || ""} ${model?.modelName || ""}`
-                            : `Owning a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                            ? `تملك سيارة ${name?.carName || ""} ${model?.name || ""}`
+                            : `Owning a car ${name?.carName || ""} ${model?.name || ""}`,
                         orderType: "Ownership",
                         image: carId.images?.[0],
                         licensePlateNumber: carId.licensePlateNumber,
                         monthlyPayment: carId.monthlyPayment,
-                        finalPayment: carId.finalPayment,
+                        odoMeter: carId.odoMeter,
+                        price: carId.carPrice,
                         carName: carId.carName,
-                        carType: type,
-                        carModel: carId.carModel,
-                        odoMeter: carId.odoMeter
+                        carModel: model.name,
+                        odoMeter: carId.odoMeter,
+                        deliveryType: rest.deliveryType,
+                        paymentMethod: rest.paymentMethod
                     };
                 }
             })
@@ -766,41 +810,40 @@ const getOrdersByRentalOffice = async (req, res, next) => {
         next(error);
     }
 };
-const isAvailable = async (req, res, next) => {
+const endOrder = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const rentalOfficeId = req.user.id;
-        console.log(rentalOfficeId)
         const orderId = req.params.id;
-        const available = req.query.available;
-        console.log(available)
-        if (!orderId) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang == "en" ? "orderId is required" : "رقم الطلب مطلوب"
-            });
-
+        const order = await rentalOfficeOrder.findOne({ _id: orderId });
+        if (order.paymentMethod == "cash") {
+            order.ended = true
+            await order.save()
         }
-        if (!available) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang == "en" ? "available is required and must be boolean" : "قيمه التوفر يجب ان true or false"
-            });
+        else if (order.paymentMethod == "online") {
+            if (order.paymentStatus == "paid") {
+                order.ended = true
+                await order.save()
+                res.status(200).send({
+                    status: true,
+                    code: 200,
+                    message: lang == "en" ? "order ended succesfully" : "تم انهاء الاوردر بنجاح"
+                })
+            }
+            else {
+                res.status(200).send({
+                    status: true,
+                    code: 200,
+                    message: lang == "en" ? "you can not end order because order unpaid" : "لا تستطيع انهاء الاوردر لانه لم يتم الدفع"
+                })
 
+            }
         }
-        await rentalOfficeOrder.findByIdAndUpdate(orderId, { isAvailable: available }, { new: true });
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            message: lang === 'ar' ? 'تم التحديث بنجاح' : 'Updated successfully',
-        });
     }
     catch (error) {
         next(error)
     }
 }
+
 
 module.exports = {
     addOrder,
@@ -812,7 +855,7 @@ module.exports = {
     getOrders,
     getBookedDays,
     getOrdersByRentalOffice,
-    isAvailable
+    endOrder
 }
 
 

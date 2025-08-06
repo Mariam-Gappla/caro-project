@@ -27,7 +27,7 @@ const messages = {
     },
     paymentMethod: {
       required: "Payment method is required",
-      valid: "Payment method must be a valid value",
+      valid: "Payment method must be either cash or online"
     },
     pickupLocation: {
       base: "Invalid location format",
@@ -79,7 +79,7 @@ const messages = {
     },
     paymentMethod: {
       required: "طريقة الدفع مطلوبة",
-      valid: "طريقة الدفع غير صحيحة",
+      valid: "طريقة الدفع يجب أن تكون إما كاش أو أونلاين"
     },
     pickupLocation: {
       base: "تنسيق الموقع غير صحيح",

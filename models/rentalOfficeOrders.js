@@ -29,7 +29,8 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    required: true
+    required: true,
+    enum:["cash","online"]
   },
   pickupLocation: {
     lat: {
@@ -60,10 +61,6 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
   isDelivered: {
     type: Boolean,
     default: false 
-  },
-  isAvailable: {
-    type: Boolean,
-    default: true,
   },
   totalCost:{
     type:Number,
