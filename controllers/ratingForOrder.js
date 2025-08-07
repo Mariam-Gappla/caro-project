@@ -152,16 +152,6 @@ const getratingbyrentalOffice = async (req, res, next) => {
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 });
-        console.log(ratings)
-        if (!ratings || ratings.length === 0) {
-            return res.status(200).send({
-                status: true,
-                code: 200,
-                message: messages.rentalOffice.ratingNotFound,
-                data:[]
-            });
-        }
-
         const customizedRatings = ratings.map(rating => {
             const user = rating.userId.toObject();
             return {

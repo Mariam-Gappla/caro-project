@@ -83,9 +83,9 @@ const getFollowersForRentalOffice = async (req, res, next) => {
             .populate("userId", "username image");
 
         if (!followers || followers.length === 0) {
-            return res.status(404).send({
-                status: false,
-                code: 404,
+            return res.status(200).send({
+                status: true,
+                code: 200,
                 message: messages.follower.noFollowers,
                 data: {
                 followers: followers,

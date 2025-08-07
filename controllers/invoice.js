@@ -209,7 +209,9 @@ const getRevenueById = async (req, res, next) => {
             status: true,
             code: 200,
             message: lang === "en" ? "Invoice fetched successfully" : "تم جلب الفاتوره بنجاح",
-            data: formatedInvoice
+            data: {
+                ...formatedInvoice
+            }
         });
     } catch (error) {
         next(error);

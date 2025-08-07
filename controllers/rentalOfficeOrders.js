@@ -486,7 +486,7 @@ const getOrderById = async (req, res, next) => {
                     ? "Your request has been completed successfully"
                     : "تمت معالجة الطلب بنجاح",
             data: {
-                order: { ...formattedOrder }
+                 ...formattedOrder 
             }
         });
     } catch (error) {
