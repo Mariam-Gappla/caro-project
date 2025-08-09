@@ -111,14 +111,6 @@ const getRevenue = async (req, res, next) => {
             .limit(limit)
             .sort({ issuedAt: -1 }); // اختياري حسب الترتيب
 
-        if (!invoices || invoices.length === 0) {
-            return res.status(404).send({
-                code: 404,
-                status: false,
-                message: messages.invoice.noInvoices
-            });
-        }
-
         const formattedInvoices = invoices.map((inv) => ({
             _id: inv._id,
             invoiceNumber: inv.invoiceNumber,
@@ -133,7 +125,7 @@ const getRevenue = async (req, res, next) => {
             data: {
                 revenue: formattedInvoices,
                 pagination: {
-                    currentPage: page,
+                    page,
                     totalPages: Math.ceil(totalCount / limit),
                 }
             }
