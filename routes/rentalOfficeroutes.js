@@ -5,7 +5,7 @@ router.get("/all",getAllRentallOffice);
 router.get("/overview",getRentalOfficeCar);
 router.get("/profileData",getProfileData)
 router.patch("/Like/:id",addLike);
-router.put("/rentalOffice",editRentalOfficeProfile)
+router.put("/",editRentalOfficeProfile)
 
 
 

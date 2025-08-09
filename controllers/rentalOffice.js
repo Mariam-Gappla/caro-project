@@ -5,7 +5,7 @@ const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
 const Name = require("../models/carName");
 const Model = require("../models/carType");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcrypt");
 const saveImage = (file, folder = 'images') => {
   const fileName = `${Date.now()}-${file.originalname}`;
   const saveDir = path.join(__dirname, '..', folder);
@@ -229,16 +229,14 @@ const editRentalOfficeProfile = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const rentalOfficeId = req.user.id;
-
-        const { username, email, password } = req.body;
         let updateData = {};
 
         // ✅ لو فيه يوزرنيم جديد
-        if (username) updateData.username = username;
+        if (req.body.username) updateData.username = req.body.username;
 
         // ✅ لو فيه إيميل جديد
-        if (email) {
-            const emailExists = await rentalOffice.findOne({ email, _id: { $ne: rentalOfficeId } });
+        if (req.body.email) {
+            const emailExists = await rentalOffice.findOne({ email:req.body.email, _id: { $ne: rentalOfficeId } });
             if (emailExists) {
                 return res.status(400).send({
                     status: false,
@@ -248,19 +246,20 @@ const editRentalOfficeProfile = async (req, res, next) => {
                         : "هذا البريد الإلكتروني مستخدم بالفعل"
                 });
             }
-            updateData.email = email;
+            updateData.email = req.body.email;
         }
 
         // ✅ لو فيه باسورد جديد
-        if (password) {
-            const hashedPassword = await bcrypt.hash(password, 10);
+        if (req.body.password) {
+            const hashedPassword = await bcrypt.hash(req.body.password, 10);
             updateData.password = hashedPassword;
         }
 
         // ✅ لو فيه صورة جديدة
         if (req.file) { 
             const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-            updateData.image = `${BASE_URL}/uploads/${req.file.filename}`;
+            const url=saveImage(file,"images")
+            updateData.image = `${BASE_URL}${url}`;
         }
 
         // ✅ لو مفيش حاجة للتحديث

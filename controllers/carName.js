@@ -2,7 +2,6 @@ const CarName = require("../models/carName")
 const addName = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-    const rentalOfficeId = req.user.id;
     const { name_en, name_ar } = req.body;
 
     if (!name_en || !name_ar) {
@@ -14,7 +13,6 @@ const addName = async (req, res, next) => {
     }
 
     await CarName.create({
-      rentalOfficeId,
       carName: { en: name_en, ar: name_ar }
     });
     return res.send({
@@ -32,8 +30,7 @@ const addName = async (req, res, next) => {
 const getNames = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-    const rentalOfficeId = req.user.id;
-    const rawNames = await CarName.find({ rentalOfficeId });
+    const rawNames = await CarName.find({});
     // تغيير شكل النتائج
     const names = rawNames.map((n) => ({
       id: n._id,

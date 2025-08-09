@@ -2,7 +2,6 @@ const carType = require("../models/carType")
 const addType = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const rentalOfficeId = req.user.id;
         const { nameId, type_en, type_ar } = req.body;
         if (!nameId) {
             return res.status(400).send({
@@ -33,7 +32,6 @@ const addType = async (req, res, next) => {
             });
         }
         await carType.create({
-            rentalOfficeId,
             nameId,
             type: { en: type_en, ar: type_ar }
         });
@@ -63,7 +61,7 @@ const getTypes = async (req, res, next) => {
             });
         }
 
-        const rawTypes = await carType.find({ rentalOfficeId, nameId });
+        const rawTypes = await carType.find({nameId });
 
         // تغيير شكل النتائج
         const types = rawTypes.map((n) => ({

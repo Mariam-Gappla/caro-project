@@ -5,7 +5,6 @@ const CarType = require('../models/carType');
 const addModel = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
-    const rentalOfficeId = req.user.id;
     const { typeId, model_en,model_ar } = req.body;
 
     if (!typeId || !model_ar || !model_en) {
@@ -17,7 +16,6 @@ const addModel = async (req, res, next) => {
     }
 
     await carModel.create({
-      rentalOfficeId,
       typeId,
       model:{
         en:model_en,
@@ -40,8 +38,6 @@ const addModel = async (req, res, next) => {
 const getModels = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
-
-    const rentalOfficeId = req.user.id;
     const { typeId } = req.body;
 
     if (!typeId) {
@@ -52,7 +48,7 @@ const getModels = async (req, res, next) => {
       });
     }
 
-    const carModels = await carModel.find({ rentalOfficeId, typeId });
+    const carModels = await carModel.find({typeId});
     const formattedModels = carModels.map(model => ({
       id: model._id,
       text: lang === 'ar' ? model.model.ar : model.model.en
