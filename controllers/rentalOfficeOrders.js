@@ -262,7 +262,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                         city: carId.city,
                         totalCost: rest.totalCost,
                         paymentStatus: order.ended == true ? "ended" : order.paymentStatus,
-                         paymentStatusText: paymentStatusText
+                        paymentStatusText: paymentStatusText
                     };
                 } else {
                     return {
@@ -275,7 +275,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                         totalCost: rest.totalCost,
                         city: carId.city,
                         paymentStatus: order.ended == true ? "ended" : order.paymentStatus,
-                         paymentStatusText: paymentStatusText
+                        paymentStatusText: paymentStatusText
                     };
                 }
             })
@@ -298,46 +298,35 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         next(err);
     }
 };
-const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
+const getOrdersStatisticsByWeekDay = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
         const lang = req.headers['accept-language'] || 'en';
 
-        // جلب عدد الطلبات الكلي
-        const fullOrders = await rentalOfficeOrder.find({ rentalOfficeId });
-        const cars = await CarRental.find({ rentalOfficeId });
-        const rating = await Rating.find({ rentalOfficeId });
+        // ناخد الشهر والسنة من الكويري أو نستخدم الشهر الحالي
+        let { month, year } = req.query;
 
-        // الإيرادات
-        const revenueResult = await rentalOfficeOrder.aggregate([
-            {
-                $match: {
-                    rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId))
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalRevenue: { $sum: "$totalCost" }
-                }
-            }
-        ]);
-        const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+        // لو مفيش month أو year نجيب القيم الحالية
+        const currentDate = new Date();
+        month = month ? parseInt(month) : currentDate.getMonth() + 1; // JS بيبدأ من 0
+        year = year ? parseInt(year) : currentDate.getFullYear();
 
-        // إحصائيات الطلبات حسب أيام الأسبوع
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 1);
+
         const result = await rentalOfficeOrder.aggregate([
             {
                 $match: {
                     rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId)),
                     date: {
-                        $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-                        $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+                        $gte: startDate,
+                        $lt: endDate
                     }
                 }
             },
             {
                 $addFields: {
-                    weekday: { $dayOfWeek: "$date" } // 1 (Sunday) to 7 (Saturday)
+                    weekday: { $dayOfWeek: "$date" }
                 }
             },
             {
@@ -361,13 +350,11 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
             7: "Saturday"
         };
 
-        // نحول النتيجة إلى كائن للتسهيل
         const statsMap = {};
         result.forEach(r => {
             statsMap[r._id] = r.count;
         });
 
-        // نرجع كل الأيام من 1 إلى 7، ونضع 0 لو مش موجود في aggregate
         const stats = Object.entries(days).map(([key, value]) => ({
             day: value,
             count: statsMap[key] || 0
@@ -376,13 +363,11 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         res.status(200).send({
             status: true,
             code: 200,
-            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+            message: lang === "en" 
+                ? "Your request has been completed successfully" 
+                : "تمت معالجة الطلب بنجاح",
             data: {
                 report: stats,
-                orders: fullOrders.length,
-                cars: cars.length,
-                rating: rating.length,
-                revenu: totalRevenue
             }
         });
 
@@ -390,6 +375,47 @@ const getOrdersForRentalOfficeByWeekDay = async (req, res, next) => {
         next(err);
     }
 };
+const getReportData = async (req, res, next) => {
+    try {
+        const rentalOfficeId = req.user.id;
+        const lang = req.headers['accept-language'] || 'en';
+        const fullOrders = await rentalOfficeOrder.find({ rentalOfficeId });
+        const cars = await CarRental.find({ rentalOfficeId });
+        const rating = await Rating.find({ rentalOfficeId });
+        // الإيرادات
+        const revenueResult = await rentalOfficeOrder.aggregate([
+            {
+                $match: {
+                    rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId))
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalCost" }
+                }
+            }
+        ]);
+        const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+        res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
+            data: {
+                orders: fullOrders.length,
+                cars: cars.length,
+                rating: rating.length,
+                revenu: totalRevenue
+
+            }
+        });
+
+
+    }
+    catch (error) {
+        next(error)
+    }
+}
 const getOrderById = async (req, res, next) => {
     try {
         const orderId = req.params.orderId;
@@ -486,7 +512,7 @@ const getOrderById = async (req, res, next) => {
                     ? "Your request has been completed successfully"
                     : "تمت معالجة الطلب بنجاح",
             data: {
-                 ...formattedOrder 
+                ...formattedOrder
             }
         });
     } catch (error) {
@@ -849,13 +875,14 @@ module.exports = {
     addOrder,
     updateOrderStatuses,
     ordersForRentalOfficewithstatus,
-    getOrdersForRentalOfficeByWeekDay,
+    getOrdersStatisticsByWeekDay,
     getOrderById,
     acceptorder,
     getOrders,
     getBookedDays,
     getOrdersByRentalOffice,
-    endOrder
+    endOrder,
+    getReportData
 }
 
 

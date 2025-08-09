@@ -42,9 +42,8 @@ const getNames = async (req, res, next) => {
         lang === "en"
           ? "Your request has been completed successfully"
           : "تمت معالجة الطلب بنجاح",
-      data: {
-        content:names,
-      },
+      data: names
+      
     });
   } catch (error) {
     next(error);

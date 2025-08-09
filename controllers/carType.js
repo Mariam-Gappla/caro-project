@@ -42,9 +42,7 @@ const getTypes = async (req, res, next) => {
                 lang === "en"
                     ? "Your request has been completed successfully"
                     : "تمت معالجة الطلب بنجاح",
-            data: {
-                content: types,
-            },
+            data: types
         });
     } catch (error) {
         next(error);

@@ -62,7 +62,7 @@ const addLike = async (req, res, next) => {
         next(err);
     }
 }
-const getRentalOfficeProfile = async (req, res, next) => {
+const getRentalOfficeCar = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const messages = getMessages(lang);
 
@@ -103,6 +103,7 @@ const getRentalOfficeProfile = async (req, res, next) => {
                             ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
                             : `Renting a car ${name?.carName || ""} ${model?.name || ""}`;
                     return {
+                        id: car._id,
                         title,
                         rentalType: "weekly/daily",
                         image: car.images[0],
@@ -117,8 +118,9 @@ const getRentalOfficeProfile = async (req, res, next) => {
                             ? `تملك سيارة ${name?.carName || ""} ${model?.name || ""}`
                             : `Owning a car ${name?.carName || ""} ${model?.name || ""}`;
                     return {
+                        id: car._id,
                         title,
-                         rentalType: "rent to own",
+                        rentalType: "rent to own",
                         image: car.images[0],
                         model: model.name,
                         carDescription: car.carDescription,
@@ -134,6 +136,39 @@ const getRentalOfficeProfile = async (req, res, next) => {
             })
         );
 
+
+        // Response
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang === "en"
+                ? "Your request has been completed successfully"
+                : "تمت معالجة الطلب بنجاح",
+            data: {
+                cars: formatedCars,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCars / limit)
+                }
+            }
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+const getProfileData = async (req, res, next) => {
+    try {
+        const lang = req.headers['accept-language'] || 'en';
+        const rentalOfficeId = req.user.id;
+        const existRentalOffice = await rentalOffice.findOne({ _id: rentalOfficeId });
+        if (!existRentalOffice) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.rentalOffice.existRentalOffice
+            });
+        }
 
         // لايكات
         const likes = existRentalOffice.likedBy.length;
@@ -157,8 +192,6 @@ const getRentalOfficeProfile = async (req, res, next) => {
             }
         ]);
         const averageRating = result.length > 0 ? result[0].averageRating.toFixed(1) : 0;
-
-        // Response
         return res.status(200).send({
             status: true,
             code: 200,
@@ -171,21 +204,18 @@ const getRentalOfficeProfile = async (req, res, next) => {
                 rating: averageRating,
                 likes: likes,
                 followers: followersCount,
-                cars: formatedCars,
-                pagination: {
-                    currentPage: page,
-                    totalPages: Math.ceil(totalCars / limit)
-                }
             }
         });
 
-    } catch (err) {
-        next(err);
     }
-};
+    catch (error) {
+        next(error)
+    }
+}
 
 module.exports = {
     getAllRentallOffice,
     addLike,
-    getRentalOfficeProfile
+    getRentalOfficeCar,
+    getProfileData
 }
