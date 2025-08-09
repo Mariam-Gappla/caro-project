@@ -48,7 +48,7 @@ const getModels = async (req, res, next) => {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang === 'ar' ? "الرجاء توفير معرف اسم السيارة" : "Please provide nameId"
+        message: lang === 'ar' ? "من فضلك ادخل معرف نوع العربيه" : "Please provide typeId"
       });
     }
 
