@@ -2,51 +2,36 @@ const carModel = require("../models/carModel");
 const carName = require('../models/carName');
 const CarType = require('../models/carType');
 
-const addModel = async (req, res,next) => {
+const addModel = async (req, res, next) => {
   try {
-    const { model, nameId, carTypeId } = req.body;
     const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
+    const rentalOfficeId = req.user.id;
+    const { typeId, model_en,model_ar } = req.body;
 
-    if (!model || !nameId || !carTypeId) {
-      const message = lang === 'ar'
-        ? 'الاسم، اسم السيارة، ونوع السيارة مطلوبين.'
-        : 'Name, car name, and car type are required.';
-      return res.status(400).send({ status: false,code:400, message });
+    if (!typeId || !model_ar || !model_en) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "en" ? "Please provide nameId and model" : "من فضلك ادخل الموديل ومعرف الاسم"
+      });
     }
 
-    const car = await carName.findOne({_id:nameId});
-    if (!car) {
-      const message = lang === 'ar'
-        ? 'اسم السيارة غير موجود.'
-        : 'Car brand not found.';
-      return res.status(400).json({ code:400, status: false, message });
-    }
-
-    const type = await CarType.findOne({_id:carTypeId});
-    if (!type) {
-      const message = lang === 'ar'
-        ? 'نوع السيارة غير موجود.'
-        : 'Car type not found.';
-      return res.status(400).send({ status: false,code:400 ,message });
-    }
-
-    const existingModel = await carModel.findOne({ name:model, carNameId:nameId, carTypeId:carTypeId });
-    if (existingModel) {
-      const message = lang === 'ar'
-        ? 'هذا الموديل مضاف بالفعل لنفس الاسم والنوع.'
-        : 'This model already exists for the selected car and type.';
-      return res.status(400).send({ status: false,code:400, message });
-    }
-
-    const newModel = await carModel.create({ name:model, carNameId:nameId, carTypeId:carTypeId });
+    await carModel.create({
+      rentalOfficeId,
+      typeId,
+      model:{
+        en:model_en,
+        ar:model_ar
+      }
+    });
     const message = lang === 'ar'
       ? 'تم إضافة الموديل بنجاح.'
       : 'Model added successfully.';
-    return res.status(200).send({ 
+    return res.status(200).send({
       status: true,
-      code:200,
-       message, 
-      });
+      code: 200,
+      message,
+    });
 
   } catch (err) {
     next(err)
@@ -56,29 +41,30 @@ const getModels = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] === 'ar' ? 'ar' : 'en';
 
-    const { carNameId, carTypeId } = req.body;
+    const rentalOfficeId = req.user.id;
+    const { typeId } = req.body;
 
-    if (!carNameId|| !carTypeId) {
-      const message = lang === 'ar'
-        ? 'يجب إرسال اسم السيارة ونوع السيارة.'
-        : 'Car name and car type are required.';
-      return res.status(400).json({ status: false, code: 400, message });
+    if (!typeId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar' ? "الرجاء توفير معرف اسم السيارة" : "Please provide nameId"
+      });
     }
 
-    const models = await carModel.find({ carNameId, carTypeId });
-
-    const formattedModels = models.map(model => ({
+    const carModels = await carModel.find({ rentalOfficeId, typeId });
+    const formattedModels = carModels.map(model => ({
       id: model._id,
-      text: model.name
+      text: lang === 'ar' ? model.model.ar : model.model.en
     }));
 
     const message = lang === 'ar'
       ? 'تم جلب الموديلات بنجاح.'
       : 'Models fetched successfully.';
 
-    return res.status(200).json({
+    return res.status(200).send({
       status: true,
-      code:200,
+      code: 200,
       message,
       data: formattedModels
     });

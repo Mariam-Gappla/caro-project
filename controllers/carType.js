@@ -2,9 +2,40 @@ const carType = require("../models/carType")
 const addType = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const { type } = req.body;
+        const rentalOfficeId = req.user.id;
+        const { nameId, type_en, type_ar } = req.body;
+        if (!nameId) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: "nameId required"
+            });
+
+        }
+        if (!type_en || !type_ar) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang == "en" ? "Please provide nameId and type in both languages" : "من فضلك دخل النوع باللغتين العربيه والانجليزيه"
+            });
+        }
+        const exists = await carType.findOne({
+            "type.en": req.body.type_en,
+            "type.ar": req.body.type_ar
+        });
+        if (exists) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang === "en"
+                    ? "This car type already exists"
+                    : "هذا النوع موجود بالفعل"
+            });
+        }
         await carType.create({
-            type: type
+            rentalOfficeId,
+            nameId,
+            type: { en: type_en, ar: type_ar }
         });
         return res.send({
             status: true,
@@ -21,18 +52,23 @@ const addType = async (req, res, next) => {
 const getTypes = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
+        const rentalOfficeId=req.user.id;
+        const {nameId}  = req.body;
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        if (!nameId) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang === 'ar' ? "الرجاء توفير معرف اسم السيارة" : "Please provide nameId"
+            });
+        }
 
-        const totalCount = await carType.countDocuments();
-        const rawTypes = await carType.find().skip(skip).limit(limit);
+        const rawTypes = await carType.find({ rentalOfficeId, nameId });
 
         // تغيير شكل النتائج
         const types = rawTypes.map((n) => ({
             id: n._id,
-            text: n.type, // لو اسم الحقل مختلف غيره هنا
+            text: lang === 'ar' ? n.type.ar : n.type.en
         }));
 
         return res.send({

@@ -1,38 +1,43 @@
 const CarName = require("../models/carName")
 const addName = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const { name } = req.body;
-        await CarName.create({
-            carName: name
-        });
-        return res.send({
-            status: true,
-            code: 200,
-            message: lang == "ar" ? "تم اضافه اسم السياره بنجاح" : "car name added successfully"
-        })
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const rentalOfficeId = req.user.id;
+    const { name_en, name_ar } = req.body;
+
+    if (!name_en || !name_ar) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "Please provide car name in both languages" : "من فضلك دخل اسم العربيه باللغتيم العربيه والانجليزيه"
+      });
+    }
+
+    await CarName.create({
+      rentalOfficeId,
+      carName: { en: name_en, ar: name_ar }
+    });
+    return res.send({
+      status: true,
+      code: 200,
+      message: lang == "ar" ? "تم اضافه اسم السياره بنجاح" : "car name added successfully"
+    })
 
 
-    }
-    catch (error) {
-        next(error)
-    }
+  }
+  catch (error) {
+    next(error)
+  }
 }
 const getNames = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const totalCount = await CarName.countDocuments();
-    const rawNames = await CarName.find().skip(skip).limit(limit);
-
+    const rentalOfficeId = req.user.id;
+    const rawNames = await CarName.find({ rentalOfficeId });
     // تغيير شكل النتائج
     const names = rawNames.map((n) => ({
       id: n._id,
-      text: n.carName, // لو اسم الحقل مختلف غيره هنا
+      text: lang === 'ar' ? n.carName.ar : n.carName.en
     }));
 
     return res.send({
@@ -43,7 +48,7 @@ const getNames = async (req, res, next) => {
           ? "Your request has been completed successfully"
           : "تمت معالجة الطلب بنجاح",
       data: names
-      
+
     });
   } catch (error) {
     next(error);
@@ -51,6 +56,6 @@ const getNames = async (req, res, next) => {
 };
 
 module.exports = {
-    addName,
-    getNames
+  addName,
+  getNames
 }
