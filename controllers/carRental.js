@@ -152,7 +152,7 @@ const getCarById = async (req, res, next) => {
     const name = await Name.findOne({ _id: car.nameId });
     const model = await Model.findOne({ _id: car.modelId });
     let formatedData;
-    const { modelId, carTypeId,__v ,rentalOfficeId,nameId, ...data } = car;
+    const { __v ,rentalOfficeId, ...data } = car;
     if (car.rentalType == "weekly/daily") {
       formatedData = {
         ...data,
