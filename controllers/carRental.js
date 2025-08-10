@@ -152,16 +152,40 @@ const getCarById = async (req, res, next) => {
     const name = await Name.findOne({ _id: car.nameId });
     const model = await Model.findOne({ _id: car.modelId });
     let formatedData;
-    const { __v ,rentalOfficeId, ...data } = car;
+    const { __v ,rentalOfficeId,nameId,modelId,carTypeId, ...data } = car;
     if (car.rentalType == "weekly/daily") {
       formatedData = {
         ...data,
+        nameId:{
+          id:nameId._id,
+          carName:lang=="en"?nameId.carName.en:nameId.carName.ar
+        },
+        modelId:{
+          id:modelId._id,
+          model:lang=="en"?modelId.model.en:modelId.model.ar
+        },
+        carTypeId:{
+          id:carTypeId._id,
+          type:lang=="en"?carTypeId.type.en:carTypeId.type.ar
+        },
         title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
       }
     }
     else {
       formatedData = {
         ...data,
+        nameId:{
+          id:nameId._id,
+          carName:lang=="en"?nameId.carName.en:nameId.carName.ar
+        },
+        modelId:{
+          id:modelId._id,
+          model:lang=="en"?modelId.model.en:modelId.model.ar
+        },
+        carTypeId:{
+          id:carTypeId._id,
+          type:lang=="en"?carTypeId.type.en:carTypeId.type.ar
+        },
         title: lang === "ar"
           ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
           : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
