@@ -8,7 +8,20 @@ const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
-const { Model } = require("mongoose");
+const path=require("path");
+const fs=require("fs");
+const saveImage = (file, folder = 'images') => {
+  const fileName = `${Date.now()}-${file.originalname}`;
+  const saveDir = path.join(__dirname, '..', folder);
+  const filePath = path.join(saveDir, fileName);
+
+  if (!fs.existsSync(saveDir)) {
+    fs.mkdirSync(saveDir, { recursive: true });
+  }
+
+  fs.writeFileSync(filePath, file.buffer);
+  return `images/${fileName}`;
+};
 const register = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -479,12 +492,11 @@ const changePassword = async (req, res, next) => {
     next(error)
   }
 }
-const getProfileData=async (req,res,next)=>{
-  try
-  {
-     const lang = req.headers['accept-language'] || 'en';
+const getProfileData = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
     const role = req.user.role;
-     const id = req.user.id;
+    const id = req.user.id;
     let Model;
     switch (role) {
       case 'user':
@@ -505,18 +517,95 @@ const getProfileData=async (req,res,next)=>{
     }
     const exist = await Model.findOne({ _id: id });
     return res.status(200).send({
-      status:true,
-      code:200,
-      message:lang=="en"?"Data retrieved successfully":"تم جلب البيانات بنجاح",
-      data:exist
+      status: true,
+      code: 200,
+      message: lang == "en" ? "Data retrieved successfully" : "تم جلب البيانات بنجاح",
+      data: exist
     })
 
   }
-  catch(error)
-  {
+  catch (error) {
     next(error)
   }
 }
+const editProfile = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const id = req.user.id;
+    const role = req.user.role;
+    let Model;
+
+    switch (role) {
+      case 'user':
+        Model = User;
+        break;
+      case 'rentalOffice':
+        Model = rentalOffice;
+        break;
+      default:
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: lang === "ar"
+            ? "هذا الدور غير موجود"
+            : "Role must be serviceProvider or User or rentalOffice"
+        });
+    }
+
+    let updateData = {};
+
+    // ✅ لو فيه يوزرنيم جديد
+    if (req.body.username) updateData.username = req.body.username;
+
+    // ✅ لو فيه إيميل جديد
+    if (req.body.email) {
+      const emailExists = await Model.findOne({ email: req.body.email, _id: { $ne: id } });
+      if (emailExists) {
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: lang === "en"
+            ? "This email is already in use"
+            : "هذا البريد الإلكتروني مستخدم بالفعل"
+        });
+      }
+      updateData.email = req.body.email;
+    }
+
+    // ✅ لو فيه صورة جديدة
+    if (req.file) {
+      const file = req.file;
+      const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+      const url = saveImage(file, "images");
+      updateData.image = `${BASE_URL}${url}`;
+    }
+
+    // ✅ لو مفيش حاجة للتحديث
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en"
+          ? "No data provided to update"
+          : "لم يتم إدخال أي بيانات للتحديث"
+      });
+    }
+
+    // ✅ تحديث البيانات باستخدام الـ Model المناسب
+    await Model.findByIdAndUpdate(id, updateData, { new: true });
+
+    return res.send({
+      status: true,
+      code: 200,
+      message: lang === "en"
+        ? "Profile updated successfully"
+        : "تم تحديث الملف الشخصي بنجاح"
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
 const logout = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -540,5 +629,6 @@ module.exports = {
   changePassword,
   addLocationForProvider,
   getProfileData,
+  editProfile,
   logout
 }

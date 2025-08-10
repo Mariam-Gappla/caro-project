@@ -227,68 +227,11 @@ const getProfileData = async (req, res, next) => {
         next(error)
     }
 }
-const editRentalOfficeProfile = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const rentalOfficeId = req.user.id;
-        let updateData = {};
 
-        // ✅ لو فيه يوزرنيم جديد
-        if (req.body.username) updateData.username = req.body.username;
-
-        // ✅ لو فيه إيميل جديد
-        if (req.body.email) {
-            const emailExists = await rentalOffice.findOne({ email:req.body.email, _id: { $ne: rentalOfficeId } });
-            if (emailExists) {
-                return res.status(400).send({
-                    status: false,
-                    code: 400,
-                    message: lang === "en"
-                        ? "This email is already in use"
-                        : "هذا البريد الإلكتروني مستخدم بالفعل"
-                });
-            }
-            updateData.email = req.body.email;
-        }
-        // ✅ لو فيه صورة جديدة
-        if (req.file) { 
-            const file=req.file
-            const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-            const url=saveImage(file,"images")
-            updateData.image = `${BASE_URL}${url}`;
-        }
-
-        // ✅ لو مفيش حاجة للتحديث
-        if (Object.keys(updateData).length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === "en"
-                    ? "No data provided to update"
-                    : "لم يتم إدخال أي بيانات للتحديث"
-            });
-        }
-
-        // ✅ تحديث البيانات
-        await rentalOffice.findByIdAndUpdate(rentalOfficeId, updateData, { new: true });
-
-        return res.send({
-            status: true,
-            code: 200,
-            message: lang === "en"
-                ? "Profile updated successfully"
-                : "تم تحديث الملف الشخصي بنجاح"
-        });
-
-    } catch (error) {
-        next(error);
-    }
-};
 
 module.exports = {
     getAllRentallOffice,
     addLike,
     getRentalOfficeCar,
-    getProfileData,
-   editRentalOfficeProfile
+    getProfileData
 }
