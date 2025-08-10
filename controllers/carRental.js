@@ -156,18 +156,12 @@ const getCarById = async (req, res, next) => {
     if (car.rentalType == "weekly/daily") {
       formatedData = {
         ...data,
-        carType:lang=="ar"?carTypeId.type.ar:carTypeId.type.en,
-        model:lang=="ar"? modelId.model.ar:modelId.model.en,
-        carName:lang=="ar"? nameId.carName.ar:nameId.carName.en,
         title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
       }
     }
     else {
       formatedData = {
         ...data,
-        carType:lang=="ar"?carTypeId.type.ar:carTypeId.type.en,
-        model:lang=="ar"? modelId.model.ar:modelId.model.en,
-        carName:lang=="ar"? nameId.carName.ar:nameId.carName.en,
         title: lang === "ar"
           ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
           : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
