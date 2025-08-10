@@ -3,10 +3,12 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Otp = require("../models/otp");
 const { registerSchema, loginSchema, registerProviderSchema } = require("../validation/registerAndLoginSchema");
+const changePasswordSchema = require("../validation/changePasswordValidition");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
+const { Model } = require("mongoose");
 const register = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -420,6 +422,101 @@ const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+const changePassword = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const role = req.user.role;
+    const { error } = changePasswordSchema(lang).validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: error.details[0].message
+      });
+    }
+    const { oldPassword, newPassword } = req.body;
+    const id = req.user.id;
+    let Model;
+    switch (role) {
+      case 'user':
+        Model = User;
+        break;
+      case 'serviceProvider':
+        Model = serviceProvider;
+        break;
+      case 'rentalOffice':
+        Model = rentalOffice;
+        break;
+      default:
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: lang == "ar" ? "هذا الدور غير موجود" : "role must be serviceProvider or User or rentalOffice"
+        });
+    }
+    const exist = await Model.findOne({ _id: id });
+    const match = await bcrypt.compare(oldPassword, exist.password);
+    if (!match) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: lang == "en" ? "old password incorrect try again!" : "الباسورد القديمه غير صحيحه حاول مره اخرى"
+      });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    exist.password = hashedPassword;
+    await exist.save();
+    return res.status(200).send({
+      code: 200,
+      status: true,
+      message: lang == "en" ? "Password changed successfully" : "تم تحديث الباسورد بنجاح"
+    })
+
+
+
+  }
+  catch (error) {
+    next(error)
+  }
+}
+const getProfileData=async (req,res,next)=>{
+  try
+  {
+     const lang = req.headers['accept-language'] || 'en';
+    const role = req.user.role;
+     const id = req.user.id;
+    let Model;
+    switch (role) {
+      case 'user':
+        Model = User;
+        break;
+      case 'serviceProvider':
+        Model = serviceProvider;
+        break;
+      case 'rentalOffice':
+        Model = rentalOffice;
+        break;
+      default:
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: lang == "ar" ? "هذا الدور غير موجود" : "role must be serviceProvider or User or rentalOffice"
+        });
+    }
+    const exist = await Model.findOne({ _id: id });
+    return res.status(200).send({
+      status:true,
+      code:200,
+      message:lang=="en"?"Data retrieved successfully":"تم جلب البيانات بنجاح",
+      data:exist
+    })
+
+  }
+  catch(error)
+  {
+    next(error)
+  }
+}
 const logout = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -440,6 +537,8 @@ module.exports = {
   login,
   requestResetPassword,
   resetPassword,
+  changePassword,
   addLocationForProvider,
+  getProfileData,
   logout
 }

@@ -247,15 +247,15 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                 console.log(paymentStatusTranslations[lang])
                 const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
                 // تأكد من أن name و model يتم جلبهم بشكل صحيح
-                const name = await Name.findOne({ _id: carId.nameId });
+                const name = await Name.findOne({_id:carId.nameId});
                 const model = await Model.findOne({ _id: carId.modelId });
 
                 if (carId?.rentalType === "weekly/daily") {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
-                            : `Renting a car ${name?.carName || ""} ${model?.name || ""}`,
+                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
                         startDate: rest.startDate,
                         endDate: rest.endDate,
                         rentalType: carId.rentalType,
@@ -268,8 +268,8 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تملك سيارة ${name?.carName || ""} ${model?.modelName || ""}`
-                            : `Owning a car ${name?.carName || ""} ${model?.modelName || ""}`,
+                            ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
                         ownershipPeriod: carId.ownershipPeriod,
                         rentalType: carId.rentalType,
                         totalCost: rest.totalCost,
@@ -363,8 +363,8 @@ const getOrdersStatisticsByWeekDay = async (req, res, next) => {
         res.status(200).send({
             status: true,
             code: 200,
-            message: lang === "en" 
-                ? "Your request has been completed successfully" 
+            message: lang === "en"
+                ? "Your request has been completed successfully"
                 : "تمت معالجة الطلب بنجاح",
             data: {
                 report: stats,
@@ -448,8 +448,8 @@ const getOrderById = async (req, res, next) => {
         let formattedOrder;
 
         const { carId, ...rest } = rawComments.toObject();
-        const name = await Name.findOne({ _id: carId.nameId });
-        const model = await Model.findOne({ carNameId: carId.nameId });
+        const name = await Name.findOne({_id: carId.nameId });
+        const model = await Model.findOne({ _id: carId.modelId });
 
         // تحديد قيمة paymentStatus الفعلية
         const paymentStatus = rest.ended === true ? "ended" : rest.paymentStatus;
@@ -459,8 +459,8 @@ const getOrderById = async (req, res, next) => {
         if (carId.rentalType == "weekly/daily") {
             formattedOrder = {
                 title: lang == "ar"
-                    ? `تأجير سياره ${name.carName + " " + model.name}`
-                    : `Renting a car ${name.carName + " " + model.name}`,
+                    ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}`
+                    : `Renting a car ${name.carName.en + " " + model.model.en}`,
                 rentalType: carId.rentalType,
                 images: carId.images,
                 carDescription: carId.carDescription,
@@ -484,8 +484,8 @@ const getOrderById = async (req, res, next) => {
         } else if (carId.rentalType == "rent to own") {
             formattedOrder = {
                 title: lang === "ar"
-                    ? `تملك سيارة ${name.carName} ${model.name}`
-                    : `Owning a car ${name.carName} ${model.name}`,
+                    ? `تملك سيارة ${name.carName.ar} ${model.model.ar}`
+                    : `Owning a car ${name.carName.en} ${model.model.en}`,
                 rentalType: carId.rentalType,
                 images: carId.images,
                 carDescription: carId.carDescription,
@@ -768,8 +768,8 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             orders.map(async order => {
                 const { carId, ...rest } = order;
 
-                const name = await Name.findOne({ _id: carId.nameId });
-                const model = await Model.findOne({ carNameId: carId.nameId });
+                const name = await Name.findOne({_id:carId.nameId});
+                const model = await Model.findOne({ _id: carId.modelId });
                 if (carId.rentalType == "weekly/daily") {
                     const diffInDays = Math.ceil(
                         (new Date(rest.endDate) - new Date(rest.startDate)) / (1000 * 60 * 60 * 24)
@@ -778,8 +778,8 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
-                            : `Renting a car ${name?.carName || ""} ${model?.name || ""}`,
+                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
                         orderType: "nonOwnership",
                         image: carId.images?.[0],
                         licensePlateNumber: carId.licensePlateNumber,
@@ -800,8 +800,8 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تملك سيارة ${name?.carName || ""} ${model?.name || ""}`
-                            : `Owning a car ${name?.carName || ""} ${model?.name || ""}`,
+                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
                         orderType: "Ownership",
                         image: carId.images?.[0],
                         licensePlateNumber: carId.licensePlateNumber,

@@ -3,6 +3,8 @@ const getMessages = require("../configration/getmessages")
 const followersForRentalOffice = require("../models/followersForRentalOffice");
 const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
+const path=require("path");
+const fs=require("fs")
 const Name = require("../models/carName");
 const Model = require("../models/carType");
 const bcrypt = require("bcrypt");
@@ -113,8 +115,8 @@ const getRentalOfficeCar = async (req, res, next) => {
                 if (rentalType === "weekly/daily") {
                     title =
                         lang === "ar"
-                            ? `تأجير سيارة ${name?.carName || ""} ${model?.name || ""}`
-                            : `Renting a car ${name?.carName || ""} ${model?.name || ""}`;
+                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`;
                     return {
                         id: car._id,
                         title,
@@ -128,8 +130,8 @@ const getRentalOfficeCar = async (req, res, next) => {
                 } else {
                     title =
                         lang === "ar"
-                            ? `تملك سيارة ${name?.carName || ""} ${model?.name || ""}`
-                            : `Owning a car ${name?.carName || ""} ${model?.name || ""}`;
+                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`;
                     return {
                         id: car._id,
                         title,
@@ -248,15 +250,9 @@ const editRentalOfficeProfile = async (req, res, next) => {
             }
             updateData.email = req.body.email;
         }
-
-        // ✅ لو فيه باسورد جديد
-        if (req.body.password) {
-            const hashedPassword = await bcrypt.hash(req.body.password, 10);
-            updateData.password = hashedPassword;
-        }
-
         // ✅ لو فيه صورة جديدة
         if (req.file) { 
+            const file=req.file
             const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
             const url=saveImage(file,"images")
             updateData.image = `${BASE_URL}${url}`;

@@ -102,12 +102,6 @@ const rentToOwnSchema = (lang = "en") => {
       'string.base': messages.licensePlateNumber.string,
       'any.required': messages.licensePlateNumber.required
     }),
-
-    totalKilometers: Joi.number().required().messages({
-      'number.base': messages.totalKilometers.number,
-      'any.required': messages.totalKilometers.required
-    }),
-
     carPrice: Joi.number().required().messages({
       'number.base': messages.carPrice.number,
       'any.required': messages.carPrice.required
@@ -255,11 +249,6 @@ const rentToOwnUpdateSchema = (lang = "en") => {
     licensePlateNumber: Joi.string().optional().messages({
       'string.base': messages.licensePlateNumber.string,
     }),
-
-    totalKilometers: Joi.number().optional().messages({
-      'number.base': messages.totalKilometers.number,
-    }),
-
     carPrice: Joi.number().optional().messages({
       'number.base': messages.carPrice.number,
     }),
