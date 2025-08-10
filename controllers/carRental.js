@@ -2,7 +2,7 @@ const carRental = require("../models/carRental");
 const { carRentalWeeklyValiditionSchema, rentToOwnSchema, carRentalWeeklyValiditionUpdateSchema, rentToOwnUpdateSchema } = require("../validation/carRentalValidition");
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
-const Model = require("../models/carType");
+const Model = require("../models/carModel");
 const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {
@@ -140,7 +140,7 @@ const getCarById = async (req, res, next) => {
     const carId = req.params.id;
     const lang = req.headers['accept-language'] || 'en';
     const messages = getMessages(lang);
-    const car = await carRental.findOne({ _id: carId }).populate("carTypeId").populate("nameId").populate("modelId");
+    const car = await carRental.findOne({ _id: carId }).populate("nameId").populate("modelId").populate("carTypeId").lean();
     console.log(car)
     if (!car) {
       return res.status(400).send({
@@ -149,14 +149,30 @@ const getCarById = async (req, res, next) => {
         message: messages.rentalCar.existCar
       })
     }
-    const name = await Name.find({ _id: car.nameId });
-    const model = await Model.find({ _id: car.modelId });
-    const formatedData = {
-      ...car.toObject(),
-      carType: car.carTypeId.type,
-      model: car.modelId.model,
-      carName: car.nameId.carName,
-      title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
+    const name = await Name.findOne({ _id: car.nameId });
+    const model = await Model.findOne({ _id: car.modelId });
+    let formatedData;
+    const { modelId, carTypeId,__v ,nameId, ...data } = car;
+    if (car.rentalType == "weekly/daily") {
+      formatedData = {
+        ...data,
+        carType:lang=="ar"?carTypeId.type.ar:carTypeId.type.en,
+        model:lang=="ar"? modelId.model.ar:modelId.model.en,
+        carName:lang=="ar"? nameId.carName.ar:nameId.carName.en,
+        title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
+      }
+    }
+    else {
+      formatedData = {
+        ...data,
+        carType:lang=="ar"?carTypeId.type.ar:carTypeId.type.en,
+        model:lang=="ar"? modelId.model.ar:modelId.model.en,
+        carName:lang=="ar"? nameId.carName.ar:nameId.carName.en,
+        title: lang === "ar"
+          ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+          : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
+      }
+
     }
     return res.status(200).send({
       status: 200,
@@ -255,14 +271,14 @@ const updateCar = async (req, res, next) => {
 };
 const deleteCar = async (req, res, next) => {
   try {
-       const lang = req.headers['accept-language'] || 'en';
-       const id=req.params.id;
-       await carRental.findOneAndDelete({_id:id});
-       return res.status(200).send({
-        code:200,
-        status:true,
-        message:lang=="ar"?"تم حذف الاعلان بنجاح":"Car listing deleted successfully"
-       })
+    const lang = req.headers['accept-language'] || 'en';
+    const id = req.params.id;
+    await carRental.findOneAndDelete({ _id: id });
+    return res.status(200).send({
+      code: 200,
+      status: true,
+      message: lang == "ar" ? "تم حذف الاعلان بنجاح" : "Car listing deleted successfully"
+    })
   }
   catch (error) {
     next(error)
