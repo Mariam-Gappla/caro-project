@@ -6,7 +6,7 @@ const carRental = require("../models/carRental");
 const path=require("path");
 const fs=require("fs")
 const Name = require("../models/carName");
-const Model = require("../models/carType");
+const Model = require("../models/carModel");
 const bcrypt = require("bcrypt");
 const saveImage = (file, folder = 'images') => {
   const fileName = `${Date.now()}-${file.originalname}`;
@@ -115,8 +115,8 @@ const getRentalOfficeCar = async (req, res, next) => {
                 if (rentalType === "weekly/daily") {
                     title =
                         lang === "ar"
-                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
-                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`;
+                            ? `تأجير سيارة ${name.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Renting a car ${name.carName.en || ""} ${model?.model.en || ""}`;
                     return {
                         id: car._id,
                         title,
@@ -129,15 +129,15 @@ const getRentalOfficeCar = async (req, res, next) => {
                     };
                 } else {
                     title =
-                        lang === "ar"
-                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
-                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`;
+                    lang === "ar"
+                            ? `تملك سيارة ${name?.carName.ar || ""} ${model.model.ar || ""}`
+                            : `Owning a car ${name?.carName.en || ""} ${model.model.en || ""}`;
                     return {
                         id: car._id,
                         title,
                         rentalType: "rent to own",
                         image: car.images[0],
-                        model: model.name,
+                        model: lang === "ar" ?model?.model.ar:model?.model.en,
                         carDescription: car.carDescription,
                         city: car.city,
                         odoMeter: car.odoMeter,

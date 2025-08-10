@@ -800,8 +800,8 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     return {
                         id: rest._id,
                         title: lang === "ar"
-                            ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
-                            : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
+                            ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                            : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
                         orderType: "Ownership",
                         image: carId.images?.[0],
                         licensePlateNumber: carId.licensePlateNumber,
