@@ -108,6 +108,7 @@ const getRentalOfficeCar = async (req, res, next) => {
         const cars = await carRental.find(carFilter).skip(skip).limit(limit);
         const formatedCars = await Promise.all(
             cars.map(async (car) => {
+                console.log(car)
                 const name = await Name.findOne({ _id: car.nameId });
                 const model = await Model.findOne({ _id: car.modelId });
 
@@ -121,7 +122,7 @@ const getRentalOfficeCar = async (req, res, next) => {
                         id: car._id,
                         title,
                         rentalType: "weekly/daily",
-                        image: car.images[0],
+                        images: car.images,
                         carDescription: car.carDescription,
                         city: car.city,
                         odoMeter: car.odoMeter,
@@ -136,7 +137,7 @@ const getRentalOfficeCar = async (req, res, next) => {
                         id: car._id,
                         title,
                         rentalType: "rent to own",
-                        image: car.images[0],
+                        images: car.images,
                         model: lang === "ar" ?model?.model.ar:model?.model.en,
                         carDescription: car.carDescription,
                         city: car.city,
