@@ -1,7 +1,7 @@
 const counter = require("../models/counter");
 const invoice = require("../models/invoice");
 const Name = require("../models/carName");
-const carRental=require("../models/carRental")
+const carRental = require("../models/carRental")
 const Model = require("../models/carModel");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const rentalOffice = require("../models/rentalOffice");
@@ -18,7 +18,7 @@ const addinvoice = async (req, res, next) => {
         }
         console.log(messages.invoice.invalidRentalType)
         const { userId, rentalOfficeId, orderId } = req.body;
-        const order=await rentalOfficeOrder.findOne({_id:orderId})
+        const order = await rentalOfficeOrder.findOne({ _id: orderId })
         const existingInvoice = await invoice.findOne({
             userId,
             rentalOfficeId,
@@ -146,16 +146,16 @@ const getRevenueById = async (req, res, next) => {
                     path: "carId" // 👈 دي اللي انتي عايزاها
                 }
             });
-        const name = await Name.findOne({ _id:  revenuDetails.orderId.carId.nameId });
-        const model = await Model.findOne({ carNameId:  revenuDetails.orderId.carId.nameId });
+        const name = await Name.findOne({ _id: revenuDetails.orderId.carId.nameId });
+        const model = await Model.findOne({ _id: revenuDetails.orderId.carId.modelId });
         let formatedInvoice;
         if (revenuDetails.orderId.carId.rentalType == "weekly/daily") {
             formatedInvoice = {
                 rentalType: revenuDetails.orderId.carId.rentalType,
                 image: revenuDetails.orderId.carId.images[0],
-                title: lang == "ar" ? `تأجير سياره ${name.carName + " " + model.name}` : `Renting a car ${name.carName + " " + model.name}`,
+                title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
                 carDescription: revenuDetails.orderId.carId.carDescription,
-                model: model.name,
+                model: lang == "ar" ? model.model.ar : model.model.en,
                 odoMeter: revenuDetails.orderId.carId.odoMeter,
                 licensePlateNumber: revenuDetails.orderId.carId.licensePlateNumber,
                 city: revenuDetails.orderId.carId.city,
@@ -175,9 +175,9 @@ const getRevenueById = async (req, res, next) => {
             formatedInvoice = {
                 rentalType: revenuDetails.orderId.carId.rentalType,
                 image: revenuDetails.orderId.carId.images[0],
-                title: lang === "ar" ? `تملك سيارة ${name.carName} ${model.name}` : `Owning a car ${name.carName} ${model.name}`,
+                title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
                 carDescription: revenuDetails.orderId.carId.carDescription,
-                model: model.name,
+                model: lang == "ar" ? model.model.ar : model.model.en,
                 odoMeter: revenuDetails.orderId.carId.odoMeter,
                 city: revenuDetails.orderId.carId.city,
                 paymentStatus: revenuDetails.orderId.paymentStatus,
