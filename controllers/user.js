@@ -8,8 +8,10 @@ const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
-const path=require("path");
-const fs=require("fs");
+const Winsh = require("../models/winsh");
+const Tire = require("../models/tire");
+const path = require("path");
+const fs = require("fs");
 const saveImage = (file, folder = 'images') => {
   const fileName = `${Date.now()}-${file.originalname}`;
   const saveDir = path.join(__dirname, '..', folder);
@@ -515,12 +517,24 @@ const getProfileData = async (req, res, next) => {
           message: lang == "ar" ? "هذا الدور غير موجود" : "role must be serviceProvider or User or rentalOffice"
         });
     }
-    const exist = await Model.findOne({ _id: id });
+    const exist = await Model.findOne({ _id: id }).lean();
+    let verification;
+    let formatedData={...exist}
+    if (role == "serviceProvider") {
+      verification = await Winsh.findOne({ providerId: exist._id });
+      if (!verification) {
+        verification = await Tire.findOne({ providerId: exist._id });
+      }
+      formatedData = {
+        ...exist,
+        nationalId: verification.nationalId
+      }
+    }
     return res.status(200).send({
       status: true,
       code: 200,
       message: lang == "en" ? "Data retrieved successfully" : "تم جلب البيانات بنجاح",
-      data: exist
+      data: formatedData
     })
 
   }
@@ -541,6 +555,9 @@ const editProfile = async (req, res, next) => {
         break;
       case 'rentalOffice':
         Model = rentalOffice;
+        break;
+      case 'serviceProvider':
+        Model = serviceProvider;
         break;
       default:
         return res.status(400).send({

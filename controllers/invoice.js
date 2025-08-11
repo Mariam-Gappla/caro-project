@@ -146,13 +146,14 @@ const getRevenueById = async (req, res, next) => {
                     path: "carId" // 👈 دي اللي انتي عايزاها
                 }
             });
+        console.log(revenuDetails)
         const name = await Name.findOne({ _id: revenuDetails.orderId.carId.nameId });
         const model = await Model.findOne({ _id: revenuDetails.orderId.carId.modelId });
         let formatedInvoice;
         if (revenuDetails.orderId.carId.rentalType == "weekly/daily") {
             formatedInvoice = {
                 rentalType: revenuDetails.orderId.carId.rentalType,
-                image: revenuDetails.orderId.carId.images[0],
+                images: revenuDetails.orderId.carId.images,
                 title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
                 carDescription: revenuDetails.orderId.carId.carDescription,
                 model: lang == "ar" ? model.model.ar : model.model.en,
@@ -164,9 +165,9 @@ const getRevenueById = async (req, res, next) => {
                 startDate: revenuDetails.orderId.startDate,
                 endDate: revenuDetails.orderId.endDate,
                 paymentStatus: revenuDetails.orderId.paymentStatus,
-                deliveryOption: revenuDetails.carId.deliveryOption,
+                deliveryOption: revenuDetails.orderId.carId.deliveryOption,
                 totalCost: revenuDetails.orderId.totalCost,
-                price: revenuDetails.carId.priceType == "open_km" ? revenuDetails.carId.pricePerFreeKilometer : revenuDetails.carId.pricePerExtraKilometer,
+                price: revenuDetails.orderId.carId.priceType == "open_km" ? revenuDetails.orderId.carId.pricePerFreeKilometer : revenuDetails.orderId.carId.pricePerExtraKilometer,
 
             }
 
@@ -174,15 +175,17 @@ const getRevenueById = async (req, res, next) => {
         else {
             formatedInvoice = {
                 rentalType: revenuDetails.orderId.carId.rentalType,
-                image: revenuDetails.orderId.carId.images[0],
-                title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
+                images: revenuDetails.orderId.carId.images,
+                title: lang === "ar"
+                    ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                    : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
                 carDescription: revenuDetails.orderId.carId.carDescription,
                 model: lang == "ar" ? model.model.ar : model.model.en,
                 odoMeter: revenuDetails.orderId.carId.odoMeter,
                 city: revenuDetails.orderId.carId.city,
                 paymentStatus: revenuDetails.orderId.paymentStatus,
                 totalCost: revenuDetails.orderId.totalCost,
-                monthlyPayment: revenuDetails.orderId.monthlyPayment,
+                monthlyPayment: revenuDetails.orderId.carId.monthlyPayment,
                 price: revenuDetails.orderId.carId.carPrice,
                 finalPayment: revenuDetails.orderId.carId.finalPayment,
                 licensePlateNumber: revenuDetails.orderId.carId.licensePlateNumber,
