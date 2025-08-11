@@ -747,7 +747,6 @@ const getOrdersByRentalOffice = async (req, res, next) => {
             .skip(skip)
             .limit(limit)
             .lean();
-        console.log(orders)
         if (orders.length === 0) {
             return res.status(200).send({
                 status: true,
@@ -777,6 +776,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
 
                     return {
                         id: rest._id,
+                        images:carId.images,
                         title: lang === "ar"
                             ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
                             : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
@@ -796,9 +796,9 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                         carModel: model.name
                     };
                 } else {
-                    const type = await CarType.findOne({ _id: carId.carTypeId })
                     return {
                         id: rest._id,
+                        images:carId.images,
                         title: lang === "ar"
                             ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
                             : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
