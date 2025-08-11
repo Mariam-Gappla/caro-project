@@ -494,6 +494,7 @@ const getOrderById = async (req, res, next) => {
                 finalPayment: carId.finalPayment,
                 carModel: carId.carModel,
                 city: carId.city,
+                monthlyPayment:carId.monthlyPayment,
                 odoMeter: carId.odoMeter,
                 licensePlateNumber: carId.licensePlateNumber,
                 startDate: rest.startDate,
