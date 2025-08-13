@@ -1,6 +1,7 @@
 const counter = require("../models/counter");
 const invoice = require("../models/invoice");
 const Name = require("../models/carName");
+const carArchive=require("../models/carArchive")
 const carRental = require("../models/carRental")
 const Model = require("../models/carModel");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
@@ -48,7 +49,7 @@ const addinvoice = async (req, res, next) => {
         }
 
         // ✅ جلب بيانات السيارة
-        const car = await carRental.findById(orderExist.carId);
+        const car = await carRental.findById(orderExist.carId) || carArchive.findOne({originalCarId:order.carId});
         if (!car) {
             return res.status(400).send({
                 code: 400,
@@ -139,79 +140,134 @@ const getRevenueById = async (req, res, next) => {
     try {
         const revenuId = req.params.id;
         const lang = req.headers["accept-language"] || "en";
-        const revenuDetails = await invoice.findOne({ _id: revenuId })
-            .populate({
-                path: "orderId",
-                populate: {
-                    path: "carId" // 👈 دي اللي انتي عايزاها
-                }
+        const messages = getMessages(lang);
+
+        if (!revenuId) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.invoice.invoiceId || (lang === "ar" ? "معرف الفاتورة مطلوب" : "Invoice ID is required")
             });
-        console.log(revenuDetails)
-        const name = await Name.findOne({ _id: revenuDetails.orderId.carId.nameId });
-        const model = await Model.findOne({ _id: revenuDetails.orderId.carId.modelId });
-        let formatedInvoice;
-        if (revenuDetails.orderId.carId.rentalType == "weekly/daily") {
-            formatedInvoice = {
-                rentalType: revenuDetails.orderId.carId.rentalType,
-                images: revenuDetails.orderId.carId.images,
-                title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
-                carDescription: revenuDetails.orderId.carId.carDescription,
-                model: lang == "ar" ? model.model.ar : model.model.en,
-                odoMeter: revenuDetails.orderId.carId.odoMeter,
-                licensePlateNumber: revenuDetails.orderId.carId.licensePlateNumber,
-                city: revenuDetails.orderId.carId.city,
-                area: revenuDetails.orderId.carId.area,
-                revenuNumber: revenuDetails.invoiceNumber,
-                startDate: revenuDetails.orderId.startDate,
-                endDate: revenuDetails.orderId.endDate,
-                paymentStatus: revenuDetails.orderId.paymentStatus,
-                deliveryOption: revenuDetails.orderId.carId.deliveryOption,
-                totalCost: revenuDetails.orderId.totalCost,
-                price: revenuDetails.orderId.carId.priceType == "open_km" ? revenuDetails.orderId.carId.pricePerFreeKilometer : revenuDetails.orderId.carId.pricePerExtraKilometer,
-
-            }
-
         }
-        else {
-            formatedInvoice = {
-                rentalType: revenuDetails.orderId.carId.rentalType,
-                images: revenuDetails.orderId.carId.images,
+
+        // جلب الفاتورة مع بيانات الطلب
+        let revenuDetails = await invoice.findById(revenuId).populate('orderId').lean();
+
+        if (!revenuDetails) {
+            return res.status(404).send({
+                status: false,
+                code: 404,
+                message: lang === "ar" ? "الفاتورة غير موجودة" : "Invoice not found"
+            });
+        }
+
+        const orderData = revenuDetails.orderId;
+
+        if (!orderData) {
+            return res.status(404).send({
+                status: false,
+                code: 404,
+                message: lang === "ar" ? "الطلب المرتبط غير موجود" : "Associated order not found"
+            });
+        }
+
+        let carData = null;
+
+        // نحاول نجيب العربية من carId
+        if (orderData.carId) {
+            carData = await carRental.findById(orderData.carId).lean();
+        }
+        // لو مش موجودة في جدول العربيات الأساسي، نجرب من الأرشيف باستخدام carOriginalId لو موجود
+        if (!carData && orderData.archivedCarId) {
+            carData = await carArchive.findOne({_id: orderData.archivedCarId}).lean();
+            console.log(orderData)
+        }
+
+        if (!carData) {
+            return res.status(404).send({
+                status: false,
+                code: 404,
+                message: lang === "ar" ? "بيانات السيارة غير موجودة" : "Car data not found"
+            });
+        }
+
+        // جلب الاسم والموديل
+        const [name, model] = await Promise.all([
+            Name.findById(carData.nameId),
+            Model.findById(carData.modelId)
+        ]);
+
+        // تجهيز الرسالة النصية لحالة الدفع
+        const paymentStatusTranslations = {
+            en: { ended: "Ended", inProgress: "In Progress", paid: "Paid" },
+            ar: { ended: "منتهي", inProgress: "قيد الانتظار", paid: "مدفوع" }
+        };
+        const paymentStatus = orderData.ended ? "ended" : orderData.paymentStatus;
+        const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
+
+        // تجهيز بيانات الفاتورة حسب نوع الإيجار
+        let formattedInvoice;
+        if (carData.rentalType === "weekly/daily") {
+            formattedInvoice = {
+                rentalType: carData.rentalType,
+                images: carData.images || [],
                 title: lang === "ar"
-                    ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
-                    : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
-                carDescription: revenuDetails.orderId.carId.carDescription,
-                model: lang == "ar" ? model.model.ar : model.model.en,
-                odoMeter: revenuDetails.orderId.carId.odoMeter,
-                city: revenuDetails.orderId.carId.city,
-                paymentStatus: revenuDetails.orderId.paymentStatus,
-                totalCost: revenuDetails.orderId.totalCost,
-                monthlyPayment: revenuDetails.orderId.carId.monthlyPayment,
-                price: revenuDetails.orderId.carId.carPrice,
-                finalPayment: revenuDetails.orderId.carId.finalPayment,
-                licensePlateNumber: revenuDetails.orderId.carId.licensePlateNumber,
-                city: revenuDetails.orderId.carId.city,
-                area: revenuDetails.orderId.carId.area,
+                    ? `تأجير سيارة ${(name?.carName?.ar || "")} ${(model?.model?.ar || "")}`
+                    : `Renting a car ${(name?.carName?.en || "")} ${(model?.model?.en || "")}`,
+                carDescription: carData.carDescription || "",
+                model: lang === "ar" ? model?.model?.ar : model?.model?.en,
+                odoMeter: carData.odoMeter || "",
+                licensePlateNumber: carData.licensePlateNumber || "",
+                city: carData.city || "",
+                area: carData.area || "",
                 revenuNumber: revenuDetails.invoiceNumber,
-                deliveryOption: revenuDetails.orderId.carId.deliveryOption,
-                startDate: revenuDetails.orderId.startDate
-
-
-
-            }
-
+                startDate: orderData.startDate,
+                endDate: orderData.endDate,
+                paymentStatus,
+                paymentStatusText,
+                deliveryOption: carData.deliveryOption || "",
+                totalCost: orderData.totalCost,
+                price: carData.priceType === "open_km" ? carData.pricePerFreeKilometer : carData.pricePerExtraKilometer,
+            };
+        } else {
+            formattedInvoice = {
+                rentalType: carData.rentalType,
+                images: carData.images || [],
+                title: lang === "ar"
+                    ? `تملك سيارة ${(name?.carName?.ar || "")} ${(model?.model?.ar || "")}`
+                    : `Owning a car ${(name?.carName?.en || "")} ${(model?.model?.en || "")}`,
+                carDescription: carData.carDescription || "",
+                model: lang === "ar" ? model?.model?.ar : model?.model?.en,
+                odoMeter: carData.odoMeter || "",
+                city: carData.city || "",
+                paymentStatus,
+                paymentStatusText,
+                totalCost: orderData.totalCost,
+                monthlyPayment: carData.monthlyPayment || 0,
+                price: carData.carPrice || 0,
+                finalPayment: carData.finalPayment || 0,
+                licensePlateNumber: carData.licensePlateNumber || "",
+                area: carData.area || "",
+                revenuNumber: revenuDetails.invoiceNumber,
+                deliveryOption: carData.deliveryOption || "",
+                startDate: orderData.startDate,
+            };
         }
-        return res.send({
+
+        return res.status(200).send({
             status: true,
             code: 200,
-            message: lang === "en" ? "Invoice fetched successfully" : "تم جلب الفاتوره بنجاح",
-            data: {
-                ...formatedInvoice
-            }
+            message: lang === "en" ? "Invoice fetched successfully" : "تم جلب الفاتورة بنجاح",
+            data: formattedInvoice
         });
+
     } catch (error) {
         next(error);
     }
 };
+
+
+
 
 module.exports = {
     addinvoice,

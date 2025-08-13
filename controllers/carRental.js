@@ -3,6 +3,8 @@ const { carRentalWeeklyValiditionSchema, rentToOwnSchema, carRentalWeeklyValidit
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
+const rentalOfficeOrder=require("../models/rentalOfficeOrders")
+const carRentalArchive=require("../models/carArchive");
 const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {
@@ -292,17 +294,46 @@ const deleteCar = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const id = req.params.id;
+
+    const car = await carRental.findOne({ _id: id });
+    if (!car) {
+      return res.status(404).send({
+        status: false,
+        code: 404,
+        message: lang == "ar" ? "السيارة غير موجودة" : "Car not found"
+      });
+    }
+
+    // تحويل الكائن وحذف _id
+    const carData = car.toObject();
+    delete carData._id;
+
+    // حفظ في الأرشيف
+    const archivedCar = await carRentalArchive.create({
+      ...carData,
+      originalCarId: car._id
+    });
+
+    // تحديث الطلبات
+    await rentalOfficeOrder.updateMany(
+      { carId: car._id },
+      { $set: { archivedCarId: archivedCar._id } }
+    );
+
+    // حذف من الجدول الأصلي
     await carRental.findOneAndDelete({ _id: id });
+
     return res.status(200).send({
       code: 200,
       status: true,
       message: lang == "ar" ? "تم حذف الاعلان بنجاح" : "Car listing deleted successfully"
-    })
+    });
+
+  } catch (error) {
+    next(error);
   }
-  catch (error) {
-    next(error)
-  }
-}
+};
+
 
 module.exports = {
   addCar,

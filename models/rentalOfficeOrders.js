@@ -67,6 +67,10 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
     required:true,
   },
   priceType:{type:String ,enum:["open_km","limited_km"]},
+  archivedCarId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'CarRentalArchive'
+},
   date: {
     type: Date,
     default: Date.now
