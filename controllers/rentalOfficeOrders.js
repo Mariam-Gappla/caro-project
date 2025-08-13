@@ -763,9 +763,9 @@ const getOrdersByRentalOffice = async (req, res, next) => {
 
         const messages = getMessages(lang);
 
-        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId });
+        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId,status:"pending" });
 
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId })
+        const orders = await rentalOfficeOrder.find({ rentalOfficeId,status:"pending" })
             .select("carId startDate endDate priceType deliveryType paymentMethod") // ✅ هنجيب بس اللي محتاجينه
             .skip(skip)
             .limit(limit)
