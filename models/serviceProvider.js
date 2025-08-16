@@ -36,7 +36,7 @@ const serviceProviderSchema = new mongoose.Schema({
         type: Date
     },
     image: {
-        type: "string",
+        type: String,
         default: `${process.env.BASE_URL}images/rentalOffice.PNG`,
     },
     createdAt: { type: Date, default: Date.now },

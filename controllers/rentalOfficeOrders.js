@@ -4,7 +4,7 @@ const CarType = require("../models/carType");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
 const Revenu = require("../models/invoice");
-const CarArchive=require("../models/carArchive");
+const CarArchive = require("../models/carArchive");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
@@ -144,7 +144,7 @@ const addOrder = async (req, res, next) => {
             deliveryType: req.body.deliveryType,
             pickupLocation: req.body.deliveryType === "delivery" ? req.body.pickupLocation : undefined,
             totalCost: req.body.totalCost,
-            archivedCarId:carId
+            archivedCarId: carId
         };
 
         if (car.rentalType === "weekly/daily") {
@@ -207,7 +207,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
 
         const paymentStatusTranslations = {
             en: { ended: "Ended", inProgress: "inProgress", paid: "Paid" },
-            ar: { ended: "منتهي", inProgress: "قيد الانتظار", paid: "مدفوع" }
+            ar: { ended: "منتهيه", inProgress: "بأنتظار الدفع", paid: "تم الدفع" }
         };
 
         // Step 1: تحديث الحالات القديمة
@@ -220,6 +220,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
             filters.status = "accepted";
         } else if (status === "ended") {
             filters.ended = true;
+            filters.status = "accepted";
         }
 
         const totalOrders = await rentalOfficeOrder.countDocuments(filters);
@@ -497,7 +498,7 @@ const getOrderById = async (req, res, next) => {
                 rentalType: carData.rentalType,
                 images: carData.images,
                 carDescription: carData.carDescription,
-                carModel: lang=="en"?model.model.en:model.model.ar,   // رجعنا الـ model كامل هنا
+                carModel: lang == "en" ? model.model.en : model.model.ar,   // رجعنا الـ model كامل هنا
                 city: carData.city,
                 odoMeter: carData.odoMeter,
                 licensePlateNumber: carData.licensePlateNumber,
@@ -525,7 +526,7 @@ const getOrderById = async (req, res, next) => {
                 ownershipPeriod: carData.ownershipPeriod,
                 price: carData.carPrice,
                 finalPayment: carData.finalPayment,
-                carModel: lang=="en"?model.model.en:model.model.ar,
+                carModel: lang == "en" ? model.model.en : model.model.ar,
                 city: carData.city,
                 monthlyPayment: carData.monthlyPayment,
                 odoMeter: carData.odoMeter,
@@ -679,8 +680,8 @@ const getOrders = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
-            message: lang === "en" 
-                ? "Your request has been completed successfully" 
+            message: lang === "en"
+                ? "Your request has been completed successfully"
                 : "تمت معالجة الطلب بنجاح",
             data: {
                 deliveredOrders: deliveredCount,
@@ -763,9 +764,9 @@ const getOrdersByRentalOffice = async (req, res, next) => {
 
         const messages = getMessages(lang);
 
-        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId,status:"pending" });
+        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId, status: "pending" });
 
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId,status:"pending" })
+        const orders = await rentalOfficeOrder.find({ rentalOfficeId, status: "pending" })
             .select("carId startDate endDate priceType deliveryType paymentMethod") // ✅ هنجيب بس اللي محتاجينه
             .skip(skip)
             .limit(limit)
@@ -870,23 +871,29 @@ const endOrder = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const orderId = req.params.id;
+        console.log(orderId)
         const order = await rentalOfficeOrder.findOne({ _id: orderId });
         if (order.paymentMethod == "cash") {
             order.ended = true
             await order.save()
+            return res.status(200).send({
+                status: true,
+                code: 200,
+                message: lang == "en" ? "order ended succesfully" : "تم انهاء الاوردر بنجاح"
+            })
         }
         else if (order.paymentMethod == "online") {
             if (order.paymentStatus == "paid") {
                 order.ended = true
                 await order.save()
-                res.status(200).send({
+                return res.status(200).send({
                     status: true,
                     code: 200,
                     message: lang == "en" ? "order ended succesfully" : "تم انهاء الاوردر بنجاح"
                 })
             }
             else {
-                res.status(200).send({
+                return res.status(200).send({
                     status: true,
                     code: 200,
                     message: lang == "en" ? "you can not end order because order unpaid" : "لا تستطيع انهاء الاوردر لانه لم يتم الدفع"
