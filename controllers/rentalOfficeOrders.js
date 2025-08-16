@@ -218,6 +218,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         let filters = { rentalOfficeId };
         if (status === "accepted") {
             filters.status = "accepted";
+            filters.ended = false;
         } else if (status === "ended") {
             filters.ended = true;
             filters.status = "accepted";
