@@ -1,11 +1,10 @@
 const multer = require('multer');
 const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/png','image/jpg', 'image/webp', 'video/mp4'];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
+  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    cb(null, true); // مقبول
   } else {
-    cb(new Error('صيغة الملف غير مدعومة'), false);
+    cb(new Error('مسموح فقط بالصور والفيديوهات'), false);
   }
 };
 const limits = {
