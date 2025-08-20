@@ -41,7 +41,6 @@ const howToUseCaro=require("./routes/howToUseCaro.js");
 
 // 🟢 Middleware
 app.use(express.json());
-app.use("/images", express.static("./images"));
 
 // 🛡️ JWT Authentication Middleware
 const authenticateToken = (req, res, next) => {

@@ -18,7 +18,7 @@ const addCar = async (req, res, next) => {
     const messages = getMessages(lang);
     const fileInfos = imageBuffers.map(file => {
       const fileName = `${Date.now()}-${file.originalname}`;
-      const filePath = path.join(__dirname, '../images', fileName);
+     const filePath = path.join('/var/www/images', fileName);
       imagePaths.push(`${BASE_URL}images/${fileName}`);
       return { fileName, filePath, buffer: file.buffer };
     });
