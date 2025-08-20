@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const http = require("http");
 const jwt = require("jsonwebtoken");
+const path=require("path");
 require("dotenv").config();
 
 const server = http.createServer(app);
