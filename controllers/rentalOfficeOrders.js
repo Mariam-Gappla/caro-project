@@ -3,7 +3,8 @@ const CarRental = require("../models/carRental");
 const CarType = require("../models/carType");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
-const Revenu = require("../models/invoice");
+const counter = require("../models/counter");
+const invoice = require("../models/invoice");
 const CarArchive = require("../models/carArchive");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
@@ -872,11 +873,29 @@ const endOrder = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const orderId = req.params.id;
-        console.log(orderId)
+        const rentalOfficeId = req.user.id;
         const order = await rentalOfficeOrder.findOne({ _id: orderId });
         if (order.paymentMethod == "cash") {
             order.ended = true
-            await order.save()
+            await order.save();
+             const count = await counter.findOneAndUpdate(
+                        { name: "invoice" },
+                        { $inc: { seq: 1 } },
+                        { returnDocument: "after", upsert: true }
+                    );
+            
+                    if (!count) {
+                        return res.status(500).json({ message: "Counter not found" });
+                    }
+            
+                    await invoice.create({
+                        invoiceNumber: count.seq,
+                        userId: order.userId,
+                        rentalOfficeId,
+                        orderId,
+                        amount: order.totalCost,
+                    });
+            
             return res.status(200).send({
                 status: true,
                 code: 200,
@@ -886,7 +905,24 @@ const endOrder = async (req, res, next) => {
         else if (order.paymentMethod == "online") {
             if (order.paymentStatus == "paid") {
                 order.ended = true
-                await order.save()
+                await order.save();
+                  const count = await counter.findOneAndUpdate(
+                        { name: "invoice" },
+                        { $inc: { seq: 1 } },
+                        { returnDocument: "after", upsert: true }
+                    );
+            
+                    if (!count) {
+                        return res.status(500).json({ message: "Counter not found" });
+                    }
+            
+                    await invoice.create({
+                        invoiceNumber: count.seq,
+                        userId: order.userId,
+                        rentalOfficeId,
+                        orderId,
+                        amount: order.totalCost,
+                    });
                 return res.status(200).send({
                     status: true,
                     code: 200,
