@@ -206,9 +206,9 @@ const login = async (req, res, next) => {
         }
 
         if (existServiceProvider.status === "pending") {
-          return res.status(200).send({
-            status: true,
-            code: 200,
+          return res.status(400).send({
+            status: false,
+            code: 400,
             message: lang === "en" ? "Your request is under review" : "جارى مراجعه الطلب"
           });
         }

@@ -43,8 +43,8 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ['inprogress', 'paid'],
-      default:"inprogress"
+      enum: ['inProgress', 'paid'],
+      default:"inProgress"
     },
     carLocation: {
       lat: {

@@ -59,7 +59,6 @@ const getOrdersbyServiceType = async (req, res, next) => {
       await tire.findOne({ providerId });
 
     const provider = await serviceProvider.findOne({ _id: providerId });
-
     if (!verificationAccount) {
       return res.status(404).json({
         status: false,
@@ -138,11 +137,11 @@ const getOrdersbyServiceType = async (req, res, next) => {
 
         formattedOrders.push({
           id: order._id,
-          userData:{
-            id:order.userId._id,
-             username: order.userId.username,
-             image:order.userId.image,
-             averageRating: avgRating,
+          userData: {
+            id: order.userId._id,
+            username: order.userId.username,
+            image: order.userId.image,
+            averageRating: avgRating,
           },
           image: order.userId.image,
           serviceType: order.serviceType,
@@ -170,11 +169,11 @@ const getOrdersbyServiceType = async (req, res, next) => {
 
         formattedOrders.push({
           id: order._id,
-         userData:{
-            id:order.userId._id,
-             username: order.userId.username,
-             image:order.userId.image,
-             averageRating: avgRating,
+          userData: {
+            id: order.userId._id,
+            username: order.userId.username,
+            image: order.userId.image,
+            averageRating: avgRating,
           },
           username: order.userId.username,
           image: order.userId.image,
@@ -486,19 +485,28 @@ const getOrdersByServiceProvider = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
+    const paymentStatusTranslations = {
+      en: {
+        inProgress: "inProgress",
+        paid: "Paid"
+      },
+      ar: {
+        inProgress: "بأنتظار الدفع",
+        paid: "تم الدفع"
+      }
+    };
     const active = req.query.active === "true"; // بتحول 
     console.log(active)
 
     // حدد قيمة paymentStatus بناءً على قيمة active
-    const paymentStatusFilter = active ? "inprogress" : "paid";
+    const paymentStatusFilter = active ? "inProgress" : "paid";
 
     const filter = {
       providerId: providerId,
       status: "accepted",
       paymentStatus: paymentStatusFilter
     };
-
+   
     const totalOrders = await serviceProviderOrder.countDocuments(filter);
 
     const orders = await serviceProviderOrder
@@ -521,7 +529,8 @@ const getOrdersByServiceProvider = async (req, res, next) => {
     const enrichedOrders = await Promise.all(
       orders.map(async (order) => {
         let distance = null;
-
+        console.log(order.paymentStatus)
+        const paymentStatusText = paymentStatusTranslations[lang][order.paymentStatus] || "";
         if (order?.location?.lat && order?.location?.long) {
           distance = haversineDistance(
             provider.location.lat,
@@ -549,7 +558,8 @@ const getOrdersByServiceProvider = async (req, res, next) => {
           distance: distance ? `${distance} km` : "",
           username: order.userId.username,
           image: order.userId.image,
-          rating: averageRating || "0.0"
+          rating: averageRating || "0.0",
+          paymentStatusText
 
         };
       })

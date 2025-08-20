@@ -225,7 +225,7 @@ const getRevenueById = async (req, res, next) => {
                 endDate: orderData.endDate,
                 paymentStatus,
                 paymentStatusText,
-                deliveryOption: carData.deliveryOption || "",
+                deliveryOption: carData.deliveryOption,
                 totalCost: orderData.totalCost,
                 price: carData.priceType === "open_km" ? carData.pricePerFreeKilometer : carData.pricePerExtraKilometer,
             };
@@ -249,7 +249,7 @@ const getRevenueById = async (req, res, next) => {
                 licensePlateNumber: carData.licensePlateNumber || "",
                 area: carData.area || "",
                 revenuNumber: revenuDetails.invoiceNumber,
-                deliveryOption: carData.deliveryOption || "",
+                deliveryOption: carData.deliveryOption,
                 startDate: orderData.startDate,
             };
         }

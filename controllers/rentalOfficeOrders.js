@@ -442,8 +442,8 @@ const getOrderById = async (req, res, next) => {
             },
             ar: {
                 ended: "منتهي",
-                inProgress: "قيد الانتظار",
-                paid: "مدفوع"
+                inProgress: "بأنتظار الدفع",
+                paid: "تم الدفع"
             }
         };
 
