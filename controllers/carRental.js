@@ -41,6 +41,7 @@ const addCar = async (req, res, next) => {
     // 🔹 إذا البيانات سليمة: نخزن الصور على السيرفر
     fileInfos.forEach(file => {
       fs.writeFileSync(file.filePath, file.buffer);
+      console.log('Saved file at:', file.filePath);
     });
 
     // 🔹 حفظ الداتا في قاعدة البيانات بعد حفظ الصور
