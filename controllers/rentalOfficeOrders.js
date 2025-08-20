@@ -130,7 +130,7 @@ const addOrder = async (req, res, next) => {
         }
 
         fs.writeFileSync(filePath, file.buffer);
-        const fileUrl = `${BASE_URL}/images/${fileName}`;
+        const fileUrl = `${BASE_URL}images/${fileName}`;
 
         // ✅ تجهيز بيانات الطلب
         const rentalOfficeId = car.rentalOfficeId;

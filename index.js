@@ -70,6 +70,15 @@ const authenticateToken = (req, res, next) => {
 };
 
 app.use(authenticateToken);
+app.use('/images', express.static(path.join(__dirname, 'images'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith(".mp4")) {
+      res.setHeader("Content-Type", "video/mp4");
+      res.setHeader("Content-Disposition", "inline"); // 👈 يخلي الفيديو يتعرض مش ينزل
+    }
+  }
+}));
+
 
 // 🟢 Apply Routes
 app.use("/otp", otp);
