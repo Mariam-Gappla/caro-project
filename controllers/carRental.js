@@ -9,105 +9,66 @@ const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {
   try {
-    console.log(req.user.id)
-    const imageBuffers = req.files || [];
+    const files = req.files || [];
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
-    // ⏰ نحفظ اسم الصورة مرة واحدة لكل صورة
+
     const imagePaths = [];
-    const messages = getMessages(lang);
-    const fileInfos = imageBuffers.map(file => {
+    const fileInfos = files.map(file => {
       const fileName = `${Date.now()}-${file.originalname}`;
-     const filePath = path.join('/var/www/images', fileName);
+      const filePath = path.join('/var/www/images', fileName);
       imagePaths.push(`${BASE_URL}images/${fileName}`);
       return { fileName, filePath, buffer: file.buffer };
     });
-    console.log(imagePaths);
+
+    // 🔹 أولًا: نتحقق من البيانات قبل حفظ الصور
     const { rentalType } = req.body;
-    if (rentalType == "weekly/daily") {
-
-      const { error } = carRentalWeeklyValiditionSchema(lang).validate({
-        ...req.body,
-        images: imagePaths,
-      });
-      if (error) {
-        return res.status(400).send({
-          code: 400,
-          status: false,
-          message: error.details[0].message
-        });
-      }
-      await carRental.create({
-        rentalType: req.body.rentalType,
-        images: imagePaths,
-        nameId: req.body.nameId,
-        modelId: req.body.modelId,
-        carTypeId: req.body.carTypeId,
-        licensePlateNumber: req.body.licensePlateNumber,
-        freeKilometers: req.body.freeKilometers,
-        pricePerFreeKilometer: req.body.pricePerFreeKilometer,
-        pricePerExtraKilometer: req.body.pricePerExtraKilometer,
-        city: req.body.city,
-        area: req.body.area,
-        carDescription: req.body.carDescription,
-        deliveryOption: req.body.deliveryOption,
-        odoMeter: req.body.odoMeter,
-        rentalOfficeId: req.user.id
-      });
-
+    let error;
+    if (rentalType === "weekly/daily") {
+      error = carRentalWeeklyValiditionSchema(lang).validate({ ...req.body, images: imagePaths }).error;
+    } else if (rentalType === "rent to own") {
+      error = rentToOwnSchema(lang).validate({ ...req.body, images: imagePaths }).error;
     }
-    else if (rentalType == "rent to own") {
-      const { error } = rentToOwnSchema(lang).validate({
-        ...req.body,
-        images: imagePaths,
-      });
-      if (error) {
-        return res.status(400).send({
-          code: 400,
-          status: false,
-          message: error.details[0].message
-        });
-      }
-      await carRental.create({
-        rentalType: req.body.rentalType,
-        images: imagePaths,
-        nameId: req.body.nameId,
-        modelId: req.body.modelId,
-        carTypeId: req.body.carTypeId,
-        licensePlateNumber: req.body.licensePlateNumber,
-        carPrice: req.body.carPrice,
-        monthlyPayment: req.body.monthlyPayment,
-        odoMeter: req.body.odoMeter,
-        finalPayment: req.body.finalPayment,
-        city: req.body.city,
-        area: req.body.area,
-        carDescription: req.body.carDescription,
-        deliveryOption: req.body.deliveryOption,
-        ownershipPeriod: req.body.ownershipPeriod,
-        rentalOfficeId: req.user.id
+
+    if (error) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: error.details[0].message
       });
     }
 
-
-
-
-    // 💾 احفظ الملفات باستخدام الأسماء اللي جهزناها
+    // 🔹 إذا البيانات سليمة: نخزن الصور على السيرفر
     fileInfos.forEach(file => {
       fs.writeFileSync(file.filePath, file.buffer);
     });
 
-
-
+    // 🔹 حفظ الداتا في قاعدة البيانات بعد حفظ الصور
+    await carRental.create({
+      rentalType: req.body.rentalType,
+      images: imagePaths,
+      nameId: req.body.nameId,
+      modelId: req.body.modelId,
+      carTypeId: req.body.carTypeId,
+      licensePlateNumber: req.body.licensePlateNumber,
+      city: req.body.city,
+      area: req.body.area,
+      carDescription: req.body.carDescription,
+      deliveryOption: req.body.deliveryOption,
+      odoMeter: req.body.odoMeter,
+      rentalOfficeId: req.user.id
+    });
 
     return res.status(200).send({
       code: 200,
       status: true,
-      message: lang == "ar" ? "تم اضافه السياره بنجاح" : "car added successfully"
+      message: lang === "ar" ? "تم اضافه السياره بنجاح" : "car added successfully"
     });
+
   } catch (err) {
     next(err);
   }
-}
+};
 const getCarsByRentalOfficeForUser = async (req, res, next) => {
   try {
     const id = req.params.id;
