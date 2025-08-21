@@ -518,6 +518,7 @@ const getOrderById = async (req, res, next) => {
                 video: carData.videoCar || ""
             };
         } else if (carData.rentalType === "rent to own") {
+            console.log(carData.monthlyPaymentde)
             formattedOrder = {
                 title: lang === "ar"
                     ? `تملك سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
