@@ -123,7 +123,7 @@ const addOrder = async (req, res, next) => {
 
         // ✅ حفظ الصورة فعليًا
         const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
-        const saveDir = path.join(__dirname, '../images');
+        const saveDir = '/var/www/images';
         const filePath = path.join(saveDir, fileName);
 
         if (!fs.existsSync(saveDir)) {
