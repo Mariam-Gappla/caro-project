@@ -193,7 +193,7 @@ const updateCar = async (req, res, next) => {
     // 3. حذف الصور من السيرفر
     imagesToDelete.forEach(imgUrl => {
       const fileName = imgUrl.split('/').pop();
-      const filePath = path.join(__dirname, '../images', fileName);
+      const filePath = path.join('/var/www/images', fileName);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     });
 
@@ -203,7 +203,7 @@ const updateCar = async (req, res, next) => {
     // 5. جهزي الصور الجديدة
     const fileInfos = imageBuffers.map(file => {
       const fileName = `${Date.now()}-${file.originalname}`;
-      const filePath = path.join(__dirname, '../images', fileName);
+      const filePath = path.join('/var/www/images', fileName);
       updatedImages.push(BASE_URL + fileName);
       return { fileName, filePath, buffer: file.buffer };
     });

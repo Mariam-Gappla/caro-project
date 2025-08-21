@@ -601,7 +601,9 @@ const acceptorder = async (req, res, next) => {
             }
 
             const fileName = `${Date.now()}-${encodeURIComponent(file.originalname)}`;
-            const saveDir = path.join(__dirname, '../images');
+
+            // نخلي المسار مطلق على السيرفر
+            const saveDir = '/var/www/images';
             const filePath = path.join(saveDir, fileName);
 
             if (!fs.existsSync(saveDir)) {
@@ -610,7 +612,10 @@ const acceptorder = async (req, res, next) => {
 
             fs.writeFileSync(filePath, file.buffer);
 
-            const fileUrl = `${BASE_URL}images/${fileName}`;
+            console.log("Saved file at:", filePath);
+
+            // نرجع لينك مباشر يوصل من المتصفح
+            const fileUrl = `${BASE_URL}/images/${fileName}`;
             const order = await rentalOfficeOrder.findByIdAndUpdate(
                 { _id: orderId },
                 { status: status },
@@ -878,24 +883,24 @@ const endOrder = async (req, res, next) => {
         if (order.paymentMethod == "cash") {
             order.ended = true
             await order.save();
-             const count = await counter.findOneAndUpdate(
-                        { name: "invoice" },
-                        { $inc: { seq: 1 } },
-                        { returnDocument: "after", upsert: true }
-                    );
-            
-                    if (!count) {
-                        return res.status(500).json({ message: "Counter not found" });
-                    }
-            
-                    await invoice.create({
-                        invoiceNumber: count.seq,
-                        userId: order.userId,
-                        rentalOfficeId,
-                        orderId,
-                        amount: order.totalCost,
-                    });
-            
+            const count = await counter.findOneAndUpdate(
+                { name: "invoice" },
+                { $inc: { seq: 1 } },
+                { returnDocument: "after", upsert: true }
+            );
+
+            if (!count) {
+                return res.status(500).json({ message: "Counter not found" });
+            }
+
+            await invoice.create({
+                invoiceNumber: count.seq,
+                userId: order.userId,
+                rentalOfficeId,
+                orderId,
+                amount: order.totalCost,
+            });
+
             return res.status(200).send({
                 status: true,
                 code: 200,
@@ -906,23 +911,23 @@ const endOrder = async (req, res, next) => {
             if (order.paymentStatus == "paid") {
                 order.ended = true
                 await order.save();
-                  const count = await counter.findOneAndUpdate(
-                        { name: "invoice" },
-                        { $inc: { seq: 1 } },
-                        { returnDocument: "after", upsert: true }
-                    );
-            
-                    if (!count) {
-                        return res.status(500).json({ message: "Counter not found" });
-                    }
-            
-                    await invoice.create({
-                        invoiceNumber: count.seq,
-                        userId: order.userId,
-                        rentalOfficeId,
-                        orderId,
-                        amount: order.totalCost,
-                    });
+                const count = await counter.findOneAndUpdate(
+                    { name: "invoice" },
+                    { $inc: { seq: 1 } },
+                    { returnDocument: "after", upsert: true }
+                );
+
+                if (!count) {
+                    return res.status(500).json({ message: "Counter not found" });
+                }
+
+                await invoice.create({
+                    invoiceNumber: count.seq,
+                    userId: order.userId,
+                    rentalOfficeId,
+                    orderId,
+                    amount: order.totalCost,
+                });
                 return res.status(200).send({
                     status: true,
                     code: 200,

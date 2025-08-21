@@ -64,7 +64,7 @@ const addTweet = async (req, res, next) => {
 
         const cleanImageName = img.originalname.replace(/\s+/g, '-');
         const fileName = `${Date.now()}-${cleanImageName}`;
-        const filePath = path.join(__dirname, '../images', fileName);
+       const filePath = path.join('/var/www/images', fileName);
         fs.writeFileSync(filePath, img.buffer);
         imagesUrls.push(BASE_URL + fileName);
       }
@@ -98,7 +98,7 @@ const addTweet = async (req, res, next) => {
 
       const cleanVideoName = video.originalname.replace(/\s+/g, '-');
       const fileName = `${Date.now()}-${cleanVideoName}`;
-      const filePath = path.join(__dirname, '../images', fileName); // تقدر تغير المسار لو حابة
+      const filePath = path.join('/var/www/images', fileName);
       fs.writeFileSync(filePath, video.buffer);
       videoUrl = BASE_URL + fileName;
     }
