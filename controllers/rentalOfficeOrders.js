@@ -122,7 +122,7 @@ const addOrder = async (req, res, next) => {
         }
 
         // ✅ حفظ الصورة فعليًا
-        const fileName = `${Date.now()}-${file.originalname}`;
+        const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
         const saveDir = path.join(__dirname, '../images');
         const filePath = path.join(saveDir, fileName);
 
@@ -600,7 +600,7 @@ const acceptorder = async (req, res, next) => {
                 });
             }
 
-            const fileName = `${Date.now()}-${encodeURIComponent(file.originalname)}`;
+           const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
 
             // نخلي المسار مطلق على السيرفر
             const saveDir = '/var/www/images';
@@ -615,7 +615,7 @@ const acceptorder = async (req, res, next) => {
             console.log("Saved file at:", filePath);
 
             // نرجع لينك مباشر يوصل من المتصفح
-            const fileUrl = `${BASE_URL}/images/${fileName}`;
+            const fileUrl = `${BASE_URL}images/${fileName}`;
             const order = await rentalOfficeOrder.findByIdAndUpdate(
                 { _id: orderId },
                 { status: status },
