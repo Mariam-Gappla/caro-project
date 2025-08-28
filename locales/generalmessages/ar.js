@@ -1,6 +1,3 @@
-const { exist } = require("joi");
-const { rentalOffice, contactus } = require("./en");
-
 module.exports = {
   register: {
     emailExists: {

@@ -1,8 +1,3 @@
-const { invalid } = require("joi");
-const contactus = require("../../models/contactUs");
-const rentalOffice = require("../../models/rentalOffice");
-const { invoice } = require("./ar");
-
 module.exports = {
   register: {
     emailExists: {
