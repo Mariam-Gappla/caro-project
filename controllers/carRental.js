@@ -3,8 +3,8 @@ const { carRentalWeeklyValiditionSchema, rentToOwnSchema, carRentalWeeklyValidit
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
-const rentalOfficeOrder=require("../models/rentalOfficeOrders")
-const carRentalArchive=require("../models/carArchive");
+const rentalOfficeOrder = require("../models/rentalOfficeOrders")
+const carRentalArchive = require("../models/carArchive");
 const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {
@@ -17,7 +17,7 @@ const addCar = async (req, res, next) => {
     // ⏰ نحفظ اسم الصورة مرة واحدة لكل صورة
     const imagePaths = [];
     const messages = getMessages(lang);
-     const fileInfos = files.map(file => {
+    const fileInfos = files.map(file => {
       const fileName = `${Date.now()}-${file.originalname}`;
       const filePath = path.join('/var/www/images', fileName);
       imagePaths.push(`${BASE_URL}images/${fileName}`);
@@ -93,7 +93,7 @@ const addCar = async (req, res, next) => {
 
 
     // 💾 احفظ الملفات باستخدام الأسماء اللي جهزناها
-     fileInfos.forEach(file => {
+    fileInfos.forEach(file => {
       fs.writeFileSync(file.filePath, file.buffer);
       console.log('Saved file at:', file.filePath);
     });
@@ -109,38 +109,106 @@ const addCar = async (req, res, next) => {
     next(err);
   }
 }
-
 const getCarsByRentalOfficeForUser = async (req, res, next) => {
   try {
     const id = req.params.id;
-    console.log(id)
     const lang = req.headers['accept-language'] || 'en';
-    const messages = getMessages(lang)
-    console.log(id)
-    const cars = await carRental.find({ rentalOfficeId: id });
+    const messages = getMessages(lang);
 
-    if (!cars) {
+    // 📌 pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // 📌 جايب rentalType من query
+    const rentalType = req.query.rentalType; // مثال: weekly/daily أو rent to own
+
+    // 📌 بناء الفلتر
+    const filter = { rentalOfficeId: id };
+    if (rentalType) {
+      filter.rentalType = rentalType;
+    }
+
+    // 📌 اجمالي عدد العربيات
+    const totalCars = await carRental.countDocuments(filter);
+
+    // 📌 العربيات بحد pagination
+    const cars = await carRental.find(filter)
+      .skip(skip)
+      .limit(limit);
+
+    if (!cars || cars.length === 0) {
       return res.status(400).send({
         code: 400,
         status: false,
         message: messages.rentalOffice.haveCars
       });
     }
+
+    const formattedCars = await Promise.all(
+      cars.map(async (car) => {
+        const name = await Name.findById(car.nameId).lean();
+        const model = await Model.findById(car.modelId).lean();
+
+        let formattedOrder = {};
+
+        if (car.rentalType === "weekly/daily") {
+          formattedOrder = {
+            id: car._id,
+            title: lang === "ar"
+              ? `تأجير سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
+              : `Renting a car ${name?.carName?.en || ""} ${model?.model?.en || ""}`,
+            rentalType: car.rentalType,
+            images: car.images,
+            carDescription: car.carDescription,
+            carModel: lang == "en" ? model?.model?.en : model?.model?.ar,
+            city: car.city,
+            odoMeter: car.odoMeter,
+            pricePerExtraKilometer: car.pricePerExtraKilometer,
+            pricePerFreeKilometer: car.pricePerFreeKilometer
+          };
+        } else if (car.rentalType === "rent to own") {
+          formattedOrder = {
+            id: car._id,
+            title: lang === "ar"
+              ? `تملك سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
+              : `Owning a car ${name?.carName?.en || ""} ${model?.model?.en || ""}`,
+            rentalType: car.rentalType,
+            images: car.images,
+            carDescription: car.carDescription,
+            ownershipPeriod: car.ownershipPeriod,
+            price: car.carPrice,
+            finalPayment: car.finalPayment,
+            carModel: lang == "en" ? model?.model?.en : model?.model?.ar,
+            city: car.city,
+            monthlyPayment: car.monthlyPayment,
+            odoMeter: car.odoMeter
+          };
+        }
+
+        return formattedOrder;
+      })
+    );
+
     return res.status(200).send({
       code: 200,
       status: true,
-      message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
-      data: cars
-    })
+      message: lang == "en"
+        ? "Your request has been completed successfully"
+        : "تمت معالجة الطلب بنجاح",
+      data: formattedCars,
+      pagination: {
+        page: page,
+        totalPages: Math.ceil(totalCars / limit),
+      }
+    });
+
+  } catch (err) {
+    next(err);
   }
-  catch (err) {
-    next(err)
-  }
-}
+};
 const getCarById = async (req, res, next) => {
   try {
-    console.log("order")
-    const user = req.user.id;
     const carId = req.params.id;
     const lang = req.headers['accept-language'] || 'en';
     const messages = getMessages(lang);
@@ -156,21 +224,21 @@ const getCarById = async (req, res, next) => {
     const name = await Name.findOne({ _id: car.nameId });
     const model = await Model.findOne({ _id: car.modelId });
     let formatedData;
-    const { __v ,rentalOfficeId,nameId,modelId,carTypeId, ...data } = car;
+    const { __v, rentalOfficeId, nameId, modelId, carTypeId, ...data } = car;
     if (car.rentalType == "weekly/daily") {
       formatedData = {
         ...data,
-        nameId:{
-          id:nameId._id,
-          carName:lang=="en"?nameId.carName.en:nameId.carName.ar
+        nameId: {
+          id: nameId._id,
+          carName: lang == "en" ? nameId.carName.en : nameId.carName.ar
         },
-        modelId:{
-          id:modelId._id,
-          model:lang=="en"?modelId.model.en:modelId.model.ar
+        modelId: {
+          id: modelId._id,
+          model: lang == "en" ? modelId.model.en : modelId.model.ar
         },
-        carTypeId:{
-          id:carTypeId._id,
-          type:lang=="en"?carTypeId.type.en:carTypeId.type.ar
+        carTypeId: {
+          id: carTypeId._id,
+          type: lang == "en" ? carTypeId.type.en : carTypeId.type.ar
         },
         title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
       }
@@ -178,17 +246,17 @@ const getCarById = async (req, res, next) => {
     else {
       formatedData = {
         ...data,
-        nameId:{
-          id:nameId._id,
-          carName:lang=="en"?nameId.carName.en:nameId.carName.ar
+        nameId: {
+          id: nameId._id,
+          carName: lang == "en" ? nameId.carName.en : nameId.carName.ar
         },
-        modelId:{
-          id:modelId._id,
-          model:lang=="en"?modelId.model.en:modelId.model.ar
+        modelId: {
+          id: modelId._id,
+          model: lang == "en" ? modelId.model.en : modelId.model.ar
         },
-        carTypeId:{
-          id:carTypeId._id,
-          type:lang=="en"?carTypeId.type.en:carTypeId.type.ar
+        carTypeId: {
+          id: carTypeId._id,
+          type: lang == "en" ? carTypeId.type.en : carTypeId.type.ar
         },
         title: lang === "ar"
           ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
@@ -198,7 +266,7 @@ const getCarById = async (req, res, next) => {
     }
     return res.status(200).send({
       status: true,
-      code:200,
+      code: 200,
       message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
       data: formatedData
     })
@@ -335,6 +403,107 @@ const deleteCar = async (req, res, next) => {
     next(error);
   }
 };
+const getSearchCar = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const messages = getMessages(lang);
+
+    const searchQuery = req.query.name || '';
+
+    // pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // ابني الفلتر حسب اللغة
+    let nameFilter = {};
+    if (lang === "ar") {
+      nameFilter["carName.ar"] = { $regex: searchQuery, $options: "i" };
+    } else {
+      nameFilter["carName.en"] = { $regex: searchQuery, $options: "i" };
+    }
+
+    // هات الأسماء
+    const names = await Name.find(nameFilter).lean();
+    if (!names.length) {
+      return res.status(400).send({
+        code: 400,
+        status: false,
+        message: lang === "en"
+          ? "No car names match your search"
+          : "لا توجد أسماء سيارات تطابق بحثك"
+      });
+    }
+
+    // هات كل الـ nameIds
+    const nameIds = names.map(n => n._id);
+
+    // هات العربيات مع pagination
+    const totalCars = await carRental.countDocuments({ nameId: { $in: nameIds } });
+    const cars = await carRental.find({ nameId: { $in: nameIds } })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    // format
+    const formattedCars = await Promise.all(
+      cars.map(async (car) => {
+        const name = names.find(n => n._id.toString() === car.nameId.toString());
+        const model = await Model.findById(car.modelId).lean();
+
+        let formattedOrder = {};
+        if (car.rentalType === "weekly/daily") {
+          formattedOrder = {
+            title: lang === "ar"
+              ? `تأجير سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
+              : `Renting a car ${name?.carName?.en || ""} ${model?.model?.en || ""}`,
+            rentalType: car.rentalType,
+            images: car.images,
+            carDescription: car.carDescription,
+            carModel: lang === "en" ? model?.model?.en : model?.model?.ar,
+            city: car.city,
+            odoMeter: car.odoMeter,
+            pricePerExtraKilometer: car.pricePerExtraKilometer,
+            pricePerFreeKilometer: car.pricePerFreeKilometer
+          };
+        } else if (car.rentalType === "rent to own") {
+          formattedOrder = {
+            title: lang === "ar"
+              ? `تملك سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
+              : `Owning a car ${name?.carName?.en || ""} ${model?.model?.en || ""}`,
+            rentalType: car.rentalType,
+            images: car.images,
+            carDescription: car.carDescription,
+            ownershipPeriod: car.ownershipPeriod,
+            price: car.carPrice,
+            finalPayment: car.finalPayment,
+            carModel: lang === "en" ? model?.model?.en : model?.model?.ar,
+            city: car.city,
+            monthlyPayment: car.monthlyPayment,
+            odoMeter: car.odoMeter
+          };
+        }
+
+        return formattedOrder;
+      })
+    );
+
+    return res.status(200).send({
+      code: 200,
+      status: true,
+      message: lang === "en"
+        ? "Your request has been completed successfully"
+        : "تمت معالجة الطلب بنجاح",
+      data: formattedCars,
+      pagination: {
+        page,
+        totalPages: Math.ceil(totalCars / limit)
+      },
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 module.exports = {
@@ -342,5 +511,6 @@ module.exports = {
   getCarsByRentalOfficeForUser,
   getCarById,
   updateCar,
+  getSearchCar,
   deleteCar
 }

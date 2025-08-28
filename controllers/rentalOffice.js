@@ -3,39 +3,83 @@ const getMessages = require("../configration/getmessages")
 const followersForRentalOffice = require("../models/followersForRentalOffice");
 const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
-const path=require("path");
-const fs=require("fs")
+const path = require("path");
+const fs = require("fs")
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
 const bcrypt = require("bcrypt");
 const saveImage = (file, folder = 'images') => {
-  const fileName = `${Date.now()}-${file.originalname}`;
-  const saveDir = path.join(__dirname, '..', folder);
-  const filePath = path.join(saveDir, fileName);
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const saveDir = path.join(__dirname, '..', folder);
+    const filePath = path.join(saveDir, fileName);
 
-  if (!fs.existsSync(saveDir)) {
-    fs.mkdirSync(saveDir, { recursive: true });
-  }
+    if (!fs.existsSync(saveDir)) {
+        fs.mkdirSync(saveDir, { recursive: true });
+    }
 
-  fs.writeFileSync(filePath, file.buffer);
-  return `images/${fileName}`;
+    fs.writeFileSync(filePath, file.buffer);
+    return `images/${fileName}`;
 };
 const getAllRentallOffice = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const allRentalOffice = await rentalOffice.find();
+
+        // 📌 Pagination params
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // 📌 هات المكاتب مع pagination
+        const allRentalOffice = await rentalOffice.find()
+            .skip(skip)
+            .limit(limit);
+
+        // 📌 هات التقييمات
+        const ratings = await ratingForOrder.aggregate([
+            {
+                $group: {
+                    _id: "$rentalOfficeId",
+                    avgRating: { $avg: "$rating" },
+                }
+            }
+        ]);
+
+        // 📌 اعمل map للتقييمات عشان الوصول يبقى أسرع
+        const ratingMap = {};
+        ratings.forEach(r => {
+            ratingMap[r._id.toString()] = {
+                avgRating: r.avgRating
+            };
+        });
+
+        // 📌 دمج التقييمات مع المكاتب
+        const formattedOffices = allRentalOffice.map(o => ({
+            username: o.username,
+            id: o._id,
+            image: o.image,
+            rating: ratingMap[o._id.toString()] || 0
+        }));
+
+        // 📌 احسب عدد المكاتب الكلي
+        const total = await rentalOffice.countDocuments();
+
         return res.status(200).send({
             code: 200,
             status: true,
-            message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
-            data: allRentalOffice
+            message: lang === "en"
+                ? "Your request has been completed successfully"
+                : "تمت معالجة الطلب بنجاح",
+            data: formattedOffices,
+            pagination: {
+                page,
+                totalPages: Math.ceil(total / limit)
+            }
         });
 
+    } catch (err) {
+        next(err);
     }
-    catch (err) {
-        next(err)
-    }
-}
+};
 const addLike = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -130,7 +174,7 @@ const getRentalOfficeCar = async (req, res, next) => {
                     };
                 } else {
                     title =
-                    lang === "ar"
+                        lang === "ar"
                             ? `تملك سيارة ${name?.carName.ar || ""} ${model.model.ar || ""}`
                             : `Owning a car ${name?.carName.en || ""} ${model.model.en || ""}`;
                     return {
@@ -138,7 +182,6 @@ const getRentalOfficeCar = async (req, res, next) => {
                         title,
                         rentalType: "rent to own",
                         images: car.images,
-                        model: lang === "ar" ?model?.model.ar:model?.model.en,
                         carDescription: car.carDescription,
                         city: car.city,
                         odoMeter: car.odoMeter,
@@ -163,7 +206,7 @@ const getRentalOfficeCar = async (req, res, next) => {
             data: {
                 cars: formatedCars,
                 pagination: {
-                    currentPage: page,
+                    page: page,
                     totalPages: Math.ceil(totalCars / limit)
                 }
             }
@@ -173,6 +216,37 @@ const getRentalOfficeCar = async (req, res, next) => {
         next(err);
     }
 };
+const getRentalOfficeById = async (req, res, next) => {
+    try {
+        const lang = req.headers['accept-language'] || 'en';
+        const rentalOfficeId = req.params.id;
+        const existRentalOffice = await rentalOffice.findOne({ _id: rentalOfficeId });
+        if (!existRentalOffice) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: messages.rentalOffice.existRentalOffice
+            });
+        }
+        const formattedOffice = {
+            id: existRentalOffice._id,
+            username: existRentalOffice.username,
+            image: existRentalOffice.image,
+        }
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang === "en"
+                ? "Your request has been completed successfully"
+                : "تمت معالجة الطلب بنجاح",
+            data: formattedOffice
+        });
+
+    }
+    catch (error) {
+        next(error)
+    }
+}
 const getProfileData = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
@@ -234,5 +308,6 @@ module.exports = {
     getAllRentallOffice,
     addLike,
     getRentalOfficeCar,
+    getRentalOfficeById,
     getProfileData
 }
