@@ -1,6 +1,7 @@
 const Post = require("../models/post");
 const postSchema = require("../validation/postValidition");
 const saveImage = require("../configration/saveImage");
+const mongoose = require("mongoose");
 const addPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
