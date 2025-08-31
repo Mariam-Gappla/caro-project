@@ -14,6 +14,6 @@ const saveImage = (file, folder = '/var/www/images') => {
   console.log("Saved file at:", filePath);
 
   // الرابط اللي هيتخزن في الداتابيز
-  return `/images/${fileName}`;
+  return `images/${fileName}`;
 };
 module.exports = saveImage;
