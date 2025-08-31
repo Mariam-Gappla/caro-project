@@ -38,7 +38,13 @@ const serviceProviderOrders= require("./routes/serviceProviderOrders.js");
 const providerRatingRoutes = require("./routes/providerRating.js");
 const workSessionRoutes = require("./routes/workSessionroutes.js");
 const howToUseCaro=require("./routes/howToUseCaro.js");
-
+const mainCategoriesRoutes=require("./routes/mainCategories");
+const subCategoriesRoutes=require("./routes/subCategories.js");
+const replyOnCommentForUser= require("./routes/replyOnCommentroutesForUser");
+const commentForUser= require("./routes/commentForUser");
+const postRoutes=require("./routes/postroutes.js");
+const cityRoutes=require("./routes/city.js");
+const areaRoutes=require("./routes/area.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -104,7 +110,14 @@ app.use("/serviceProviderOrders",serviceProviderOrders);
 app.use("/providerRating", providerRatingRoutes);
 app.use("/workSession", workSessionRoutes);
 app.use("/HowToUseCaro",howToUseCaro);
-app.use("/carTypes",typeRoutes)
+app.use("/carTypes",typeRoutes);
+app.use("/mainCategories",mainCategoriesRoutes);
+app.use("/subCategories",subCategoriesRoutes);
+app.use("/replyOnCommentForUser",replyOnCommentForUser);
+app.use("/commentForUser",commentForUser);
+app.use("/posts",postRoutes);
+app.use("/area",areaRoutes);
+app.use("/city",cityRoutes)
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
@@ -113,7 +126,6 @@ app.use((err, req, res, next) => {
     message: err.message || "Something went wrong",
   });
 });
-
 // 🚀 Start the server
 const port = 3000;
 server.listen(port, async () => {
@@ -121,4 +133,3 @@ server.listen(port, async () => {
   console.log(`✅ Server is running on port ${port}`);
   socketConnection(server); // ← تفعيل socket.io هنا
 });
-server.setTimeout(300000);

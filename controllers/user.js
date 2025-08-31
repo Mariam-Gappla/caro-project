@@ -12,9 +12,14 @@ const Winsh = require("../models/winsh");
 const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
-const saveImage = (file, folder = 'images') => {
-  const fileName = `${Date.now()}-${file.originalname}`;
-  const saveDir = path.join(__dirname, '..', folder);
+const saveImage = (file, folder = '/var/www/images') => {
+  // ⬅️ تنظيف اسم الملف: إزالة المسافات والرموز الخاصة
+  const cleanName = file.originalname
+    .replace(/\s+/g, '_')           // استبدال المسافات بـ "_"
+    .replace(/[^a-zA-Z0-9._-]/g, ''); // حذف أي رموز غير مسموحة
+
+  const fileName = `${Date.now()}-${cleanName}`;
+  const saveDir = folder; // المسار المطلق
   const filePath = path.join(saveDir, fileName);
 
   if (!fs.existsSync(saveDir)) {
@@ -22,7 +27,11 @@ const saveImage = (file, folder = 'images') => {
   }
 
   fs.writeFileSync(filePath, file.buffer);
-  return `images/${fileName}`;
+
+  console.log("✅ Saved file at:", filePath);
+
+  // الرابط اللي هيتخزن في الداتابيز
+  return `/images/${fileName}`;
 };
 const register = async (req, res, next) => {
   try {
@@ -593,7 +602,7 @@ const editProfile = async (req, res, next) => {
     if (req.file) {
       const file = req.file;
       const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-      const url = saveImage(file, "images");
+      const url = saveImage(file);
       updateData.image = `${BASE_URL}${url}`;
     }
 

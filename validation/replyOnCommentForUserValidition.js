@@ -1,6 +1,6 @@
 const Joi = require("joi");
 const mongoose = require("mongoose");
-const getMessages=require("../locales/schemaValiditionMessages/replyOnCommentValiditionMessages")
+const getMessages=require("../locales/schemaValiditionMessages/replyOnCommentForUserMessages")
 const isValidObjectId = (value, helpers) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
     return helpers.error("any.invalid");
@@ -8,7 +8,7 @@ const isValidObjectId = (value, helpers) => {
   return value;
 };
 
-const replyOnCommentValiditionSchema = (lang="en")=>{
+const replyOnCommentForUserValiditionSchema = (lang="en")=>{
   const messages=getMessages(lang)
   return Joi.object({
   userId: Joi.string().custom(isValidObjectId, "ObjectId validation")
@@ -47,4 +47,4 @@ const replyOnCommentValiditionSchema = (lang="en")=>{
     })
 });
 }
-module.exports={replyOnCommentValiditionSchema}
+module.exports={replyOnCommentForUserValiditionSchema}

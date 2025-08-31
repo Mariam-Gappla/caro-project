@@ -1,0 +1,33 @@
+const messages = {
+  en: {
+    content: {
+      base: "Comment must be a text",
+      empty: "Comment cannot be empty",
+      min: "Comment must contain at least one character",
+      max: "Comment cannot exceed 500 characters",
+      required: "Comment is required"
+    },
+    postId: {
+      base: "Post ID must be a string",
+      required: "Post ID is required"
+    }
+  },
+
+  ar: {
+    content: {
+      base: "التعليق يجب أن يكون نصًا",
+      empty: "التعليق لا يمكن أن يكون فارغًا",
+      min: "التعليق يجب أن يحتوي على حرف واحد على الأقل",
+      max: "التعليق لا يمكن أن يزيد عن 500 حرف",
+      required: "التعليق مطلوب"
+    },
+    postId: {
+      base: "معرّف الاعلان يجب أن يكون نصًا",
+      required: "معرّف الاعلان مطلوب"
+    }
+  }
+};
+const getMessages = (lang = 'en') => {
+    return messages[lang] || messages.en;
+};
+module.exports = getMessages;
