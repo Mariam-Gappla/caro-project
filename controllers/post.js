@@ -38,7 +38,12 @@ const addPost = async (req, res, next) => {
       ...req.body,
       userId: userId,
       images: imagePaths
-    })
+    });
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en" ? "Post added successfully" : "تم إضافة المنشور بنجاح"
+    });
 
   }
   catch (err) {
