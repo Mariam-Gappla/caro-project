@@ -3,23 +3,8 @@ const getMessages = require("../configration/getmessages")
 const followersForRentalOffice = require("../models/followersForRentalOffice");
 const ratingForOrder = require("../models/ratingForOrder");
 const carRental = require("../models/carRental");
-const path = require("path");
-const fs = require("fs")
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
-const bcrypt = require("bcrypt");
-const saveImage = (file, folder = 'images') => {
-    const fileName = `${Date.now()}-${file.originalname}`;
-    const saveDir = path.join(__dirname, '..', folder);
-    const filePath = path.join(saveDir, fileName);
-
-    if (!fs.existsSync(saveDir)) {
-        fs.mkdirSync(saveDir, { recursive: true });
-    }
-
-    fs.writeFileSync(filePath, file.buffer);
-    return `images/${fileName}`;
-};
 const getAllRentallOffice = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
@@ -53,12 +38,26 @@ const getAllRentallOffice = async (req, res, next) => {
         });
 
         // 📌 دمج التقييمات مع المكاتب
-        const formattedOffices = allRentalOffice.map(o => ({
-            username: o.username,
-            id: o._id,
-            image: o.image,
-            rating: ratingMap[o._id.toString()] || 0
-        }));
+        const formattedOffices = await Promise.all(
+            allRentalOffice.map(async o => {
+                const isLiked = o.likes?.some(id => id.toString() === userId.toString());
+
+                const follow = await followersForRentalOffice.findOne({
+                    userId,
+                    rentalOfficeId: o._id
+                });
+
+                return {
+                    username: o.username,
+                    id: o._id,
+                    image: o.image,
+                    rating: ratingMap[o._id.toString()] || 0,
+                    isLiked,
+                    isFollowed: !!follow
+                };
+            })
+        );
+
 
         // 📌 احسب عدد المكاتب الكلي
         const total = await rentalOffice.countDocuments();
@@ -69,10 +68,12 @@ const getAllRentallOffice = async (req, res, next) => {
             message: lang === "en"
                 ? "Your request has been completed successfully"
                 : "تمت معالجة الطلب بنجاح",
-            data: formattedOffices,
-            pagination: {
-                page,
-                totalPages: Math.ceil(total / limit)
+            data: {
+                offices: formattedOffices,
+                pagination: {
+                    page,
+                    totalPages: Math.ceil(total / limit)
+                }
             }
         });
 

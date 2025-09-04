@@ -3,7 +3,7 @@ const postSchema = new mongoose.Schema({
     images: [{ type: String }],
     title: { type: String, required: true },
     description: { type: String, required: true },
-    mainCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: "MainCategory", required: true },
+    mainCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: "MainCategoryActivity", required: true },
     subCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory", required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     location: {

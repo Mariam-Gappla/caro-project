@@ -8,31 +8,13 @@ const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
+const RatingCenter=require("../models/ratingCenter");
+const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
 const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
-const saveImage = (file, folder = '/var/www/images') => {
-  // ⬅️ تنظيف اسم الملف: إزالة المسافات والرموز الخاصة
-  const cleanName = file.originalname
-    .replace(/\s+/g, '_')           // استبدال المسافات بـ "_"
-    .replace(/[^a-zA-Z0-9._-]/g, ''); // حذف أي رموز غير مسموحة
-
-  const fileName = `${Date.now()}-${cleanName}`;
-  const saveDir = folder; // المسار المطلق
-  const filePath = path.join(saveDir, fileName);
-
-  if (!fs.existsSync(saveDir)) {
-    fs.mkdirSync(saveDir, { recursive: true });
-  }
-
-  fs.writeFileSync(filePath, file.buffer);
-
-  console.log("✅ Saved file at:", filePath);
-
-  // الرابط اللي هيتخزن في الداتابيز
-  return `/images/${fileName}`;
-};
+const saveImage = require("../configration/saveImage");
 const register = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -192,7 +174,18 @@ const login = async (req, res, next) => {
         status: true,
         message: messages.login.success,
         data: {
-          user: existRentalOffice,
+          user: {
+            _id: existRentalOffice._id,
+            username: existRentalOffice.username,
+            image: existRentalOffice.image,
+            phone: existRentalOffice.phone,
+            email: existRentalOffice.email,
+            password: existRentalOffice.password,
+            likedBy: existRentalOffice.likedBy,
+            createdAt: existRentalOffice.createdAt,
+            __v: 0,
+
+          },
           token
         }
       });
@@ -248,7 +241,15 @@ const login = async (req, res, next) => {
             message: messages.login.success,
             data: {
               user: {
-                ...user,
+                _id: existServiceProvider._id,
+                username: existServiceProvider.username,
+                image: existServiceProvider.image,
+                phone: existServiceProvider.phone,
+                email: existServiceProvider.email,
+                password: existServiceProvider.password,
+                likedBy: existServiceProvider.likedBy,
+                createdAt:existServiceProvider.createdAt,
+                __v: 0,
                 active: lastSession ? lastSession.isWorking : false,
                 location: user.location || null
               },
@@ -308,6 +309,7 @@ const login = async (req, res, next) => {
           message: messages.login.emailExists.user
         });
       }
+      const userAsRentalOffice=await rentalOffice.findOne({phone})
 
       const match = await bcrypt.compare(password, existUser.password);
       if (!match) {
@@ -324,7 +326,22 @@ const login = async (req, res, next) => {
         status: true,
         message: messages.login.success,
         data: {
-          user: existUser,
+          user: {
+            _id: existUser._id,
+            username: existUser.username,
+            image: existUser.image,
+            phone: existUser.phone,
+            email: existUser.email,
+            password: existUser.password,
+            likedBy: existUser.likedBy,
+            createdAt: existUser.createdAt,
+            subscribeAsRntalOffice:userAsRentalOffice?true:false,
+            role:existUser.role,
+            createdAt:existUser.createdAt,
+            updatedAt:existUser.updatedAt,
+            __v: 0,
+
+          },
           token
         }
       });
@@ -528,7 +545,7 @@ const getProfileData = async (req, res, next) => {
     }
     const exist = await Model.findOne({ _id: id }).lean();
     let verification;
-    let formatedData={...exist}
+    let formatedData = { ...exist }
     if (role == "serviceProvider") {
       verification = await Winsh.findOne({ providerId: exist._id });
       if (!verification) {
@@ -601,7 +618,9 @@ const editProfile = async (req, res, next) => {
     // ✅ لو فيه صورة جديدة
     if (req.file) {
       const file = req.file;
+      const exist = await Model.findById(id);
       const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+      fs.unlinkSync(path.join("/var/www/images", exist.image || '')); // حذف الصورة القديمة لو موجودة
       const url = saveImage(file);
       updateData.image = `${BASE_URL}${url}`;
     }
@@ -645,6 +664,148 @@ const logout = async (req, res, next) => {
     next(err);
   }
 };
+const userAsProvider = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const id = req.user.id;
+    const existUser = await User.findOne({ _id: id });
+    if (!existUser) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
+      });
+    }
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الصوره مطلوبه" : "image is required"
+      });
+    }
+    const { error } = userAsProviderSchema(lang).validate(req.body);
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: error.details[0].message
+      });
+    }
+    let imageUrl;
+    imageUrl = saveImage(file);
+    console.log( imageUrl)
+    imageUrl = `${process.env.BASE_URL}${imageUrl}`;
+    await User.findByIdAndUpdate(id, {
+      image: imageUrl,
+      username: req.body.username,
+      whatsAppNumber:req.body.whatsAppNumber,
+      email: req.body.email,
+      cityId: req.body.cityId,
+      details: req.body.details,
+      categoryCenterId: req.body.categoryCenterId,
+      subCategoryCenterId: req.body.subCategoryCenterId,
+      tradeRegisterNumber: req.body.tradeRegisterNumber,
+
+    });
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "ar" ? "تم التقديم بنجاح" : "submitted successfully"
+    });
+
+
+  }
+  catch (err) {
+    next(err)
+  }
+}
+const acceptUserAsProvider = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const userId = req.params.userId;
+    const existUser = await User.findOne({ _id: userId });
+    if (!existUser) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
+      });
+    }
+    await User.findByIdAndUpdate(userId, { role: "Provider" });
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "ar" ? "تم القبول بنجاح" : "accepted successfully"
+    });
+
+  }
+  catch (err) {
+    next(err)
+  }
+}
+const getCenters = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const mainCategoryCenterId = req.params.id;
+
+    const centers = await User.find({
+      role: "Provider",
+      categoryCenterId: mainCategoryCenterId
+    })
+      .populate('categoryCenterId')
+      .populate('subCategoryCenterId')
+      .populate('cityId');
+
+    // هات IDs بتاعة كل المراكز مرة واحدة
+    const centerIds = centers.map(c => c._id);
+
+    // هات كل الريفيوهات/التقييمات الخاصة بالمراكز دي
+    const ratings = await RatingCenter.aggregate([
+      { $match: { centerId: { $in: centerIds } } },
+      {
+        $group: {
+          _id: "$centerId",
+          avgRating: { $avg: "$rate" },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // اعمل map علشان توصل الريتنغ لكل مركز
+    const ratingMap = {};
+    ratings.forEach(r => {
+      ratingMap[r._id.toString()] = {
+        avgRating: r.avgRating,
+        count: r.count
+      };
+    });
+
+    const formatedCenters = centers.map(center => {
+      const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
+      return {
+        id: center._id,
+        username: center.username,
+        image: center.image,
+        details: center.details,
+        city: center.cityId?.name?.[lang] || "",
+        category: center.subCategoryCenterId?.name?.[lang] || "",
+        rating: r.avgRating.toFixed(1), // متوسط التقييم
+      };
+    });
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "ar" ? "تم جلب البيانات بنجاح" : "Data retrieved successfully",
+      data: formatedCenters
+    });
+  }
+  catch (err) {
+    next(err);
+  }
+};
+
 
 
 module.exports = {
@@ -656,5 +817,8 @@ module.exports = {
   addLocationForProvider,
   getProfileData,
   editProfile,
-  logout
+  getCenters,
+  acceptUserAsProvider,
+  logout,
+  userAsProvider
 }

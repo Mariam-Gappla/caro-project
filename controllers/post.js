@@ -21,7 +21,11 @@ const addPost = async (req, res, next) => {
     };
     delete req.body["location.lat"];
     delete req.body["location.long"];
-    req.body.contactType = [req.body.contactType];
+    if (req.body.contactType) {
+      if (!Array.isArray(req.body.contactType)) {
+        req.body.contactType = [req.body.contactType];
+      }
+    }
     const { error } = postSchema(lang).validate({ ...req.body, userId });
     if (error) {
       return res.status(400).send({
@@ -33,6 +37,7 @@ const addPost = async (req, res, next) => {
     let imagePaths = [];
     files.forEach(file => {
       const imagePath = saveImage(file);
+      console.log("imagePath:", imagePath);
       imagePaths.push(`${BASE_URL}${imagePath}`);
     });
     await Post.create({

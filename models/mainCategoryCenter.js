@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const mainCategorySchema = new mongoose.Schema(
+const mainCategoryCenterSchema = new mongoose.Schema(
   {
     name: {
      en: { type: String, required: true ,unique: true},
@@ -12,4 +12,4 @@ const mainCategorySchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("MainCategory", mainCategorySchema);
+module.exports = mongoose.model("MainCategoryCenter", mainCategoryCenterSchema);

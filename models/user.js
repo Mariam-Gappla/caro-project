@@ -25,17 +25,40 @@ const userSchema = new mongoose.Schema({
   resetOtp: {
     type: Number
   },
-  trust:{
-    type:Boolean,
-    default:false
+  status:{
+    type:String,
+    enum:["verified","unverified","premium"],
+    default:"unverified"
   },
   resetOtpExpires: {
     type: Date
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+  cityId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "City"
+  },
+  whatsAppNumber:{
+    type:String
+  },
+  details:{
+    type: String
+  },
+  categoryCenterId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MainCategoryCenter"
+  },
+  subCategoryCenterId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SubCategoryCenter"
+  },
+  tradeRegisterNumber:{
+    type: String
+  },
+  role: {
+    type: String,
+    enum: ['User', 'Provider'],
+    default: 'user'
+  },
+},{timestamps:true});
 const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -38,13 +38,19 @@ const serviceProviderOrders= require("./routes/serviceProviderOrders.js");
 const providerRatingRoutes = require("./routes/providerRating.js");
 const workSessionRoutes = require("./routes/workSessionroutes.js");
 const howToUseCaro=require("./routes/howToUseCaro.js");
-const mainCategoriesRoutes=require("./routes/mainCategories");
-const subCategoriesRoutes=require("./routes/subCategories.js");
+const mainCategoriesActivityRoutes=require("./routes/mainCategoryActivity.js");
+const subCategoriesActivitiesRoutes=require("./routes/subCategories.js");
 const replyOnCommentForUser= require("./routes/replyOnCommentroutesForUser");
 const commentForUser= require("./routes/commentForUser");
 const postRoutes=require("./routes/postroutes.js");
 const cityRoutes=require("./routes/city.js");
 const areaRoutes=require("./routes/area.js");
+const ServicesRoutes=require("./routes/service.js");
+const MainCategoryCenterRoutes=require("./routes/mainCategoryCenter.js");
+const SubCategoryCenterRoutes=require("./routes/subCategoryCenter.js");
+const CenterRating=require("./routes/ratingCenter.js");
+const CenterFollower=require("./routes/followerCenter.js");
+const CenterServices=require("./routes/centerServices.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -111,13 +117,19 @@ app.use("/providerRating", providerRatingRoutes);
 app.use("/workSession", workSessionRoutes);
 app.use("/HowToUseCaro",howToUseCaro);
 app.use("/carTypes",typeRoutes);
-app.use("/mainCategories",mainCategoriesRoutes);
-app.use("/subCategories",subCategoriesRoutes);
+app.use("/mainCategoriesActivity",mainCategoriesActivityRoutes);
+app.use("/subCategories",subCategoriesActivitiesRoutes);
 app.use("/replyOnCommentForUser",replyOnCommentForUser);
 app.use("/commentForUser",commentForUser);
 app.use("/posts",postRoutes);
 app.use("/area",areaRoutes);
-app.use("/city",cityRoutes)
+app.use("/city",cityRoutes);
+app.use("/service",ServicesRoutes);
+app.use("/mainCategoryCenter",MainCategoryCenterRoutes);
+app.use("/subCategoryCenter",SubCategoryCenterRoutes);
+app.use("/CenterRating",CenterRating);
+app.use("/CenterFollower",CenterFollower);
+app.use("/CenterServices",CenterServices);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

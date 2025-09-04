@@ -196,10 +196,12 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
       message: lang == "en"
         ? "Your request has been completed successfully"
         : "تمت معالجة الطلب بنجاح",
-      data: formattedCars,
-      pagination: {
-        page: page,
-        totalPages: Math.ceil(totalCars / limit),
+      data: {
+        cars: formattedCars,
+        pagination: {
+          page: page,
+          totalPages: Math.ceil(totalCars / limit),
+        }
       }
     });
 
