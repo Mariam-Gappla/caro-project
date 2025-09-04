@@ -60,7 +60,7 @@ const getCenterServiceByCenterId = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const centerServiceId = req.params.id;
-        const centerService = await CenterService.findOne({ _id: centerServiceId }).populate("services");
+        const centerService = await CenterService.findOne({ centerId: centerServiceId }).populate("services");
         const { services, ...rest } = centerService;
         const formatedServices=services.map((ser)=>{
             return {
