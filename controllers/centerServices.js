@@ -1,12 +1,14 @@
 const CenterService = require("../models/centerServices");
 const saveImage = require("../configration/saveImage");
-const centerServiceSchema = require("../validation/centerServices");
+const centerServiceSchema = require("../validation/centerServices")
 const addCenterService = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
         const userId = req.user.id;
-        const { error } = centerServiceSchema(lang).validate(req.body);
+        const { error } = centerServiceSchema(lang).validate({
+            ...req.body
+        });
         if (error) {
             return res.status(400).send({
                 code: 400,
@@ -23,12 +25,13 @@ const addCenterService = async (req, res, next) => {
             })
         }
         // الصور المرفوعة كملفات
+        let imageUrls=[]
         if (req.files["images"]) {
-            images = req.files["images"].map(file => BASE_URL + saveImage(file));
+             imageUrls = req.files["images"].map(file => BASE_URL + saveImage(file));
         }
         if (imageUrls) {
             const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
-            images = [...images, ...urls];
+            images = [...urls];
         }
         // 🟢 الفيديو
         let video = null;

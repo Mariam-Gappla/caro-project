@@ -1,5 +1,4 @@
-module.exports = (lang = "en") => {
-  const messages = {
+const messages = {
     en: {
       centerId: {
         required: "Center ID is required",
@@ -37,7 +36,7 @@ module.exports = (lang = "en") => {
       }
     }
   };
-};
+
 const getMessages = (lang = 'en') => {
   return messages[lang] || messages.en;
 };

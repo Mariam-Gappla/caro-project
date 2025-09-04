@@ -2,14 +2,8 @@ const Joi = require("joi");
 const getMessages = require("../locales/schemaValiditionMessages/centerServiceValiditionMessages");
 
 const centerServiceSchema = (lang = "en") => {
-  const messages = getMessages(lang);
-
-  return Joi.object({
-    centerId: Joi.string().required().messages({
-      "string.base": messages.centerId.string,
-      "any.required": messages.centerId.required,
-      "string.empty": messages.centerId.required
-    }),
+   const messages=getMessages(lang)
+   return Joi.object({
     details: Joi.string().required().messages({
       "string.base": messages.details.string,
       "any.required": messages.details.required,

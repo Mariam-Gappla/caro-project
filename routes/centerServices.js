@@ -1,8 +1,11 @@
-const express=require("express");
-const router=express.Router();
-const {addCenterService,getCenterServiceByCenterId}=require("../controllers/centerServices");
-router.post("/",addCenterService);
-router.get("/:id",getCenterServiceByCenterId);
+const express = require("express");
+const router = express.Router();
+const upload = require("../configration/uploadFile")
+const { addCenterService, getCenterServiceByCenterId } = require("../controllers/centerServices");
+router.post("/", upload.fields([
+    { name: "images", maxCount: 10 }
+]), addCenterService);
+router.get("/:id", getCenterServiceByCenterId);
 
 
 
@@ -10,4 +13,4 @@ router.get("/:id",getCenterServiceByCenterId);
 
 
 
-module.exports=router;
+module.exports = router;
