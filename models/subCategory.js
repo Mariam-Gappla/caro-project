@@ -7,7 +7,7 @@ const categorySchema = new mongoose.Schema(
     },
     mainCategoryId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "MainCategory",
+      ref: "MainCategoryActivity",
       required: true
     }
   },

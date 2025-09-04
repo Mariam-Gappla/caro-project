@@ -1,7 +1,6 @@
 const CenterService = require("../models/centerServices");
 const saveImage = require("../configration/saveImage");
 const centerServiceSchema = require("../validation/centerServices");
-const Service = require("../models/service");
 const mongoose = require('mongoose');
 const addCenterService = async (req, res, next) => {
     try {
@@ -60,49 +59,6 @@ const addCenterService = async (req, res, next) => {
         next(err)
     }
 }
-/*
-const getCenterServiceByCenterId = async (req, res, next) => {
-  try {
-    const lang = req.headers['accept-language'] || 'en';
-    const centerServiceId = req.params.id;
-
-    // ✅ populate services
-    const centerService = await CenterService.findOne({ centerId: centerServiceId })
-      .populate("services");
-
-    if (!centerService) {
-      return res.status(404).send({
-        status: false,
-        code: 404,
-        message: lang === "en" ? "Center service not found" : "الخدمة غير موجودة"
-      });
-    }
-
-    // ✅ فورمات للخدمات
-    const formattedServices = centerService.services.map(service => ({
-      id: service._id,
-      name: service.name?.[lang] || service.name?.en, // حسب اللغة
-      image: service.image
-    }));
-
-    return res.status(200).send({
-      status: true,
-      code: 200,
-      message: lang === "en"
-        ? "Your request has been completed successfully"
-        : "تمت معالجة الطلب بنجاح",
-      data: {
-        id: centerService._id,
-        details: centerService.details,
-        services: formattedServices,
-        products: centerService.products
-      }
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-*/
 const getCenterServiceByCenterId = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';

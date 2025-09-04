@@ -9,6 +9,7 @@ const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
 const RatingCenter=require("../models/ratingCenter");
+const CenterService=require("../models/centerServices")
 const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
 const Tire = require("../models/tire");
@@ -321,6 +322,7 @@ const login = async (req, res, next) => {
       }
 
       const token = jwt.sign({ id: existUser._id, role: "user" }, process.env.JWT_SECRET);
+      const haveService=await CenterService.findOne({centerId:existUser._id});
       return res.status(200).send({
         code: 200,
         status: true,
@@ -336,6 +338,7 @@ const login = async (req, res, next) => {
             likedBy: existUser.likedBy,
             createdAt: existUser.createdAt,
             subscribeAsRntalOffice:userAsRentalOffice?true:false,
+            haveService:haveService?true:false,
             role:existUser.role,
             createdAt:existUser.createdAt,
             updatedAt:existUser.updatedAt,
