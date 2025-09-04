@@ -1,6 +1,7 @@
 const CenterService = require("../models/centerServices");
 const saveImage = require("../configration/saveImage");
-const centerServiceSchema = require("../validation/centerServices")
+const centerServiceSchema = require("../validation/centerServices");
+const Service = require("../models/service");
 const addCenterService = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
@@ -25,9 +26,9 @@ const addCenterService = async (req, res, next) => {
             })
         }
         // الصور المرفوعة كملفات
-        let imageUrls=[]
+        let imageUrls = []
         if (req.files["images"]) {
-             imageUrls = req.files["images"].map(file => BASE_URL + saveImage(file));
+            imageUrls = req.files["images"].map(file => BASE_URL + saveImage(file));
         }
         if (imageUrls) {
             const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
@@ -41,7 +42,7 @@ const addCenterService = async (req, res, next) => {
         }
         await CenterService.create({
             products: images,
-            services: req.body.services,
+            services: req.body.services.map(id => new mongoose.Types.ObjectId(id)),
             centerId: userId,
             details: req.body.details
         });
@@ -60,25 +61,23 @@ const getCenterServiceByCenterId = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const centerServiceId = req.params.id;
-        const centerService = await CenterService.findOne({ centerId: centerServiceId }).populate("services");
+        const centerService = await CenterService.findOne({ centerId:centerServiceId })
+            .populate("services");
+        const service = await Service.findOne({ _id: centerService.services[0] })
+        console.log(service)
         const { services, ...rest } = centerService;
-        const formatedServices=services.map((ser)=>{
+        const formatedServices = services.map((ser) => {
             return {
-                name:ser.name,
-                image:ser.image
+                name: ser.name,
+                image: ser.image
             }
         })
-        centerService.services=formatedServices;
+        centerService.services = formatedServices;
         return res.status(200).send({
             status: true,
             code: 200,
             message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
-            data: {
-                details: centerService.details,
-                services: centerService.services,
-                products:centerService.products
-
-            }
+            data: centerService
         })
 
     }
