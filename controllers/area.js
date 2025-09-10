@@ -49,7 +49,7 @@ const getArea = async (req, res, next) => {
         // رجّع البيانات مع اسم المنطقة حسب اللغة المطلوبة
         const formattedAreas = areas.map(area => ({
             id: area._id,
-            name: area.name[lang] || area.name.en  // fallback للإنجليزي لو اللغة مش موجودة
+            text: area.name[lang] || area.name.en  // fallback للإنجليزي لو اللغة مش موجودة
         }));
         return res.status(200).send({
             status: true,
