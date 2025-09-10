@@ -60,24 +60,27 @@ const getPostsByMainCategory = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const categoryId = req.params.categoryId;
+
     const city = req.query.city;
     const area = req.query.area;
     const search = req.query.search;
 
+    // pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     // فلتر ديناميكي
     let matchFilter = { mainCategoryId: new mongoose.Types.ObjectId(categoryId) };
 
-    // ✅ city حسب اللغة
     if (city) {
       matchFilter[`city.${lang}`] = city;
     }
 
-    // ✅ area حسب اللغة
     if (area) {
       matchFilter[`area.${lang}`] = area;
     }
 
-    // ✅ search برضه حسب اللغة (في العنوان والوصف)
     if (search) {
       matchFilter.$or = [
         { [`title.${lang}`]: { $regex: search, $options: "i" } },
@@ -88,6 +91,7 @@ const getPostsByMainCategory = async (req, res, next) => {
     const posts = await Post.aggregate([
       { $match: matchFilter },
 
+      // user data
       {
         $lookup: {
           from: "users",
@@ -98,6 +102,29 @@ const getPostsByMainCategory = async (req, res, next) => {
       },
       { $unwind: "$userData" },
 
+      // city data
+      {
+        $lookup: {
+          from: "cities",
+          localField: "cityId",
+          foreignField: "_id",
+          as: "cityData"
+        }
+      },
+      { $unwind: { path: "$cityData", preserveNullAndEmptyArrays: true } },
+
+      // area data
+      {
+        $lookup: {
+          from: "areas",
+          localField: "areaId",
+          foreignField: "_id",
+          as: "areaData"
+        }
+      },
+      { $unwind: { path: "$areaData", preserveNullAndEmptyArrays: true } },
+
+      // comments & replies
       {
         $lookup: {
           from: "comments",
@@ -114,25 +141,33 @@ const getPostsByMainCategory = async (req, res, next) => {
           as: "replies"
         }
       },
+
       {
         $addFields: {
           commentsCount: { $size: "$comments" },
           repliesCount: { $size: "$replies" },
           totalCommentsAndReplies: {
             $add: [{ $size: "$comments" }, { $size: "$replies" }]
-          }
+          },
+
+          // ✅ نخليهم حسب اللغة
+          title: `$title.${lang}`,
+          description: `$description.${lang}`,
+          city: `$cityData.name.${lang}`,
+          area: `$areaData.name.${lang}`
         }
       },
+
       {
         $project: {
           id: "$_id",
           createdAt: 1,
           images: 1,
-          title: `$title.${lang}`,
-          description: `$description.${lang}`,
+          title: 1,
+          description: 1,
           price: 1,
-          city: `$city.${lang}`,
-          area: `$area.${lang}`,
+          city: 1,
+          area: 1,
           totalCommentsAndReplies: 1,
           userData: {
             username: "$userData.username",
@@ -140,8 +175,14 @@ const getPostsByMainCategory = async (req, res, next) => {
             trust: "$userData.trust"
           }
         }
-      }
+      },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit }
     ]);
+
+    const totalCount = await Post.countDocuments(matchFilter);
+    const totalPages = Math.ceil(totalCount / limit);
 
     res.status(200).send({
       status: true,
@@ -150,12 +191,20 @@ const getPostsByMainCategory = async (req, res, next) => {
         lang === "en"
           ? "Posts retrieved successfully"
           : "تم استرجاع المنشورات بنجاح",
-      data: posts
+      data: {
+        posts,
+        pagination: {
+          page,
+          totalPages
+        }
+      }
     });
   } catch (err) {
     next(err);
   }
 };
+
+
 module.exports = {
   addPost,
   getPostsByMainCategory

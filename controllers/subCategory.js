@@ -4,11 +4,12 @@ const getSubCategories = async (req, res, next) => {
     try {
         const lang =req.headers["accept-language"] || "en";
         const categories = await SubCategory.find();
+        const formatedCategories=categories.map((cat)=>({id:cat._id,text:cat.name}))
         return res.status(200).send({
             status: true,
             code: 200,
             message: lang=="ar"?"تم جلب الاقسام بنجاح":"Categories fetched successfully",
-            data: categories
+            data: formatedCategories
         });
     }
     catch (error) {
@@ -112,7 +113,7 @@ const getSubCategoriesInMainCategory = async (req, res, next) => {
         const formatedCategories = categories.map(cat => {
             return {
                 id: cat._id,
-                name: lang == "ar" ? cat.name.ar : cat.name.en,
+                text: lang == "ar" ? cat.name.ar : cat.name.en,
             }
         })
         return res.status(200).send({

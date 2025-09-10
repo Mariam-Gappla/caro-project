@@ -1,5 +1,6 @@
 const CenterService = require("../models/centerServices");
 const saveImage = require("../configration/saveImage");
+const User=require("../models/user");
 const centerServiceSchema = require("../validation/centerServices");
 const mongoose = require('mongoose');
 const addCenterService = async (req, res, next) => {
@@ -64,6 +65,15 @@ const getCenterServiceByCenterId = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const centerServiceId = req.params.id;
         const centerService = await CenterService.findOne({ centerId: centerServiceId }).populate("services").lean();
+        if(!centerService)
+        {
+            return res.status(400).send({
+                status:false,
+                code:400,
+                message:lang=="ar"?"لا توجد خدمات لهذا المركر":"this center does not have services"
+            })
+        }
+        const user=await User.findOne({_id:centerServiceId});
         console.log("Populated services:", centerService.services);
         const { services, ...rest } = centerService;
         const formatedServices = services.map((ser) => {
@@ -79,6 +89,8 @@ const getCenterServiceByCenterId = async (req, res, next) => {
             message: lang == "en" ? "Your request has been completed successfully" : "تمت معالجة الطلب بنجاح",
             data: {
                 id: centerService._id,
+                username:user.username,
+                image:user.image,
                 details: centerService.details,
                 services: centerService.services,
                 products: centerService.products

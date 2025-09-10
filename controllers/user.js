@@ -339,7 +339,7 @@ const login = async (req, res, next) => {
             createdAt: existUser.createdAt,
             subscribeAsRntalOffice:userAsRentalOffice?true:false,
             haveService:haveService?true:false,
-            role:existUser.role,
+            role:existUser.isProvider?"provider":"user",
             createdAt:existUser.createdAt,
             updatedAt:existUser.updatedAt,
             __v: 0,
@@ -735,7 +735,7 @@ const acceptUserAsProvider = async (req, res, next) => {
         message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
       });
     }
-    await User.findByIdAndUpdate(userId, { role: "Provider" });
+    await User.findByIdAndUpdate(userId, { isProvider: true });
     return res.status(200).send({
       status: true,
       code: 200,

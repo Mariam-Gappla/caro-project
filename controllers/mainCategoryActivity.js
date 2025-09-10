@@ -33,7 +33,7 @@ const getAllMainCategoryActivity = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const mainCategories = await MainCategoryActivity.find({});
-        const formattedCategories = mainCategories.map(cat => ({ id: cat._id, name: cat.name[lang] }));
+        const formattedCategories = mainCategories.map(cat => ({ id: cat._id, text: cat.name[lang] }));
         return res.status(200).send({
             status: true,
             code: 200,

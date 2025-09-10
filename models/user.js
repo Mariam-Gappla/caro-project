@@ -56,9 +56,11 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['User', 'Provider'],
-    default: 'user'
   },
+  isProvider:{
+    type:Boolean,
+    default:false
+  }
 },{timestamps:true});
 const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -8,7 +8,7 @@ const Model = require("../models/carModel");
 const getAllRentallOffice = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
-
+        const userId=req.user.id
         // 📌 Pagination params
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;

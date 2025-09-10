@@ -34,7 +34,7 @@ const getAllSubCategoryCenter=async(req,res,next)=>{
         const lang=req.headers["accept-language"] || "en";
         const mainCategoryCenterId=req.params.id;
         const subCategories=await SubCategoryCenter.find({mainCategoryCenterId});
-        const formattedCategories=subCategories.map(cat=>({id:cat._id,name:cat.name[lang]}));
+        const formattedCategories=subCategories.map(cat=>({id:cat._id,text:cat.name[lang]}));
         return res.status(200).send({
             status:true,
             code:200,

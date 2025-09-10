@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const getMessages=require("../locales/schemaValiditionMessages/ratingForOrderValiditionMessages");
+const getMessages=require("../locales/schemaValiditionMessages/ratingCenter");
 const ratingCenterSchemaValidation = (lang='en')=>{
   const msg=getMessages(lang);
    return  Joi.object({

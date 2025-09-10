@@ -40,7 +40,7 @@ const getCities = async (req, res, next) => {
         // رجّع البيانات مع اسم المنطقة حسب اللغة المطلوبة
         const formattedCities = cities.map(city => ({
             id: city._id,
-            name: city.name[lang] || city.name.en  // fallback للإنجليزي لو اللغة مش موجودة
+            text: city.name[lang] || city.name.en  // fallback للإنجليزي لو اللغة مش موجودة
         }));
         return res.status(200).send({
             status: true,

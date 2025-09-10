@@ -15,7 +15,7 @@ const followerCenterSchema = new mongoose.Schema({
     default: Date.now 
   }
 });
-followerSchema.index({ userId: 1, centerId: 1 }, { unique: true });
+followerCenterSchema.index({ userId: 1, centerId: 1 }, { unique: true });
 
 const followerCenter = mongoose.model('FollowerCenter', followerCenterSchema);
 module.exports=followerCenter;
