@@ -8,8 +8,8 @@ const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
 const serviceProvider = require("../models/serviceProvider");
-const RatingCenter=require("../models/ratingCenter");
-const CenterService=require("../models/centerServices")
+const RatingCenter = require("../models/ratingCenter");
+const CenterService = require("../models/centerServices")
 const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
 const Tire = require("../models/tire");
@@ -249,7 +249,7 @@ const login = async (req, res, next) => {
                 email: existServiceProvider.email,
                 password: existServiceProvider.password,
                 likedBy: existServiceProvider.likedBy,
-                createdAt:existServiceProvider.createdAt,
+                createdAt: existServiceProvider.createdAt,
                 __v: 0,
                 active: lastSession ? lastSession.isWorking : false,
                 location: user.location || null
@@ -310,7 +310,7 @@ const login = async (req, res, next) => {
           message: messages.login.emailExists.user
         });
       }
-      const userAsRentalOffice=await rentalOffice.findOne({phone})
+      const userAsRentalOffice = await rentalOffice.findOne({ phone })
 
       const match = await bcrypt.compare(password, existUser.password);
       if (!match) {
@@ -322,7 +322,7 @@ const login = async (req, res, next) => {
       }
 
       const token = jwt.sign({ id: existUser._id, role: "user" }, process.env.JWT_SECRET);
-      const haveService=await CenterService.findOne({centerId:existUser._id});
+      const haveService = await CenterService.findOne({ centerId: existUser._id });
       return res.status(200).send({
         code: 200,
         status: true,
@@ -337,11 +337,11 @@ const login = async (req, res, next) => {
             password: existUser.password,
             likedBy: existUser.likedBy,
             createdAt: existUser.createdAt,
-            subscribeAsRntalOffice:userAsRentalOffice?true:false,
-            haveService:haveService?true:false,
-            role:existUser.isProvider?"provider":"user",
-            createdAt:existUser.createdAt,
-            updatedAt:existUser.updatedAt,
+            subscribeAsRntalOffice: userAsRentalOffice ? true : false,
+            haveService: haveService ? true : false,
+            role: existUser.isProvider ? "provider" : "user",
+            createdAt: existUser.createdAt,
+            updatedAt: existUser.updatedAt,
             __v: 0,
 
           },
@@ -697,12 +697,12 @@ const userAsProvider = async (req, res, next) => {
     }
     let imageUrl;
     imageUrl = saveImage(file);
-    console.log( imageUrl)
+    console.log(imageUrl)
     imageUrl = `${process.env.BASE_URL}${imageUrl}`;
     await User.findByIdAndUpdate(id, {
       image: imageUrl,
       username: req.body.username,
-      whatsAppNumber:req.body.whatsAppNumber,
+      whatsAppNumber: req.body.whatsAppNumber,
       email: req.body.email,
       cityId: req.body.cityId,
       details: req.body.details,
@@ -752,18 +752,32 @@ const getCenters = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const mainCategoryCenterId = req.params.id;
 
+    // 🟢 استقبل page و limit من query params
+    const page = parseInt(req.query.page) || 1;  // الصفحة الحالية (افتراضي 1)
+    const limit = parseInt(req.query.limit) || 10; // عدد العناصر في الصفحة (افتراضي 10)
+    const skip = (page - 1) * limit;
+
+    // 🟢 هات العدد الكلي عشان pagination info
+    const totalCenters = await User.countDocuments({
+      role: "Provider",
+      categoryCenterId: mainCategoryCenterId
+    });
+
+    // 🟢 هات الـ centers بالـ pagination
     const centers = await User.find({
       role: "Provider",
       categoryCenterId: mainCategoryCenterId
     })
       .populate('categoryCenterId')
       .populate('subCategoryCenterId')
-      .populate('cityId');
+      .populate('cityId')
+      .skip(skip)     // تجاهل العناصر اللي قبل الصفحة المطلوبة
+      .limit(limit);  // هات بس limit عناصر
 
-    // هات IDs بتاعة كل المراكز مرة واحدة
+    // IDs بتاعة كل المراكز
     const centerIds = centers.map(c => c._id);
 
-    // هات كل الريفيوهات/التقييمات الخاصة بالمراكز دي
+    // الريفيوهات/التقييمات الخاصة بالمراكز
     const ratings = await RatingCenter.aggregate([
       { $match: { centerId: { $in: centerIds } } },
       {
@@ -775,7 +789,7 @@ const getCenters = async (req, res, next) => {
       }
     ]);
 
-    // اعمل map علشان توصل الريتنغ لكل مركز
+    // Map للـ ratings
     const ratingMap = {};
     ratings.forEach(r => {
       ratingMap[r._id.toString()] = {
@@ -784,6 +798,7 @@ const getCenters = async (req, res, next) => {
       };
     });
 
+    // تجهيز الـ response النهائي
     const formatedCenters = centers.map(center => {
       const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
       return {
@@ -793,21 +808,29 @@ const getCenters = async (req, res, next) => {
         details: center.details,
         city: center.cityId?.name?.[lang] || "",
         category: center.subCategoryCenterId?.name?.[lang] || "",
-        rating: r.avgRating.toFixed(1), // متوسط التقييم
+        rating: r.avgRating?.toFixed(1) || 0,
+        ratingCount: r.count
       };
     });
 
     return res.status(200).send({
       status: true,
       code: 200,
-      message: lang == "ar" ? "تم جلب البيانات بنجاح" : "Data retrieved successfully",
-      data: formatedCenters
+      message: lang === "ar" ? "تم جلب البيانات بنجاح" : "Data retrieved successfully",
+      data: {
+        centers: formatedCenters,
+        pagination: {
+          page,
+          totalPages: Math.ceil(totalCenters / limit)
+        }
+      },
     });
   }
   catch (err) {
     next(err);
   }
 };
+
 
 
 
