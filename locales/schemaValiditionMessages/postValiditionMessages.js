@@ -34,6 +34,10 @@ const messages = {
             required: "المنطقة مطلوبة",
             string: "المنطقة يجب أن تكون نصًا"
         },
+        video: {
+            required: "الفيديو مطلوب",
+            array: "الفيديو يجب ان يكون مصفوفه"
+        }
     },
     en: {
         images: "At least one image is required",
@@ -70,6 +74,10 @@ const messages = {
             required: "Area is required",
             string: "Area must be a string"
         },
+        video: {
+            required: "video is required",
+            string: "video must be array"
+        }
     }
 }
 const getMessages = (lang = 'en') => {

@@ -32,6 +32,10 @@ const userAsProviderSchema = (lang = "en") => {
             "string.empty": messages.userName,
             "any.required": messages.userName
         }),
+        nationalId:Joi.string().required().messages({
+           "string.empty": messages.nationalId,
+            "any.required": messages.nationalId
+        }),
         email:Joi.string().required().messages({
             "string.empty": messages.email,
             "any.required": messages.email

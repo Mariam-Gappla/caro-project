@@ -12,7 +12,6 @@ const postSchema = new mongoose.Schema({
     },
     priceType: { type: String, enum: ["fixed", "negotiable", "best"], default: "fixed", required: true },
     price: { type: Number },
-    deposit: { type: Number, default: 0, required: true },
     contactType: {
         type: [String], // Array of strings
         enum: ["whatsapp", "call", "inAppChat"],
@@ -30,6 +29,10 @@ const postSchema = new mongoose.Schema({
     },
     contactValue: {
         type: String,
+    },
+    video:{
+        type:[String],
+        required:true
     }
 }, { timestamps: true });
 module.exports = mongoose.model("Post", postSchema);

@@ -1,7 +1,7 @@
-const {followerCenterSchema}=require("../validation/followerCenter");
-const User=require("../models/user");
-const CenterFollower=require("../models/followerCenter")
-const mongoose=require("mongoose");
+const { followerCenterSchema } = require("../validation/followerCenter");
+const User = require("../models/user");
+const CenterFollower = require("../models/followerCenter")
+const mongoose = require("mongoose");
 const addFollowerCenter = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -18,40 +18,46 @@ const addFollowerCenter = async (req, res, next) => {
     }
 
     // ✅ check if already followed
-    const existCenter = await CenterFollower.findOne({ 
-      userId: new mongoose.Types.ObjectId(userId), 
-      centerId: new mongoose.Types.ObjectId(centerId) 
+    const existCenter = await CenterFollower.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      centerId: new mongoose.Types.ObjectId(centerId)
     });
 
     if (existCenter) {
+      await CenterFollower.findOneAndDelete({
+        userId: new mongoose.Types.ObjectId(userId),
+        centerId: new mongoose.Types.ObjectId(centerId)
+      })
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang=="en" 
-          ? "Center is already followed" 
-          : "انت تتابع هذا المركز بالفعل"
+        message: lang == "en" ? "follow canceled successfuly" : "تم الغاء المتابعه"
       });
     }
+    else {
+      // ✅ create new follow
+      await CenterFollower.create({
+        userId: new mongoose.Types.ObjectId(userId),
+        centerId: new mongoose.Types.ObjectId(centerId)
+      });
 
-    // ✅ create new follow
-    await CenterFollower.create({ 
-      userId: new mongoose.Types.ObjectId(userId), 
-      centerId: new mongoose.Types.ObjectId(centerId) 
-    });
+      res.status(200).send({
+        status: true,
+        code: 200,
+        message: lang == "en"
+          ? "Center followed successfully"
+          : "تمت متابعة المركز بنجاح"
+      });
 
-    res.status(200).send({
-      status: true,
-      code: 200,
-      message: lang=="en" 
-        ? "Center followed successfully" 
-        : "تمت متابعة المركز بنجاح"
-    });
+    }
+
+
   }
   catch (err) {
     next(err);
   }
 }
 
-module.exports={
-   addFollowerCenter
+module.exports = {
+  addFollowerCenter
 }

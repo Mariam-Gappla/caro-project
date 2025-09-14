@@ -49,15 +49,6 @@ const postSchema = (lang = "en") => {
       }),
       otherwise: Joi.optional()
     }),
-    contactType: {
-      type: [String], // Array of strings
-      enum: ["whatsapp", "call", "inAppChat"],
-      required: true,
-    },
-    deposit: Joi.number().required().messages({
-      "number.base": messages.deposit,
-      "any.required": messages.deposit
-    }),
     cityId: Joi.string().required().messages({
       'string.base': messages.city.string,
       'any.required': messages.city.required

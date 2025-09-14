@@ -7,12 +7,21 @@ const addPost = async (req, res, next) => {
     const lang = req.headers["accept-language"] || "en";
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const userId = req.user.id
-    const files = req.files;
-    if (!files || files.length === 0) {
+    const images = req.files.images;
+    const video= req.files.video;
+    if (!images || images.length === 0) {
       return res.status(400).send({
         status: false,
         code: 400,
         message: lang === "en" ? "Images are required" : "الصور مطلوبة"
+      });
+    }
+    if(!video || video.length==0)
+    {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "video are required" : "الفيديو مطلوبة"
       });
     }
     req.body.location = {
@@ -35,15 +44,21 @@ const addPost = async (req, res, next) => {
       });
     }
     let imagePaths = [];
-    files.forEach(file => {
+    let videoPaths=[];
+    images.forEach(file => {
       const imagePath = saveImage(file);
       console.log("imagePath:", imagePath);
       imagePaths.push(`${BASE_URL}${imagePath}`);
     });
+    video.forEach(file => {
+      const videoPath = saveImage(file);
+      videoPaths.push(`${BASE_URL}${videoPath}`);
+    })
     await Post.create({
       ...req.body,
       userId: userId,
-      images: imagePaths
+      images: imagePaths,
+      video:videoPaths
     });
     return res.status(200).send({
       status: true,
@@ -83,8 +98,8 @@ const getPostsByMainCategory = async (req, res, next) => {
 
     if (search) {
       matchFilter.$or = [
-        { [`title.${lang}`]: { $regex: search, $options: "i" } },
-        { [`description.${lang}`]: { $regex: search, $options: "i" } }
+        { [`title`]: { $regex: search, $options: "i" } },
+        { [`description`]: { $regex: search, $options: "i" } }
       ];
     }
 
@@ -182,7 +197,7 @@ const getPostsByMainCategory = async (req, res, next) => {
     ]);
 
     const totalCount = await Post.countDocuments(matchFilter);
-    const totalPages = Math.ceil(totalCount / limit);
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
     res.status(200).send({
       status: true,

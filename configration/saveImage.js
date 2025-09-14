@@ -1,7 +1,10 @@
-const path=require("path");
-const fs=require("fs");
+const path = require("path");
+const fs = require("fs");
+
 const saveImage = (file, folder = '/var/www/images') => {
-  const fileName = `${Date.now()}-${file.originalname}`;
+  // نشيل المسافات ونحوّلها لشرطة سفلية أو نشيلها خالص
+  const safeName = file.originalname.replace(/\s+/g, "_"); // أو "" لو عايزة تشيليها تماما
+  const fileName = `${Date.now()}-${safeName}`;
   const saveDir = folder; // المسار المطلق
   const filePath = path.join(saveDir, fileName);
 
@@ -16,4 +19,5 @@ const saveImage = (file, folder = '/var/www/images') => {
   // الرابط اللي هيتخزن في الداتابيز
   return `images/${fileName}`;
 };
+
 module.exports = saveImage;

@@ -20,9 +20,6 @@ const tweetSchema = new mongoose.Schema({
     }
   ],
   images: {
-    type: [String]
-  },
-  video: {
     type: String
   },
   createdAt: {

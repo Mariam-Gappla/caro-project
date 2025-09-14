@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 const centerServiceSchema = mongoose.Schema({
     centerId: {
@@ -17,6 +18,16 @@ const centerServiceSchema = mongoose.Schema({
     products: {
         type: [String],
         required: true
+    },
+    location: {
+        lat: {
+            type: Number,
+            required:true,
+        },
+        long: {
+            type: Number,
+            required:true
+        }
     },
 })
 const centerService = mongoose.model('CenterService', centerServiceSchema);

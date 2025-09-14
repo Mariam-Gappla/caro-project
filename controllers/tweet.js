@@ -6,6 +6,7 @@ const Replies = require("../models/replyOnComments.js");
 const path = require("path");
 const mongoose = require("mongoose")
 const fs = require("fs");
+const saveImage = require("../configration/saveImage.js");
 const addTweet = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -29,78 +30,24 @@ const addTweet = async (req, res, next) => {
 
     const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
     const { content, title } = req.body;
-
-    // أنواع الملفات المسموحة
-    const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
-    const allowedVideoTypes = ["video/mp4", "video/quicktime"];
-
-    let imagesUrls = [];
-    let videoUrl = "";
-
+    let imageUrl;
     // ⬅️ التعامل مع الصور
-    if (req.files?.images) {
-      const images = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+    if (req.files?.image) {
+      const image = Array.isArray(req.files.image) ? req.files.image : [req.files.image];
 
-      if (images.length > 3) {
+      if (image.length > 1) {
         return res.status(400).send({
           code: 400,
           status: false,
           message: lang === 'en'
-            ? "You can upload up to 3 images only"
-            : "مسموح بحد أقصى ٣ صور فقط"
+            ? "You can upload up to 1 image only"
+            : "مسموح بحد أقصى صوره واحدة فقط"
         });
       }
+      const file=req.files.image
+      imageUrl = BASE_URL + saveImage(file[0])
 
-      for (const img of images) {
-        if (!allowedImageTypes.includes(img.mimetype)) {
-          return res.status(400).send({
-            code: 400,
-            status: false,
-            message: lang === 'en'
-              ? "Only JPG, PNG, or WEBP images are allowed."
-              : "مسموح فقط بصور JPG أو PNG أو WEBP"
-          });
-        }
 
-        const cleanImageName = img.originalname.replace(/\s+/g, '-');
-        const fileName = `${Date.now()}-${cleanImageName}`;
-       const filePath = path.join('/var/www/images', fileName);
-        fs.writeFileSync(filePath, img.buffer);
-        imagesUrls.push(BASE_URL + fileName);
-      }
-    }
-
-    // ⬅️ التعامل مع الفيديو
-    if (req.files?.video) {
-      const videos = Array.isArray(req.files.video) ? req.files.video : [req.files.video];
-
-      if (videos.length > 1) {
-        return res.status(400).send({
-          code: 400,
-          status: false,
-          message: lang === 'en'
-            ? "Only one video is allowed"
-            : "مسموح برفع فيديو واحد فقط"
-        });
-      }
-
-      const video = videos[0];
-
-      if (!allowedVideoTypes.includes(video.mimetype)) {
-        return res.status(400).send({
-          code: 400,
-          status: false,
-          message: lang === 'en'
-            ? "Only MP4 or MOV videos are allowed."
-            : "مسموح فقط بفيديوهات MP4 أو MOV"
-        });
-      }
-
-      const cleanVideoName = video.originalname.replace(/\s+/g, '-');
-      const fileName = `${Date.now()}-${cleanVideoName}`;
-      const filePath = path.join('/var/www/images', fileName);
-      fs.writeFileSync(filePath, video.buffer);
-      videoUrl = BASE_URL + fileName;
     }
 
     // ⬅️ الحفظ في قاعدة البيانات
@@ -108,8 +55,7 @@ const addTweet = async (req, res, next) => {
       content,
       title,
       userId: id,
-      images: imagesUrls,
-      video: videoUrl
+      image: imageUrl,
     });
 
     return res.status(200).send({

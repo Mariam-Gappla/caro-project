@@ -8,6 +8,7 @@ const messages ={
         tradeRegisterNumber: "Trade Register Number is required",
         userName: "Username is required",
         email: "Email is required",
+        nationalId:"national Id required"
     },
     ar:{
         cityId: "المدينه مطلوبة",
@@ -18,6 +19,7 @@ const messages ={
         tradeRegisterNumber: "رقم السجل التجاري مطلوب",
         userName: "اسم المستخدم مطلوب",
         email: "البريد الإلكتروني مطلوب",
+        nationalId:"رقم الهويه مطلوب"
 
     }
 }

@@ -1,5 +1,5 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
-
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -53,6 +53,9 @@ const userSchema = new mongoose.Schema({
   },
   tradeRegisterNumber:{
     type: String
+  },
+  nationalId:{
+    type:String,
   },
   role: {
     type: String,

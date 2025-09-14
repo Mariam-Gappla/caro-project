@@ -16,6 +16,7 @@ const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
 const saveImage = require("../configration/saveImage");
+const mongoose=require("mongoose");
 const register = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -709,6 +710,7 @@ const userAsProvider = async (req, res, next) => {
       categoryCenterId: req.body.categoryCenterId,
       subCategoryCenterId: req.body.subCategoryCenterId,
       tradeRegisterNumber: req.body.tradeRegisterNumber,
+      nationalId:req.body.nationalId
 
     });
     return res.status(200).send({
@@ -751,7 +753,7 @@ const getCenters = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const mainCategoryCenterId = req.params.id;
-
+    console.log(mainCategoryCenterId)
     // 🟢 استقبل page و limit من query params
     const page = parseInt(req.query.page) || 1;  // الصفحة الحالية (افتراضي 1)
     const limit = parseInt(req.query.limit) || 10; // عدد العناصر في الصفحة (افتراضي 10)
@@ -759,20 +761,21 @@ const getCenters = async (req, res, next) => {
 
     // 🟢 هات العدد الكلي عشان pagination info
     const totalCenters = await User.countDocuments({
-      role: "Provider",
+      isProvider: true,
       categoryCenterId: mainCategoryCenterId
     });
 
     // 🟢 هات الـ centers بالـ pagination
     const centers = await User.find({
-      role: "Provider",
-      categoryCenterId: mainCategoryCenterId
+      isProvider: true,
+      categoryCenterId: new mongoose.Types.ObjectId(mainCategoryCenterId)
     })
       .populate('categoryCenterId')
       .populate('subCategoryCenterId')
       .populate('cityId')
       .skip(skip)     // تجاهل العناصر اللي قبل الصفحة المطلوبة
       .limit(limit);  // هات بس limit عناصر
+      console.log(centers)
 
     // IDs بتاعة كل المراكز
     const centerIds = centers.map(c => c._id);

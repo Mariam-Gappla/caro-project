@@ -4,8 +4,7 @@ const {addTweet,addLike,getTweetWithCommentsAndReplies,tweetsWithFullCommentCoun
 const upload=require("../configration/uploadFile");
 router.get("/",tweetsWithFullCommentCount)
 router.post("/add", upload.fields([
-    { name: "images" },
-    { name: "video", maxCount: 1 }
+    { name: "image"},
   ]),addTweet);
 router.patch("/like/:id",addLike);
 router.get("/tweetwithcomments/:id",getTweetWithCommentsAndReplies);

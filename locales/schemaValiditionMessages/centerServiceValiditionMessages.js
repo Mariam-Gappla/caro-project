@@ -15,7 +15,18 @@ const messages = {
       products: {
         base: "Products must be an array of strings",
         required: "At least one product is required",
+      },
+      location:{
+        lat:{
+          base:"lat must be number",
+          required:"lat required"
+        },
+        long:{
+          base:"long must be number",
+          required:"long required"
+        }
       }
+      
     },
     ar: {
       centerId: {
@@ -33,6 +44,16 @@ const messages = {
       products: {
         base: "المنتجات يجب أن تكون قائمة من النصوص",
         required: "مطلوب إدخال منتج واحد على الأقل",
+      },
+      location:{
+        lat:{
+          base:"خط العرض يجب ان يكون رقم",
+          required:"خط العرض مطلوب"
+        },
+        long:{
+          base:"خط الطول يجب ان يكون رقم",
+          required:"خط الطول مطلوب"
+        }
       }
     }
   };

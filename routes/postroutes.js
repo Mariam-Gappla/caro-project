@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const upload=require("../configration/uploadFile");
 const {addPost,getPostsByMainCategory}=require("../controllers/post");
-router.post("/",upload.array("images",10),addPost);
+router.post("/",upload.fields([
+    {name:"images"},
+    {name:"video"}
+]),addPost);
 router.get("/category/:categoryId",getPostsByMainCategory);
 
 

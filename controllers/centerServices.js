@@ -1,6 +1,7 @@
 const CenterService = require("../models/centerServices");
 const saveImage = require("../configration/saveImage");
 const User=require("../models/user");
+const followerCenter=require("../models/followerCenter");
 const centerServiceSchema = require("../validation/centerServices");
 const mongoose = require('mongoose');
 const addCenterService = async (req, res, next) => {
@@ -8,6 +9,12 @@ const addCenterService = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
         const userId = req.user.id;
+        req.body.location={
+            lat:Number(req.body['location.lat']),
+            long:Number(req.body['location.long'])
+        }
+        delete req.body['location.lat']
+        delete req.body['location.long']
         const { error } = centerServiceSchema(lang).validate({
             ...req.body
         });
@@ -45,6 +52,7 @@ const addCenterService = async (req, res, next) => {
             products: images,
             services: req.body.services.map(id => new mongoose.Types.ObjectId(id)),
             centerId: userId,
+            location:req.body.location,
             details: req.body.details
         });
         const test = await CenterService.findOne({ centerId: userId }).populate("services");
@@ -63,8 +71,10 @@ const addCenterService = async (req, res, next) => {
 const getCenterServiceByCenterId = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
+        const userId=req.user.id
         const centerServiceId = req.params.id;
         const centerService = await CenterService.findOne({ centerId: centerServiceId }).populate("services").lean();
+        const follower= await followerCenter.findOne({userId});
         if(!centerService)
         {
             return res.status(400).send({
@@ -91,9 +101,12 @@ const getCenterServiceByCenterId = async (req, res, next) => {
                 id: centerService._id,
                 username:user.username,
                 image:user.image,
+                location:centerService.location,
+                whatsAppNumber:user.whatsAppNumber,
                 details: centerService.details,
                 services: centerService.services,
-                products: centerService.products
+                products: centerService.products,
+                isfollowed:follower?true:false
             }
         })
 

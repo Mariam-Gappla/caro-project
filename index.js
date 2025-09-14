@@ -51,6 +51,7 @@ const SubCategoryCenterRoutes=require("./routes/subCategoryCenter.js");
 const CenterRating=require("./routes/ratingCenter.js");
 const CenterFollower=require("./routes/followerCenter.js");
 const CenterServices=require("./routes/centerServices.js");
+const favorite=require("./routes/favoriteroutes.js")
 // 🟢 Middleware
 app.use(express.json());
 
@@ -130,6 +131,7 @@ app.use("/subCategoryCenter",SubCategoryCenterRoutes);
 app.use("/CenterRating",CenterRating);
 app.use("/CenterFollower",CenterFollower);
 app.use("/CenterServices",CenterServices);
+app.use("/favorite",favorite)
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
