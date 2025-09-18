@@ -4,6 +4,10 @@ const userAsProviderSchema = (lang = "en") => {
     const messages = getMessages(lang);
       console.log(messages)
     return Joi.object({
+        areaId: Joi.string().required().messages({
+            "string.empty": messages.areaId,
+            "any.required": messages.areaId
+        }),
         cityId: Joi.string().required().messages({
             "string.empty": messages.cityId,
             "any.required": messages.cityId

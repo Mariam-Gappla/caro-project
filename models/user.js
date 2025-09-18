@@ -57,6 +57,10 @@ const userSchema = new mongoose.Schema({
   nationalId:{
     type:String,
   },
+  areaId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Area"
+  },
   role: {
     type: String,
   },

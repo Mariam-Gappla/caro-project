@@ -1,6 +1,7 @@
 const messages ={
     en: {
         cityId: "City is required",
+        areaId: "Area is required",
         whatsAppNumber: "WhatsApp Number is required",
         details: "Details is required",
         categoryCenterId: "center is required",
@@ -12,6 +13,7 @@ const messages ={
     },
     ar:{
         cityId: "المدينه مطلوبة",
+        areaId: "المنطقه مطلوبه",
         whatsAppNumber: "رقم الواتساب مطلوب",
         details: "التفاصيل مطلوبة",
         categoryCenterId: "المركز مطلوب",

@@ -707,6 +707,7 @@ const userAsProvider = async (req, res, next) => {
       whatsAppNumber: req.body.whatsAppNumber,
       email: req.body.email,
       cityId: req.body.cityId,
+      areaId: req.body.areaId,
       details: req.body.details,
       categoryCenterId: req.body.categoryCenterId,
       subCategoryCenterId: req.body.subCategoryCenterId,
@@ -754,34 +755,49 @@ const getCenters = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const mainCategoryCenterId = req.params.id;
-    console.log(mainCategoryCenterId)
-    // 🟢 استقبل page و limit من query params
-    const page = parseInt(req.query.page) || 1;  // الصفحة الحالية (افتراضي 1)
-    const limit = parseInt(req.query.limit) || 10; // عدد العناصر في الصفحة (افتراضي 10)
+
+    // 🟢 pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // 🟢 هات العدد الكلي عشان pagination info
-    const totalCenters = await User.countDocuments({
-      isProvider: true,
-      categoryCenterId: mainCategoryCenterId
-    });
+    // 🟢 filters
+    const { cityId, areaId, search } = req.query;
 
-    // 🟢 هات الـ centers بالـ pagination
-    const centers = await User.find({
+    // 🟢 build query object dynamically
+    const query = {
       isProvider: true,
-      categoryCenterId: new mongoose.Types.ObjectId(mainCategoryCenterId)
-    })
+      categoryCenterId: new mongoose.Types.ObjectId(mainCategoryCenterId),
+    };
+
+    if (cityId) {
+      query.cityId = new mongoose.Types.ObjectId(cityId);
+    }
+
+    if (areaId) {
+      query.areaId = new mongoose.Types.ObjectId(areaId);
+    }
+
+    if (search) {
+      query.username = { $regex: search, $options: "i" }; // case-insensitive
+    }
+
+    // 🟢 total count for pagination
+    const totalCenters = await User.countDocuments(query);
+
+    // 🟢 get centers with pagination
+    const centers = await User.find(query)
       .populate('categoryCenterId')
       .populate('subCategoryCenterId')
       .populate('cityId')
-      .skip(skip)     // تجاهل العناصر اللي قبل الصفحة المطلوبة
-      .limit(limit);  // هات بس limit عناصر
-    console.log(centers)
+      .populate('areaId')
+      .skip(skip)
+      .limit(limit);
 
-    // IDs بتاعة كل المراكز
+    // 🟢 collect centerIds
     const centerIds = centers.map(c => c._id);
 
-    // الريفيوهات/التقييمات الخاصة بالمراكز
+    // 🟢 ratings aggregation
     const ratings = await RatingCenter.aggregate([
       { $match: { centerId: { $in: centerIds } } },
       {
@@ -793,7 +809,7 @@ const getCenters = async (req, res, next) => {
       }
     ]);
 
-    // Map للـ ratings
+    // 🟢 rating map
     const ratingMap = {};
     ratings.forEach(r => {
       ratingMap[r._id.toString()] = {
@@ -802,7 +818,7 @@ const getCenters = async (req, res, next) => {
       };
     });
 
-    // تجهيز الـ response النهائي
+    // 🟢 format response
     const formatedCenters = centers.map(center => {
       const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
       return {
@@ -829,11 +845,11 @@ const getCenters = async (req, res, next) => {
         }
       },
     });
-  }
-  catch (err) {
+  } catch (err) {
     next(err);
   }
 };
+
 const getProfileDataForCenters = async (req,res,next)=>{
   try {
     const lang = req.headers["accept-language"] || "en";
