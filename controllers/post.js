@@ -4,6 +4,7 @@ const Comment = require("../models/centerComments");
 const Reply = require("../models/centerReplies");
 const saveImage = require("../configration/saveImage");
 const MainCategory = require("../models/mainCategoryActivity");
+const MainCategoryCenter = require("../models/mainCategoryCenter");
 const ShowRoomPosts = require("../models/showroomPost");
 const mongoose = require("mongoose");
 const addPost = async (req, res, next) => {
@@ -110,7 +111,12 @@ const getPostsByMainCategory = async (req, res, next) => {
         { title: { $regex: req.query.search, $options: "i" } }
       ];
     }
-    const mainCategory = await MainCategory.findById(categoryId);
+    let mainCategory
+    mainCategory = await MainCategory.findById(categoryId);
+    if(!mainCategory)
+    {
+      mainCategory = await MainCategoryCenter.findById(categoryId);
+    }
 
     let posts = [];
     let totalCount = 0;
@@ -246,7 +252,12 @@ const getPostById= async (req,res,next)=>{
   try {
     const lang = req.headers["accept-language"] || "en";
     const postId = req.params.id;
-    const post = await Post.findById(postId).populate("userId", "username image").populate("cityId", `name.${lang}`).populate("areaId",`name.${lang}`).lean();
+    let post = await Post.findById(postId).populate("userId", "username image").lean();
+    if(!post)
+    {
+      post = await ShowRoomPosts.findById(postId).populate("showroomId", "username image").lean();
+    }
+      
     const formatedPost={
       id: post._id,
       createdAt: post.createdAt,
@@ -257,8 +268,10 @@ const getPostById= async (req,res,next)=>{
       description: post.description,
       contactType: post.contactType,
       contactValue: post.contactValue || null,
-      city: post.cityId?.name?.[lang] || "",
-      area: post.areaId?.name?.[lang] || "",
+        user: {
+            username: post.userId.username,
+            image: post.userId.image,
+          }
     }
     if(!post){
       return res.status(404).send({
