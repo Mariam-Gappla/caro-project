@@ -31,8 +31,7 @@ const postSchema = new mongoose.Schema({
         type: String,
     },
     video:{
-        type:[String],
-        required:true
+        type:String,
     }
 }, { timestamps: true });
 module.exports = mongoose.model("Post", postSchema);

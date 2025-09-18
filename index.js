@@ -51,7 +51,10 @@ const SubCategoryCenterRoutes=require("./routes/subCategoryCenter.js");
 const CenterRating=require("./routes/ratingCenter.js");
 const CenterFollower=require("./routes/followerCenter.js");
 const CenterServices=require("./routes/centerServices.js");
-const favorite=require("./routes/favoriteroutes.js")
+const favorite=require("./routes/favoriteroutes.js");
+const showroomPostsroutes=require("./routes/showroomPostsroutes.js");
+const centerCommentsroutes=require("./routes/centerCommentsroutes.js");
+const centerRepliesroutes=require("./routes/centerRepliesroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -131,7 +134,10 @@ app.use("/subCategoryCenter",SubCategoryCenterRoutes);
 app.use("/CenterRating",CenterRating);
 app.use("/CenterFollower",CenterFollower);
 app.use("/CenterServices",CenterServices);
-app.use("/favorite",favorite)
+app.use("/favorite",favorite);
+app.use("/showroomPosts",showroomPostsroutes);
+app.use("/centerComments",centerCommentsroutes);
+app.use("/centerReplies",centerRepliesroutes);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

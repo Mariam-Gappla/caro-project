@@ -1,10 +1,28 @@
-const showRoomPosts = new mongoose.Schema(
-  {
-    
-  },
-  {
-    timestamps: true // بيضيف createdAt و updatedAt تلقائيًا
-  }
-);
-const showRoom = mongoose.model("ShowRoomPosts", showRoomPosts);
-module.exports = showRoom;
+const mongoose=require("mongoose");
+const showroomPostsSchema=new mongoose.Schema({
+title:{type:String,required:true},
+images:{type:[String],required:true},
+video:{type:String},
+services:{type:[String],required:true},
+carNameId:{type:mongoose.Schema.Types.ObjectId,ref:"CarName",required:true},
+carModelId:{type:mongoose.Schema.Types.ObjectId,ref:"CarModel",required:true},
+carTypeId:{type:mongoose.Schema.Types.ObjectId,ref:"carType",required:true},
+cityId:{type:mongoose.Schema.Types.ObjectId,ref:"City",required:true},
+showroomId:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true},
+transmissionType:{type:String,required:true},
+fuelType:{type:String,required:true},
+cylinders:{type:Number,required:true},
+carCondition:{type:Boolean,required:true},
+interiorColor:{type:String,required:true},
+exteriorColor:{type:String,required:true},
+discription:{type:String,required:true},
+advantages:{type:[String],required:true},
+discount:{type:Boolean,required:true},
+financing:{type:Boolean,required:true},
+price:{type:Number,required:true},
+year:{type:Number,required:true},
+discountedPrice:{type:Number},
+postNumber:{type:Number,required:true}
+},{timestamps:true});
+const showroomPosts = mongoose.model("ShowRoomPosts", showroomPostsSchema);
+module.exports = showroomPosts;

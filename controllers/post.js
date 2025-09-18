@@ -1,6 +1,10 @@
 const Post = require("../models/post");
 const postSchema = require("../validation/postValidition");
+const Comment = require("../models/centerComments");
+const Reply = require("../models/centerReplies");
 const saveImage = require("../configration/saveImage");
+const MainCategory = require("../models/mainCategoryActivity");
+const ShowRoomPosts = require("../models/showroomPost");
 const mongoose = require("mongoose");
 const addPost = async (req, res, next) => {
   try {
@@ -8,7 +12,8 @@ const addPost = async (req, res, next) => {
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const userId = req.user.id
     const images = req.files.images;
-    const video= req.files.video;
+    const video = req.files.video;
+
     if (!images || images.length === 0) {
       return res.status(400).send({
         status: false,
@@ -16,25 +21,30 @@ const addPost = async (req, res, next) => {
         message: lang === "en" ? "Images are required" : "الصور مطلوبة"
       });
     }
-    if(!video || video.length==0)
-    {
+
+    if (video && video.length > 1) {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang === "en" ? "video are required" : "الفيديو مطلوبة"
+        message: lang === "en"
+          ? "Only one video is allowed"
+          : "مسموح برفع فيديو واحد فقط"
       });
     }
+
     req.body.location = {
       lat: parseFloat(req.body["location.lat"]),
       long: parseFloat(req.body["location.long"])
     };
     delete req.body["location.lat"];
     delete req.body["location.long"];
+
     if (req.body.contactType) {
       if (!Array.isArray(req.body.contactType)) {
         req.body.contactType = [req.body.contactType];
       }
     }
+
     const { error } = postSchema(lang).validate({ ...req.body, userId });
     if (error) {
       return res.status(400).send({
@@ -43,160 +53,174 @@ const addPost = async (req, res, next) => {
         message: error.details[0].message
       });
     }
+
     let imagePaths = [];
-    let videoPaths=[];
     images.forEach(file => {
       const imagePath = saveImage(file);
-      console.log("imagePath:", imagePath);
       imagePaths.push(`${BASE_URL}${imagePath}`);
     });
-    video.forEach(file => {
-      const videoPath = saveImage(file);
-      videoPaths.push(`${BASE_URL}${videoPath}`);
-    })
+
+    let videoPath;
+    if (video && video.length === 1) {
+      videoPath = `${BASE_URL}${saveImage(video[0])}`;
+    }
+
     await Post.create({
       ...req.body,
       userId: userId,
       images: imagePaths,
-      video:videoPaths
+      video: videoPath || undefined
     });
+
     return res.status(200).send({
       status: true,
       code: 200,
       message: lang === "en" ? "Post added successfully" : "تم إضافة المنشور بنجاح"
     });
-
+  } catch (err) {
+    next(err);
   }
-  catch (err) {
-    next(err)
-  }
-}
+};
 const getPostsByMainCategory = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const categoryId = req.params.categoryId;
-
-    const city = req.query.city;
-    const area = req.query.area;
-    const search = req.query.search;
 
     // pagination params
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // فلتر ديناميكي
+    // فلتر عام
     let matchFilter = { mainCategoryId: new mongoose.Types.ObjectId(categoryId) };
 
-    if (city) {
-      matchFilter[`city.${lang}`] = city;
+    // city filter
+    if (req.query.cityId) {
+      matchFilter.cityId = req.query.cityId;
     }
 
-    if (area) {
-      matchFilter[`area.${lang}`] = area;
+    // area filter
+    if (req.query.areaId) {
+      matchFilter.areaId= req.query.areaId;
     }
 
-    if (search) {
+    // search filter
+    if (req.query.search) {
       matchFilter.$or = [
-        { [`title`]: { $regex: search, $options: "i" } },
-        { [`description`]: { $regex: search, $options: "i" } }
+        { title: { $regex: req.query.search, $options: "i" } }
       ];
     }
+    const mainCategory = await MainCategory.findById(categoryId);
 
-    const posts = await Post.aggregate([
-      { $match: matchFilter },
+    let posts = [];
+    let totalCount = 0;
 
-      // user data
-      {
-        $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userData"
-        }
-      },
-      { $unwind: "$userData" },
+    // ✅ لو الكاتيجوري سيارات → نجيب من Posts و ShowroomPosts
+    if (mainCategory && mainCategory.name.en === "cars") {
+      const [normalPosts, showroomPosts] = await Promise.all([
+        Post.find(matchFilter)
+          .populate("userId", "username image status")
+          .populate("cityId", `name.${lang}`)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
 
-      // city data
-      {
-        $lookup: {
-          from: "cities",
-          localField: "cityId",
-          foreignField: "_id",
-          as: "cityData"
-        }
-      },
-      { $unwind: { path: "$cityData", preserveNullAndEmptyArrays: true } },
+        ShowRoomPosts.find()
+          .populate("showroomId", "username image status")
+          .populate("cityId", `name.${lang}`)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean()
+      ]);
 
-      // area data
-      {
-        $lookup: {
-          from: "areas",
-          localField: "areaId",
-          foreignField: "_id",
-          as: "areaData"
-        }
-      },
-      { $unwind: { path: "$areaData", preserveNullAndEmptyArrays: true } },
+      posts = [...normalPosts, ...showroomPosts];
 
-      // comments & replies
-      {
-        $lookup: {
-          from: "comments",
-          localField: "_id",
-          foreignField: "postId",
-          as: "comments"
-        }
-      },
-      {
-        $lookup: {
-          from: "replies",
-          localField: "comments._id",
-          foreignField: "commentId",
-          as: "replies"
-        }
-      },
+      // الحساب الكلي
+      const [normalCount, showroomCount] = await Promise.all([
+        Post.countDocuments(matchFilter),
+        ShowRoomPosts.countDocuments()
+      ]);
+      totalCount = normalCount + showroomCount;
+    } else {
+      // ✅ غير كدا → نجيب من Posts بس
+      posts = await Post.find(matchFilter)
+        .populate("userId", "username image status")
+        .populate("cityId", `name.${lang}`)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
 
-      {
-        $addFields: {
-          commentsCount: { $size: "$comments" },
-          repliesCount: { $size: "$replies" },
-          totalCommentsAndReplies: {
-            $add: [{ $size: "$comments" }, { $size: "$replies" }]
-          },
+      totalCount = await Post.countDocuments(matchFilter);
+    }
 
-          // ✅ نخليهم حسب اللغة
-          title: `$title.${lang}`,
-          description: `$description.${lang}`,
-          city: `$cityData.name.${lang}`,
-          area: `$areaData.name.${lang}`
-        }
-      },
-
-      {
-        $project: {
-          id: "$_id",
-          createdAt: 1,
-          images: 1,
-          title: 1,
-          description: 1,
-          price: 1,
-          city: 1,
-          area: 1,
-          totalCommentsAndReplies: 1,
-          userData: {
-            username: "$userData.username",
-            image: "$userData.image",
-            trust: "$userData.trust"
-          }
-        }
-      },
-      { $sort: { createdAt: -1 } },
-      { $skip: skip },
-      { $limit: limit }
+    // ✅ نحسب التعليقات والردود
+    const postIds = posts.map(p => p._id);
+    const [comments, replies] = await Promise.all([
+      Comment.aggregate([
+        { $match: { postId: { $in: postIds }, entityType: "Post" } },
+        { $group: { _id: "$postId", count: { $sum: 1 } } }
+      ]),
+      Reply.aggregate([
+        { $match: { postId: { $in: postIds } } },
+        { $group: { _id: "$postId", count: { $sum: 1 } } }
+      ])
     ]);
 
-    const totalCount = await Post.countDocuments(matchFilter);
+    const commentMap = {};
+    comments.forEach(c => {
+      commentMap[c._id.toString()] = c.count;
+    });
+
+    const replyMap = {};
+    replies.forEach(r => {
+      replyMap[r._id.toString()] = r.count;
+    });
+
+    // ✅ نعمل format موحّد للبوستات
+    const formattedPosts = posts.map(post => {
+      const commentCount = commentMap[post._id.toString()] || 0;
+      const replyCount = replyMap[post._id.toString()] || 0;
+
+      if (post.carNameId) {
+        // Showroom Post
+        return {
+          id: post._id,
+          createdAt: post.createdAt,
+          images: post.images || [],
+          title:post.title,
+          price: post.price,
+          city: post.cityId?.name?.[lang] || "",
+          totalCommentsAndReplies: commentCount + replyCount,
+          user: {
+            username: post.showroomId.username,
+            image: post.showroomId.image,
+            status:post.showroomId.status
+          }
+            
+          
+        };
+      } else {
+        // Normal Post
+        return {
+          id: post._id,
+          createdAt: post.createdAt,
+          images: post.images || [],
+          title: post.title, // عشان الـ Post عنده title جاهز
+          price: post.price,
+          city: post.cityId?.name?.[lang] || "",
+          totalCommentsAndReplies: commentCount + replyCount,
+          user:{
+            username: post.userId.username,
+            image: post.userId.image,
+            status:post.userId.status
+          }
+        };
+      }
+    });
+
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
     res.status(200).send({
@@ -207,7 +231,7 @@ const getPostsByMainCategory = async (req, res, next) => {
           ? "Posts retrieved successfully"
           : "تم استرجاع المنشورات بنجاح",
       data: {
-        posts,
+        posts: formattedPosts,
         pagination: {
           page,
           totalPages
@@ -217,10 +241,49 @@ const getPostsByMainCategory = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}
+const getPostById= async (req,res,next)=>{
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const postId = req.params.id;
+    const post = await Post.findById(postId).populate("userId", "username image").populate("cityId", `name.${lang}`).populate("areaId",`name.${lang}`).lean();
+    const formatedPost={
+      id: post._id,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      video: post.video || null,
+      images: post.images || null,
+      title: post.title,
+      description: post.description,
+      contactType: post.contactType,
+      contactValue: post.contactValue || null,
+      city: post.cityId?.name?.[lang] || "",
+      area: post.areaId?.name?.[lang] || "",
+    }
+    if(!post){
+      return res.status(404).send({
+        status: false,
+        code: 404,
+        message: lang === "en" ? "Post not found" : "المنشور غير موجود"
+      });
+    }
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en" ? "Post retrieved successfully" : "تم استرجاع المنشور بنجاح",
+      data: formatedPost
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+
 
 
 module.exports = {
   addPost,
-  getPostsByMainCategory
+  getPostsByMainCategory,
+  getPostById
 }

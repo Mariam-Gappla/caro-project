@@ -12,11 +12,12 @@ const RatingCenter = require("../models/ratingCenter");
 const CenterService = require("../models/centerServices")
 const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
+const centerFollower = require("../models/followerCenter");
 const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
 const saveImage = require("../configration/saveImage");
-const mongoose=require("mongoose");
+const mongoose = require("mongoose");
 const register = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -710,7 +711,7 @@ const userAsProvider = async (req, res, next) => {
       categoryCenterId: req.body.categoryCenterId,
       subCategoryCenterId: req.body.subCategoryCenterId,
       tradeRegisterNumber: req.body.tradeRegisterNumber,
-      nationalId:req.body.nationalId
+      nationalId: req.body.nationalId
 
     });
     return res.status(200).send({
@@ -775,7 +776,7 @@ const getCenters = async (req, res, next) => {
       .populate('cityId')
       .skip(skip)     // تجاهل العناصر اللي قبل الصفحة المطلوبة
       .limit(limit);  // هات بس limit عناصر
-      console.log(centers)
+    console.log(centers)
 
     // IDs بتاعة كل المراكز
     const centerIds = centers.map(c => c._id);
@@ -811,7 +812,7 @@ const getCenters = async (req, res, next) => {
         details: center.details,
         city: center.cityId?.name?.[lang] || "",
         category: center.subCategoryCenterId?.name?.[lang] || "",
-        rating: r.avgRating?.toFixed(1) || 0,
+        rating: r.avgRating ? Number(r.avgRating) : 0.0,
         ratingCount: r.count
       };
     });
@@ -833,6 +834,31 @@ const getCenters = async (req, res, next) => {
     next(err);
   }
 };
+const getProfileDataForCenters = async (req,res,next)=>{
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const centerId = req.params.id;
+    const center= await User.findById(centerId).select('username image details location whatsAppNumber phone').populate("cityId").lean();
+    const isFollowed= await centerFollower.findOne({userId:req.user.id,centerId:centerId});
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en"
+        ? "center profile data retrieved successfully"
+        : "تم استرجاع بيانات ملف المركز بنجاح",
+      data:{
+        ...center,
+        cityId:undefined,
+        city:center.cityId?.name?.[lang]||"",
+        isFollowed:!!isFollowed
+      }
+    })
+   
+}
+  catch (error) {
+    next(error)
+  }
+}
 
 
 
@@ -849,5 +875,6 @@ module.exports = {
   getCenters,
   acceptUserAsProvider,
   logout,
-  userAsProvider
+  userAsProvider,
+  getProfileDataForCenters
 }

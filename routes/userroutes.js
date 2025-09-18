@@ -2,7 +2,7 @@ const express=require("express");
 const router=express.Router();
 const {register,login,resetPassword,requestResetPassword,logout,
     addLocationForProvider,changePassword,getProfileData,editProfile,
-userAsProvider,acceptUserAsProvider,getCenters}=require('../controllers/user.js');
+userAsProvider,acceptUserAsProvider,getCenters,getProfileDataForCenters}=require('../controllers/user.js');
 const upload=require("../configration/uploadFile.js");
 router.post("/register",register);
 router.post("/add-location",addLocationForProvider);
@@ -16,4 +16,5 @@ router.post("/become-provider",upload.single("image"),userAsProvider);
 router.put("/accept-user-as-provider/:userId",acceptUserAsProvider);
 router.get("/get-centers/:id",getCenters);
 router.get("/",getProfileData);
+router.get("/get-center-profile/:id",getProfileDataForCenters);
 module.exports=router;
