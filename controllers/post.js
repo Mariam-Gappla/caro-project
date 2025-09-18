@@ -248,17 +248,50 @@ const getPostsByMainCategory = async (req, res, next) => {
     next(err);
   }
 }
-const getPostById= async (req,res,next)=>{
+const getPostById = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const postId = req.params.id;
-    let post = await Post.findById(postId).populate("userId", "username image").lean();
-    if(!post)
-    {
-      post = await ShowRoomPosts.findById(postId).populate("showroomId", "username image").lean();
+
+    let post = await Post.findById(postId)
+      .populate("userId", "username image")
+      .lean();
+
+    if (!post) {
+      post = await ShowRoomPosts.findById(postId)
+        .populate("showroomId", "username image")
+        .lean();
     }
-      
-    const formatedPost={
+
+    if (!post) {
+      return res.status(404).send({
+        status: false,
+        code: 404,
+        message:
+          lang === "en" ? "Post not found" : "المنشور غير موجود",
+      });
+    }
+
+    // 🟢 تحويل contactType -> رقم
+    const mapContactType = {
+      call: 1,
+      whatsapp: 2,
+      inAppChat: 3,
+    };
+
+    let contactTypes = [];
+    if (post.contactType) {
+      // لو contactType عبارة عن string فيه أكتر من قيمة
+      const types = Array.isArray(post.contactType)
+        ? post.contactType
+        : post.contactType.split(","); 
+
+      contactTypes = types
+        .map((t) => mapContactType[t.trim()])
+        .filter((v) => v !== undefined); // نتأكد إن اللي مالوش mapping مايتاخدش
+    }
+
+    const formatedPost = {
       id: post._id,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
@@ -266,30 +299,28 @@ const getPostById= async (req,res,next)=>{
       images: post.images || null,
       title: post.title,
       description: post.description,
-      contactType: post.contactType,
-      contactValue: post.contactValue || null,
-        user: {
-            username: post.userId.username,
-            image: post.userId.image,
-          }
-    }
-    if(!post){
-      return res.status(404).send({
-        status: false,
-        code: 404,
-        message: lang === "en" ? "Post not found" : "المنشور غير موجود"
-      });
-    }
+      contactTypes: contactTypes, // array فيها القيم الرقمية
+      contactValue: post.contactValue,
+      user: {
+        username: post.userId?.username ,
+        image: post.userId?.image 
+      },
+    };
+
     return res.status(200).send({
       status: true,
       code: 200,
-      message: lang === "en" ? "Post retrieved successfully" : "تم استرجاع المنشور بنجاح",
-      data: formatedPost
+      message:
+        lang === "en"
+          ? "Post retrieved successfully"
+          : "تم استرجاع المنشور بنجاح",
+      data: formatedPost,
     });
   } catch (error) {
     next(error);
   }
-}
+};
+
 
 
 
