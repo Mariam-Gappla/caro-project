@@ -272,7 +272,7 @@ const getPostById = async (req, res, next) => {
       });
     }
 
-    // 🟢 تحويل contactType -> رقم
+    // 🟢 contactType mapping
     const mapContactType = {
       call: 1,
       whatsapp: 2,
@@ -281,15 +281,27 @@ const getPostById = async (req, res, next) => {
 
     let contactTypes = [];
     if (post.contactType) {
-      // لو contactType عبارة عن string فيه أكتر من قيمة
       const types = Array.isArray(post.contactType)
         ? post.contactType
-        : post.contactType.split(","); 
+        : post.contactType.split(",");
 
       contactTypes = types
         .map((t) => mapContactType[t.trim()])
-        .filter((v) => v !== undefined); // نتأكد إن اللي مالوش mapping مايتاخدش
+        .filter((v) => v !== undefined);
     }
+
+    // 🟢 priceType mapping
+    const mapPriceType = {
+      best: 1,        // أفضل سعر
+      negotiable: 2,  // قابل للتفاوض
+      fixed: 3        // ثابت
+    };
+
+    const priceTypeCode = mapPriceType[post.priceType] || null;
+    const price =
+      post.priceType === "negotiable" || post.priceType === "fixed"
+        ? post.price
+        : undefined;
 
     const formatedPost = {
       id: post._id,
@@ -299,10 +311,12 @@ const getPostById = async (req, res, next) => {
       images: post.images || null,
       title: post.title,
       description: post.description,
-      contactTypes: contactTypes, // array فيها القيم الرقمية
+      contactTypes: contactTypes, 
       contactValue: post.contactValue,
+      priceType: priceTypeCode, // 🟢 هنا الرقم بدل النص
+      price: price,             // 🟢 يرجع السعر لو best أو fixed فقط
       user: {
-        username: post.userId?.username ,
+        username: post.userId?.username,
         image: post.userId?.image 
       },
     };
@@ -320,6 +334,7 @@ const getPostById = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 
