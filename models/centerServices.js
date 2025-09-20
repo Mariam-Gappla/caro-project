@@ -29,6 +29,10 @@ const centerServiceSchema = mongoose.Schema({
             required:true
         }
     },
+    video: {
+        type: String,
+        required:true
+    }
 })
 const centerService = mongoose.model('CenterService', centerServiceSchema);
 module.exports = centerService;

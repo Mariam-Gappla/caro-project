@@ -14,7 +14,7 @@ const favoriteSchema = mongoose.Schema({
   entityType: {
     type: String,
     required: true,
-    enum: ["User", "Post"], // ممكن تزودي أنواع تانية
+    enum: ["User", "Post","ShowRoomPosts","rentalOffice","CarRental"], // ممكن تزودي أنواع تانية
   },
 }, { timestamps: true });
 

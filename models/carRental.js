@@ -22,7 +22,7 @@ const carRentalSchema = new mongoose.Schema({
   videoCar:{type:String},                           
   rentalOfficeId  :{
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'RentalOffice', 
+    ref: 'rentalOffice', 
     required: true 
   }                      
 });

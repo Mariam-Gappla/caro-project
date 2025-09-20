@@ -1,6 +1,4 @@
-const { populate } = require("dotenv");
 const Favorite = require("../models/favorite");
-const path = require("path");
 const toggleFavorite = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -32,56 +30,126 @@ const toggleFavorite = async (req, res, next) => {
   }
 };
 const getFavoritesForUser = async (req, res, next) => {
-  const lang = req.headers["accept-language"] || "en";
-  const userId = req.user.id;
-  const page = req.query.page || 1;
-  const limit = req.query.limit || 10;
-  const skip = (page - 1) * limit;
-  const favoritesPost = await Favorite.find({ userId, entityType: "Post" }).populate('entityId').populate("userId")
-  const favoriteCenters = await Favorite.find({ userId, entityType: "User" })
-    .populate({
-      path: "entityId",
-      populate: {
-        path: "categoryCenterId", // ده جوه الـ User
-      },
-    })
-  const formatedCenterFavorites = favoriteCenters.map((fav) => {
-    const { entityId, ...rest } = fav;
-      return {
-        title: entityId.username,
-        subTitle: entityId.categoryCenterId.name[lang],
-        image: entityId.image
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    let title = "";
+    // 🟢 هات الفيفوريتس الأساسية
+    const favorites = await Favorite.find({ userId }).sort({ createdAt: -1 });
+
+    // 🟢 populate لكل نوع entityType
+    const populatedFavorites = await Promise.all(
+      favorites.map(async (fav) => {
+        if (fav.entityType === "User") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "categoryCenterId" },
+          });
+        } else if (fav.entityType === "Post") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "userId" },
+          });
+        } else if (fav.entityType === "ShowRoomPosts") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "showroomId" },
+          });
+        }
+        else if (fav.entityType === "rentalOffice") {
+          await fav.populate({
+            path: "entityId",
+          });
+        }
+        else if (fav.entityType === "CarRental") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "rentalOfficeId" }
+          });
+        }
+        return fav;
+      })
+    );
+
+    // 🟢 format response
+    const formattedFavorites = populatedFavorites.map((fav) => {
+      const { entityType, entityId, createdAt } = fav;
+      if (!entityId) return null;
+
+      if (entityType === "User") {
+        return {
+          type: "center",
+          title: entityId.username,
+          subTitle: entityId.categoryCenterId?.name?.[lang] || "",
+          image: entityId.image,
+          createdAt,
+        };
       }
 
-  });
-   const formatedPostsFavorites =  favoritesPost.map((fav) => {
-    const { entityId,userId ,...rest } = fav;
-      return {
-        title: userId.username,
-        subTitle: entityId.title,
-        image: userId.image
+      if (entityType === "Post") {
+        return {
+          type: "post",
+          title: entityId.userId?.username || "",
+          subTitle: entityId.title || "",
+          image: entityId.userId?.image || "",
+          createdAt,
+        };
       }
 
-  });
-  let allFavorites=[]
-  allFavorites=[...formatedCenterFavorites,...formatedPostsFavorites]
-    // Sort by date (optional)
-    allFavorites.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if (entityType === "ShowRoomPosts") {
+        return {
+          type: "showroomPost",
+          title: entityId.showroomId?.username || "",
+          subTitle: entityId.title || "",
+          image: entityId.showroomId?.image || "",
+          createdAt,
+        };
+      }
+      if (entityType === "rentalOffice") {
+        return {
+          type: "rentalOffice",
+          title: entityId.username || "",
+          subTitle: lang == "en" ? "rental office" : "مكتب تاجير",
+          image: entityId.image || "",
+          createdAt,
+        };
+      }
+      if (entityType === "CarRental") {
+        return {
+          type: "CarRental",
+          title: entityId.rentalOfficeId.username || "",
+          subTitle: req.query.title,
+          image: entityId.images?.[0] || "",
+          createdAt,
+        };
+      }
 
-    // Pagination
-    const totalCount = allFavorites.length;
+
+      return null;
+    }).filter(Boolean);
+
+    // 🟢 pagination
+    const totalCount = formattedFavorites.length;
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-  return res.status(200).send({
-    status: true,
-    code: 200,
-    data: {
-      favorities: allFavorites,
-      pagination: {
-        page,
-        totalPages
-      }
-    }
-  })
-}
+    const paginatedFavorites = formattedFavorites.slice(skip, skip + limit);
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      data: {
+        favorites: paginatedFavorites,
+        pagination: {
+          page,
+          totalPages,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 module.exports = { toggleFavorite, getFavoritesForUser };
