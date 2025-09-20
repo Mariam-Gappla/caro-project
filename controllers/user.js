@@ -13,6 +13,7 @@ const CenterService = require("../models/centerServices")
 const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
 const centerFollower = require("../models/followerCenter");
+const Favorite = require("../models/favorite");
 const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
@@ -755,7 +756,7 @@ const getCenters = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const mainCategoryCenterId = req.params.id;
-
+    const userId = req.user.id;
     // 🟢 pagination params
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -819,19 +820,31 @@ const getCenters = async (req, res, next) => {
     });
 
     // 🟢 format response
-    const formatedCenters = centers.map(center => {
-      const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
-      return {
-        id: center._id,
-        username: center.username,
-        image: center.image,
-        details: center.details,
-        city: center.cityId?.name?.[lang] || "",
-        category: center.subCategoryCenterId?.name?.[lang] || "",
-        rating: r.avgRating ? Number(r.avgRating) : 0.0,
-        ratingCount: r.count
-      };
-    });
+    // 🟢 format response with favorites
+    const formatedCenters = await Promise.all(
+      centers.map(async (center) => {
+        const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
+
+        const existFavorite = await Favorite.findOne({
+          userId: userId,
+          entityId: center._id,
+          entityType: "User"
+        });
+
+        return {
+          id: center._id,
+          username: center.username,
+          image: center.image,
+          details: center.details,
+          city: center.cityId?.name?.[lang] || "",
+          category: center.subCategoryCenterId?.name?.[lang] || "",
+          rating: r.avgRating ? Number(r.avgRating) : 0.0,
+          ratingCount: r.count,
+          isFavorite: !!existFavorite   // 🟢 ترجع true/false
+        };
+      })
+    );
+
 
     return res.status(200).send({
       status: true,
@@ -850,27 +863,27 @@ const getCenters = async (req, res, next) => {
   }
 };
 
-const getProfileDataForCenters = async (req,res,next)=>{
+const getProfileDataForCenters = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const centerId = req.params.id;
-    const center= await User.findById(centerId).select('username image details location whatsAppNumber phone').populate("cityId").lean();
-    const isFollowed= await centerFollower.findOne({userId:req.user.id,centerId:centerId});
+    const center = await User.findById(centerId).select('username image details location whatsAppNumber phone').populate("cityId").lean();
+    const isFollowed = await centerFollower.findOne({ userId: req.user.id, centerId: centerId });
     return res.status(200).send({
       status: true,
       code: 200,
       message: lang === "en"
         ? "center profile data retrieved successfully"
         : "تم استرجاع بيانات ملف المركز بنجاح",
-      data:{
+      data: {
         ...center,
-        cityId:undefined,
-        city:center.cityId?.name?.[lang]||"",
-        isFollowed:!!isFollowed
+        cityId: undefined,
+        city: center.cityId?.name?.[lang] || "",
+        isFollowed: !!isFollowed
       }
     })
-   
-}
+
+  }
   catch (error) {
     next(error)
   }
