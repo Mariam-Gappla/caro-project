@@ -793,38 +793,37 @@ const getCenters = async (req, res, next) => {
     const lat = parseFloat(req.query.lat);
     const long = parseFloat(req.query.long);
 
-    if (isNaN(lat) || isNaN(long)) {
-      return res.status(400).send({
-        status: false,
-        code: 400,
-        message:
-          lang === "ar"
-            ? "إحداثيات الموقع غير صحيحة"
-            : "Invalid location coordinates",
-      });
-    }
-
     // 🟢 filters
     const { cityId, search } = req.query;
 
+    // 🟢 base match query
+    const matchQuery = {
+      isProvider: true,
+      categoryCenterId: new mongoose.Types.ObjectId(mainCategoryCenterId),
+      ...(cityId ? { cityId: new mongoose.Types.ObjectId(cityId) } : {}),
+      ...(search ? { username: { $regex: search, $options: "i" } } : {}),
+    };
+
     // 🟢 aggregation pipeline
-    const centers = await User.aggregate([
-      {
+    const pipeline = [];
+
+    if (!isNaN(lat) && !isNaN(long)) {
+      // لو فيه lat/long
+      pipeline.push({
         $geoNear: {
           near: { type: "Point", coordinates: [long, lat] },
           distanceField: "distance",
           maxDistance: 5000, // 5 km
           spherical: true,
-          query: {
-            isProvider: true,
-            categoryCenterId: new mongoose.Types.ObjectId(
-              mainCategoryCenterId
-            ),
-            ...(cityId ? { cityId: new mongoose.Types.ObjectId(cityId) } : {}),
-            ...(search ? { username: { $regex: search, $options: "i" } } : {}),
-          },
+          query: matchQuery,
         },
-      },
+      });
+    } else {
+      // لو مفيش lat/long
+      pipeline.push({ $match: matchQuery });
+    }
+
+    pipeline.push(
       { $skip: skip },
       { $limit: limit },
       {
@@ -851,9 +850,12 @@ const getCenters = async (req, res, next) => {
           location: 1,
           subCategoryCenterId: { $arrayElemAt: ["$subCategoryCenterId", 0] },
           cityId: { $arrayElemAt: ["$cityId", 0] },
+          distance: 1,
         },
-      },
-    ]);
+      }
+    );
+
+    const centers = await User.aggregate(pipeline);
 
     // 🟢 collect centerIds
     const centerIds = centers.map((c) => c._id);
@@ -882,21 +884,21 @@ const getCenters = async (req, res, next) => {
     // 🟢 format response with favorites
     const formattedCenters = await Promise.all(
       centers.map(async (center) => {
-        const r =
-          ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
+        const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
 
         const existFavorite = await Favorite.findOne({
           userId: userId,
           entityId: center._id,
           entityType: "User",
         });
+
         return {
           id: center._id,
           username: center.username,
           image: center.image,
           details: center.details,
           city: center.cityId?.name?.[lang] || "",
-          category: center.subCategoryCenterId?.name[lang] || "",
+          category: center.subCategoryCenterId?.name?.[lang] || "",
           rating: r.avgRating ? parseFloat(r.avgRating.toFixed(2)) : 0.0,
           isFavorite: !!existFavorite,
         };
@@ -907,9 +909,7 @@ const getCenters = async (req, res, next) => {
       status: true,
       code: 200,
       message:
-        lang === "ar"
-          ? "تم جلب البيانات بنجاح"
-          : "Data retrieved successfully",
+        lang === "ar" ? "تم جلب البيانات بنجاح" : "Data retrieved successfully",
       data: {
         centers: formattedCenters,
         pagination: {
