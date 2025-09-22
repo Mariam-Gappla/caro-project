@@ -1,70 +1,191 @@
 const CenterComment = require('../models/centerComments');
-const addComment = async (req,res,next)=>{
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const {entityType, content,entityId} = req.body;
-        const userId=req.user.id;
-        if (!entityType || !content || !entityId) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required'
-            });
-        }
-        await CenterComment.create({entityType, content, entityId, userId});
-        res.status(200).send({
-            status:true,
-            code:200,
-            message:lang=="en"? 'Comment added successfully': 'تم إضافة التعليق بنجاح'
-        });
-    } catch (error) {
-        next(error);
+const CenterReply = require("../models/centerReplies")
+const addComment = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const { entityType, content, entityId } = req.body;
+    const userId = req.user.id;
+    if (!entityType || !content || !entityId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required'
+      });
     }
-}
-const getCommentsByPostId=async (req,res,next)=>{
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const postId = req.params.id;
-        if (!postId) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === 'ar' ? 'معرف المنشور مطلوب' : 'Post ID is required'
-            });
-        }
-        const comments = await CenterComment.find({entityId:postId,entityType:"Post"}).populate('userId','username image');
-        res.status(200).send({
-            status:true,
-            code:200,
-            data:comments
-        });
-    } catch (error) {
-        next(error);
-    }
-}
-const getCommentsByShowRoomPostId=async (req,res,next)=>{
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const postId = req.params.id;
-        if (!postId) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === 'ar' ? 'معرف المنشور مطلوب' : 'Post ID is required'
-            });
-        }
-    } catch (error) {
-        next(error);
-    }
-    const comments = await CenterComment.find({entityId:postId,entityType:"ShowRoomPosts"}).populate('userId','username image');
+    await CenterComment.create({ entityType, content, entityId, userId });
     res.status(200).send({
-        status:true,
-        code:200,
-        data:comments
+      status: true,
+      code: 200,
+      message: lang == "en" ? 'Comment added successfully' : 'تم إضافة التعليق بنجاح'
     });
+  } catch (error) {
+    next(error);
+  }
 }
+const getCommentsByPostId = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const postId = req.params.id;
+    if (!postId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar' ? 'معرف المنشور مطلوب' : 'Post ID is required'
+      });
+    }
+    const comments = await CenterComment.find({ entityId: postId, entityType: "Post" }).populate('userId', 'username image');
+    res.status(200).send({
+      status: true,
+      code: 200,
+      data: comments
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+const getCommentsByShowRoomPostId = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const postId = req.params.id;
+    if (!postId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar' ? 'معرف المنشور مطلوب' : 'Post ID is required'
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+  const comments = await CenterComment.find({ entityId: postId, entityType: "ShowRoomPosts" }).populate('userId', 'username image');
+  res.status(200).send({
+    status: true,
+    code: 200,
+    data: comments
+  });
+}
+const getPostCommentsWithReplies = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const postId = req.params.id;
+
+    if (!postId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Post ID is required" : "مطلوب معرف البوست",
+      });
+    }
+
+    // 📌 هات التعليقات الخاصة بالبوست
+    const comments = await CenterComment.find({ entityId: postId, entityType: "Post" })
+      .populate("userId", "username image") // المستخدم اللي كتب الكومنت
+      .lean();
+
+    // 📌 هات الـ replies لكل كومنت
+    const commentsWithReplies = await Promise.all(
+      comments.map(async (comment) => {
+        const replies = await CenterReply.find({ commentId: comment._id })
+          .populate("userId", "username image") // المستخدم اللي رد
+          .lean();
+
+        return {
+          _id: comment._id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          user: {
+            username: comment.userId?.username,
+            image: comment.userId?.image,
+          },
+          replies: replies.map((reply) => ({
+            _id: reply._id,
+            content: reply.content,
+            createdAt: reply.createdAt,
+            user: {
+              username: reply.userId?.username,
+              image: reply.userId?.image,
+            },
+          })),
+        };
+      })
+    );
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en"
+        ? "Comments and replies retrieved successfully"
+        : "تم جلب التعليقات والردود بنجاح",
+      data: commentsWithReplies,
+
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+const getShowRoomPostCommentsWithReplies = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const postId = req.params.id;
+
+    if (!postId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Post ID is required" : "مطلوب معرف البوست",
+      });
+    }
+
+    // 📌 هات التعليقات الخاصة بالبوست
+    const comments = await CenterComment.find({ entityId: postId, entityType: "ShowRoomPosts" })
+      .populate("userId", "username image") // المستخدم اللي كتب الكومنت
+      .lean();
+
+    // 📌 هات الـ replies لكل كومنت
+    const commentsWithReplies = await Promise.all(
+      comments.map(async (comment) => {
+        const replies = await CenterReply.find({ commentId: comment._id })
+          .populate("userId", "username image") // المستخدم اللي رد
+          .lean();
+
+        return {
+          _id: comment._id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          user: {
+            username: comment.userId?.username,
+            image: comment.userId?.image,
+          },
+          replies: replies.map((reply) => ({
+            _id: reply._id,
+            content: reply.content,
+            createdAt: reply.createdAt,
+            user: {
+              username: reply.userId?.username,
+              image: reply.userId?.image,
+            },
+          })),
+        };
+      })
+    );
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en"
+        ? "Comments and replies retrieved successfully"
+        : "تم جلب التعليقات والردود بنجاح",
+      data: commentsWithReplies,
+
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
-    addComment,
-    getCommentsByPostId,
-    getCommentsByShowRoomPostId
+  addComment,
+  getCommentsByPostId,
+  getCommentsByShowRoomPostId,
+  getPostCommentsWithReplies,
+  getShowRoomPostCommentsWithReplies
 }

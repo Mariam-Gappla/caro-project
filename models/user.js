@@ -25,49 +25,57 @@ const userSchema = new mongoose.Schema({
   resetOtp: {
     type: Number
   },
-  status:{
-    type:String,
-    enum:["verified","unverified","premium"],
-    default:"unverified"
+  status: {
+    type: String,
+    enum: ["verified", "unverified", "premium"],
+    default: "unverified"
   },
   resetOtpExpires: {
     type: Date
   },
-  cityId:{
+  cityId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "City"
   },
-  whatsAppNumber:{
-    type:String
-  },
-  details:{
+  whatsAppNumber: {
     type: String
   },
-  categoryCenterId:{
+  details: {
+    type: String
+  },
+  categoryCenterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "MainCategoryCenter"
   },
-  subCategoryCenterId:{
+  subCategoryCenterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubCategoryCenter"
   },
-  tradeRegisterNumber:{
+  tradeRegisterNumber: {
     type: String
   },
-  nationalId:{
-    type:String,
+  nationalId: {
+    type: String,
   },
-  areaId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Area"
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'], // لازم "Point"
+      required: true,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
   },
   role: {
     type: String,
   },
-  isProvider:{
-    type:Boolean,
-    default:false
+  isProvider: {
+    type: Boolean,
+    default: false
   }
-},{timestamps:true});
+}, { timestamps: true });
 const User = mongoose.model("User", userSchema);
+userSchema.index({ location: "2dsphere" });
 module.exports = User;

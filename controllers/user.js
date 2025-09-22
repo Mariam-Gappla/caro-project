@@ -675,22 +675,47 @@ const userAsProvider = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const id = req.user.id;
+
     const existUser = await User.findOne({ _id: id });
     if (!existUser) {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
+        message: lang == "ar" ? "هذا المستخدم غير موجود" : "This user does not exist"
       });
     }
+
     const file = req.file;
     if (!file) {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang == "ar" ? "الصوره مطلوبه" : "image is required"
+        message: lang == "ar" ? "الصورة مطلوبة" : "Image is required"
       });
     }
+
+    // ✅ استخرج lat,long من البودي
+    const { lat, long } = req.body;
+
+    if (!lat || !long) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الموقع (lat, long) مطلوب" : "Location (lat, long) is required"
+      });
+    }
+
+    // ✅ جهز location object
+    req.body.location = {
+      type: "Point",
+      coordinates: [parseFloat(long), parseFloat(lat)] // [longitude, latitude]
+    };
+
+    // ❌ امسح الـ lat,long علشان مش محتاجينهم في الموديل
+    delete req.body.lat;
+    delete req.body.long;
+
+    // ✅ Validation بعد ما ضفت location
     const { error } = userAsProviderSchema(lang).validate(req.body);
     if (error) {
       return res.status(400).send({
@@ -699,10 +724,11 @@ const userAsProvider = async (req, res, next) => {
         message: error.details[0].message
       });
     }
-    let imageUrl;
-    imageUrl = saveImage(file);
-    console.log(imageUrl)
+
+    // ✅ حفظ الصورة
+    let imageUrl = saveImage(file);
     imageUrl = `${process.env.BASE_URL}${imageUrl}`;
+
     await User.findByIdAndUpdate(id, {
       image: imageUrl,
       username: req.body.username,
@@ -714,21 +740,20 @@ const userAsProvider = async (req, res, next) => {
       categoryCenterId: req.body.categoryCenterId,
       subCategoryCenterId: req.body.subCategoryCenterId,
       tradeRegisterNumber: req.body.tradeRegisterNumber,
-      nationalId: req.body.nationalId
-
+      nationalId: req.body.nationalId,
+      location: req.body.location // ✅ حفظ الموقع
     });
+
     return res.status(200).send({
       status: true,
       code: 200,
-      message: lang == "ar" ? "تم التقديم بنجاح" : "submitted successfully"
+      message: lang == "ar" ? "تم التقديم بنجاح" : "Submitted successfully"
     });
 
-
+  } catch (err) {
+    next(err);
   }
-  catch (err) {
-    next(err)
-  }
-}
+};
 const acceptUserAsProvider = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -755,49 +780,83 @@ const acceptUserAsProvider = async (req, res, next) => {
 }
 const getCenters = async (req, res, next) => {
   try {
-    const lang = req.headers['accept-language'] || 'en';
+    const lang = req.headers["accept-language"] || "en";
     const mainCategoryCenterId = req.params.id;
     const userId = req.user.id;
+
     // 🟢 pagination params
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // 🟢 lat/long
+    const lat = parseFloat(req.query.lat);
+    const long = parseFloat(req.query.long);
+
+    if (isNaN(lat) || isNaN(long)) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message:
+          lang === "ar"
+            ? "إحداثيات الموقع غير صحيحة"
+            : "Invalid location coordinates",
+      });
+    }
+
     // 🟢 filters
-    const { cityId, areaId, search } = req.query;
+    const { cityId, search } = req.query;
 
-    // 🟢 build query object dynamically
-    const query = {
-      isProvider: true,
-      categoryCenterId: new mongoose.Types.ObjectId(mainCategoryCenterId),
-    };
-
-    if (cityId) {
-      query.cityId = new mongoose.Types.ObjectId(cityId);
-    }
-
-    if (areaId) {
-      query.areaId = new mongoose.Types.ObjectId(areaId);
-    }
-
-    if (search) {
-      query.username = { $regex: search, $options: "i" }; // case-insensitive
-    }
-
-    // 🟢 total count for pagination
-    const totalCenters = await User.countDocuments(query);
-
-    // 🟢 get centers with pagination
-    const centers = await User.find(query)
-      .populate('categoryCenterId')
-      .populate('subCategoryCenterId')
-      .populate('cityId')
-      .populate('areaId')
-      .skip(skip)
-      .limit(limit);
+    // 🟢 aggregation pipeline
+    const centers = await User.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [long, lat] },
+          distanceField: "distance",
+          maxDistance: 5000, // 5 km
+          spherical: true,
+          query: {
+            isProvider: true,
+            categoryCenterId: new mongoose.Types.ObjectId(
+              mainCategoryCenterId
+            ),
+            ...(cityId ? { cityId: new mongoose.Types.ObjectId(cityId) } : {}),
+            ...(search ? { username: { $regex: search, $options: "i" } } : {}),
+          },
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "subcategorycenters",
+          localField: "subCategoryCenterId",
+          foreignField: "_id",
+          as: "subCategoryCenterId",
+        },
+      },
+      {
+        $lookup: {
+          from: "cities",
+          localField: "cityId",
+          foreignField: "_id",
+          as: "cityId",
+        },
+      },
+      {
+        $project: {
+          username: 1,
+          image: 1,
+          details: 1,
+          location: 1,
+          subCategoryCenterId: { $arrayElemAt: ["$subCategoryCenterId", 0] },
+          cityId: { $arrayElemAt: ["$cityId", 0] },
+        },
+      },
+    ]);
 
     // 🟢 collect centerIds
-    const centerIds = centers.map(c => c._id);
+    const centerIds = centers.map((c) => c._id);
 
     // 🟢 ratings aggregation
     const ratings = await RatingCenter.aggregate([
@@ -806,64 +865,63 @@ const getCenters = async (req, res, next) => {
         $group: {
           _id: "$centerId",
           avgRating: { $avg: "$rate" },
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // 🟢 rating map
     const ratingMap = {};
-    ratings.forEach(r => {
+    ratings.forEach((r) => {
       ratingMap[r._id.toString()] = {
         avgRating: r.avgRating,
-        count: r.count
+        count: r.count,
       };
     });
 
-    // 🟢 format response
     // 🟢 format response with favorites
-    const formatedCenters = await Promise.all(
+    const formattedCenters = await Promise.all(
       centers.map(async (center) => {
-        const r = ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
+        const r =
+          ratingMap[center._id.toString()] || { avgRating: 0, count: 0 };
 
         const existFavorite = await Favorite.findOne({
           userId: userId,
           entityId: center._id,
-          entityType: "User"
+          entityType: "User",
         });
-
         return {
           id: center._id,
           username: center.username,
           image: center.image,
           details: center.details,
           city: center.cityId?.name?.[lang] || "",
-          category: center.subCategoryCenterId?.name?.[lang] || "",
-          rating: r.avgRating ? Number(r.avgRating) : 0.0,
-          ratingCount: r.count,
-          isFavorite: !!existFavorite   // 🟢 ترجع true/false
+          category: center.subCategoryCenterId?.name[lang] || "",
+          rating: r.avgRating ? parseFloat(r.avgRating.toFixed(2)) : 0.0,
+          isFavorite: !!existFavorite,
         };
       })
     );
 
-
     return res.status(200).send({
       status: true,
       code: 200,
-      message: lang === "ar" ? "تم جلب البيانات بنجاح" : "Data retrieved successfully",
+      message:
+        lang === "ar"
+          ? "تم جلب البيانات بنجاح"
+          : "Data retrieved successfully",
       data: {
-        centers: formatedCenters,
+        centers: formattedCenters,
         pagination: {
           page,
-          totalPages: Math.ceil(totalCenters / limit)
-        }
+          totalPages: Math.ceil(centerIds.length / limit),
+        },
       },
     });
   } catch (err) {
     next(err);
   }
 };
-
 const getProfileDataForCenters = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -878,6 +936,10 @@ const getProfileDataForCenters = async (req, res, next) => {
         : "تم استرجاع بيانات ملف المركز بنجاح",
       data: {
         ...center,
+        location:{
+         long:center.location.coordinates[0],
+         lat:center.location.coordinates[1],
+        },
         cityId: undefined,
         city: center.cityId?.name?.[lang] || "",
         isFollowed: !!isFollowed

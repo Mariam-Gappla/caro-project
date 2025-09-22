@@ -1,4 +1,4 @@
-const messages ={
+const messages = {
     en: {
         cityId: "City is required",
         areaId: "Area is required",
@@ -9,9 +9,14 @@ const messages ={
         tradeRegisterNumber: "Trade Register Number is required",
         userName: "Username is required",
         email: "Email is required",
-        nationalId:"national Id required"
+        nationalId: "national Id required",
+        locationRequired: "Location is required",
+        locationType: "Location type must be 'Point'",
+        coordinatesRequired: "Coordinates are required",
+        coordinateNumber: "Each coordinate must be a number",
+        coordinatesLength: "Coordinates must contain exactly [longitude, latitude]",
     },
-    ar:{
+    ar: {
         cityId: "المدينه مطلوبة",
         areaId: "المنطقه مطلوبه",
         whatsAppNumber: "رقم الواتساب مطلوب",
@@ -21,7 +26,12 @@ const messages ={
         tradeRegisterNumber: "رقم السجل التجاري مطلوب",
         userName: "اسم المستخدم مطلوب",
         email: "البريد الإلكتروني مطلوب",
-        nationalId:"رقم الهويه مطلوب"
+        nationalId: "رقم الهويه مطلوب",
+        locationRequired: "الموقع مطلوب",
+        locationType: "نوع الموقع يجب أن يكون 'Point'",
+        coordinatesRequired: "الإحداثيات مطلوبة",
+        coordinateNumber: "كل إحداثي يجب أن يكون رقمًا",
+        coordinatesLength: "الإحداثيات يجب أن تحتوي على [خط الطول, خط العرض] فقط",
 
     }
 }
