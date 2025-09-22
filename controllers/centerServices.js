@@ -157,6 +157,7 @@ const getCenterServiceByCenterId = async (req, res, next) => {
                 location:centerService.location,
                 whatsAppNumber:user.whatsAppNumber,
                 details: centerService.details,
+                video:centerService.video || "",
                 services: centerService.services,
                 products: centerService.products,
                 city: user.cityId.name[lang] ,

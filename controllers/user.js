@@ -341,6 +341,7 @@ const login = async (req, res, next) => {
             likedBy: existUser.likedBy,
             createdAt: existUser.createdAt,
             subscribeAsRntalOffice: userAsRentalOffice ? true : false,
+            categoryId:existUser.categoryCenterId || "user",
             haveService: haveService ? true : false,
             role: existUser.isProvider ? "provider" : "user",
             createdAt: existUser.createdAt,
@@ -888,6 +889,53 @@ const getProfileDataForCenters = async (req, res, next) => {
     next(error)
   }
 }
+const getUserData = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const messages = getMessages(lang);
+    const userId = req.user.id;
+    
+      const existUser = await User.findOne({ _id: userId });
+      if (!existUser) {
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: messages.login.emailExists.user
+        });
+      }
+      const phone = existUser.phone;
+      const userAsRentalOffice = await rentalOffice.findOne({ phone })
+      const haveService = await CenterService.findOne({ centerId: existUser._id });
+      return res.status(200).send({
+        code: 200,
+        status: true,
+        message: lang=="en"?"request get successfully":"تم معالجه الطلب بنجاح",
+        data: {
+          user: {
+            _id: existUser._id,
+            username: existUser.username,
+            image: existUser.image,
+            phone: existUser.phone,
+            email: existUser.email,
+            password: existUser.password,
+            likedBy: existUser.likedBy,
+            createdAt: existUser.createdAt,
+            subscribeAsRntalOffice: userAsRentalOffice ? true : false,
+            categoryId:existUser.categoryCenterId || "user",
+            haveService: haveService ? true : false,
+            role: existUser.isProvider ? "provider" : "user",
+            createdAt: existUser.createdAt,
+            updatedAt: existUser.updatedAt,
+            __v: 0,
+
+          },
+        }
+      });
+  }
+  catch (error) {
+    next(error)
+  }
+}
 
 
 
@@ -905,5 +953,6 @@ module.exports = {
   acceptUserAsProvider,
   logout,
   userAsProvider,
-  getProfileDataForCenters
+  getProfileDataForCenters,
+  getUserData
 }

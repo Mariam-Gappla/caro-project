@@ -7,7 +7,7 @@ const followerSchema = new mongoose.Schema({
   },
   rentalOfficeId: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'RentalOffice', 
+    ref: 'rentalOffice', 
     required: true 
   },
   followedAt: { 

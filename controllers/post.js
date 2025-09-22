@@ -100,132 +100,100 @@ const getPostsByMainCategory = async (req, res, next) => {
       matchFilter.cityId = req.query.cityId;
     }
 
-    // area filter
-    if (req.query.areaId) {
-      matchFilter.areaId= req.query.areaId;
-    }
-
     // search filter
     if (req.query.search) {
       matchFilter.$or = [
         { title: { $regex: req.query.search, $options: "i" } }
       ];
     }
-    let mainCategory
-    mainCategory = await MainCategory.findById(categoryId);
-    if(!mainCategory)
-    {
-      mainCategory = await MainCategoryCenter.findById(categoryId);
-    }
 
-    let posts = [];
-    let totalCount = 0;
+    // ✅ نجيب البوستات فقط من Post
+    const posts = await Post.find(matchFilter)
+      .populate({
+        path: "userId",
+        select: "username image status phone categoryCenterId",
+        populate: {
+          path: "categoryCenterId",
+          select: `name.${lang}`, // علشان يجيب الاسم باللغه
+        },
+      })
+      .populate("cityId", `name.${lang}`)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    // ✅ لو الكاتيجوري سيارات → نجيب من Posts و ShowroomPosts
-    if (mainCategory && mainCategory.name.en === "cars") {
-      const [normalPosts, showroomPosts] = await Promise.all([
-        Post.find(matchFilter)
-          .populate("userId", "username image status")
-          .populate("cityId", `name.${lang}`)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
 
-        ShowRoomPosts.find()
-          .populate("showroomId", "username image status")
-          .populate("cityId", `name.${lang}`)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean()
-      ]);
-
-      posts = [...normalPosts, ...showroomPosts];
-
-      // الحساب الكلي
-      const [normalCount, showroomCount] = await Promise.all([
-        Post.countDocuments(matchFilter),
-        ShowRoomPosts.countDocuments()
-      ]);
-      totalCount = normalCount + showroomCount;
-    } else {
-      // ✅ غير كدا → نجيب من Posts بس
-      posts = await Post.find(matchFilter)
-        .populate("userId", "username image status")
-        .populate("cityId", `name.${lang}`)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
-
-      totalCount = await Post.countDocuments(matchFilter);
-    }
+    const totalCount = await Post.countDocuments(matchFilter);
 
     // ✅ نحسب التعليقات والردود
     const postIds = posts.map(p => p._id);
+    console.log("postIds:", postIds);
     const [comments, replies] = await Promise.all([
+      // 🟢 1) التعليقات
       Comment.aggregate([
-        { $match: { postId: { $in: postIds }, entityType: "Post" } },
-        { $group: { _id: "$postId", count: { $sum: 1 } } }
+        { $match: { entityId: { $in: postIds }, entityType: "Post" } },
+        { $group: { _id: "$entityId", count: { $sum: 1 } } }
       ]),
+
+      // 🟢 2) الردود
       Reply.aggregate([
-        { $match: { postId: { $in: postIds } } },
-        { $group: { _id: "$postId", count: { $sum: 1 } } }
+        {
+          $lookup: {
+            from: "centercomments",    // مش Comment, اسم الكولكشن جوه MongoDB
+            localField: "commentId",   // اللي في Reply
+            foreignField: "_id",       // اللي في CenterComment
+            as: "commentData"
+          }
+        },
+        { $unwind: "$commentData" },
+
+        {
+          $match: { "commentData.entityId": { $in: postIds } }
+        },
+
+        {
+          $group: {
+            _id: "$commentData.entityId",
+            count: { $sum: 1 }
+          }
+        }
       ])
     ]);
 
+
+    console.log("replies:", replies);
     const commentMap = {};
     comments.forEach(c => {
       commentMap[c._id.toString()] = c.count;
     });
-
+    console.log("commentMap:", commentMap);
     const replyMap = {};
     replies.forEach(r => {
       replyMap[r._id.toString()] = r.count;
     });
 
-    // ✅ نعمل format موحّد للبوستات
+    // ✅ format
     const formattedPosts = posts.map(post => {
       const commentCount = commentMap[post._id.toString()] || 0;
       const replyCount = replyMap[post._id.toString()] || 0;
-
-      if (post.carNameId) {
-        // Showroom Post
-        return {
-          id: post._id,
-          createdAt: post.createdAt,
-          images: post.images || [],
-          title:post.title,
-          price: post.price,
-          city: post.cityId?.name?.[lang] || "",
-          totalCommentsAndReplies: commentCount + replyCount,
-          user: {
-            username: post.showroomId.username,
-            image: post.showroomId.image,
-            status:post.showroomId.status
-          }
-            
-          
-        };
-      } else {
-        // Normal Post
-        return {
-          id: post._id,
-          createdAt: post.createdAt,
-          images: post.images || [],
-          title: post.title, // عشان الـ Post عنده title جاهز
-          price: post.price,
-          city: post.cityId?.name?.[lang] || "",
-          totalCommentsAndReplies: commentCount + replyCount,
-          user:{
-            username: post.userId.username,
-            image: post.userId.image,
-            status:post.userId.status
-          }
-        };
-      }
+      return {
+        id: post._id,
+        createdAt: post.createdAt,
+        images: post.images || [],
+        title: post.title,
+        price: post.price,
+        city: post.cityId?.name?.[lang] || "",
+        totalCommentsAndReplies: commentCount + replyCount,
+        user: {
+          username: post.userId.username,
+          image: post.userId.image,
+          status: post.userId.status,
+          isShowRoom: post.userId?.categoryCenterId?.name?.en == "showrooms" ? true : false, // ✅ أهو هنا
+        }
+      };
     });
+
 
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
@@ -247,7 +215,7 @@ const getPostsByMainCategory = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-}
+};
 const getPostById = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -311,13 +279,13 @@ const getPostById = async (req, res, next) => {
       images: post.images || null,
       title: post.title,
       description: post.description,
-      contactTypes: contactTypes, 
+      contactTypes: contactTypes,
       contactValue: post.contactValue,
       priceType: priceTypeCode, // 🟢 هنا الرقم بدل النص
       price: price,             // 🟢 يرجع السعر لو best أو fixed فقط
       user: {
         username: post.userId?.username,
-        image: post.userId?.image 
+        image: post.userId?.image
       },
     };
 
@@ -334,6 +302,7 @@ const getPostById = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 

@@ -122,5 +122,5 @@ const getFollowersForRentalOffice = async (req, res, next) => {
 
 module.exports = {
     addFollower,
-    getFollowersForRentalOffice
+    getFollowersForRentalOffice,
 }

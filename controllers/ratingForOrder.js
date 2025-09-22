@@ -2,6 +2,7 @@ const review = require("../models/ratingForOrder");
 const ratingSchemaValidation = require("../validation/ratingForRentalOfficeValidition");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const serviceProviderOrders = require("../models/serviceProviderOrders");
+const RatingPost=require("../models/ratingPost")
 const getMessages = require("../configration/getmessages");
 const addRatingForOrderToRentalOffice = async (req, res, next) => {
     try {
@@ -181,54 +182,6 @@ const getratingbyrentalOffice = async (req, res, next) => {
         next(error);
     }
 }
-const getRatingByUser = async (req, res, next) => {
-
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang);
-        const userId = req.user.id;
-        const page = parseInt(req.query.page) || 1;
-        const limit = 10;
-        const skip = (page - 1) * limit;
-        const ratings = await review.find({ userId })
-            .populate('userId', 'username image')
-            .select('rating comment createdAt')
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
-        const totalCount = await review.countDocuments({
-            userId: userId
-        });
-        const customizedRatings = ratings.map(rating => {
-            const user = rating.userId.toObject();
-            return {
-                username: user.username,
-                image: user.image,
-                rating: rating.rating,
-                comment: rating.comment || " ",
-                createdAt: rating.createdAt
-            };
-        });
-        /*customizedRatings*/
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            data: {
-                rating: customizedRatings,
-                pagination: {
-                    page: page,
-                    totalPages: Math.ceil(totalCount / limit),
-                }
-            },
-        });
-    }
-    catch (error) {
-        next(error);
-    }
-
-
-
-}
 const getRatingByServiceProvider = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
@@ -285,6 +238,5 @@ module.exports = {
     addRatingForOrderToRentalOffice,
     addRatingForOrderToServiceProvider,
     getratingbyrentalOffice,
-    getRatingByUser,
-    getRatingByServiceProvider
+    getRatingByServiceProvider,
 }

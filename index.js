@@ -55,6 +55,8 @@ const favorite=require("./routes/favoriteroutes.js");
 const showroomPostsroutes=require("./routes/showroomPostsroutes.js");
 const centerCommentsroutes=require("./routes/centerCommentsroutes.js");
 const centerRepliesroutes=require("./routes/centerRepliesroutes.js");
+const reportroutes=require("./routes/repoerroutes.js");
+const ratingPost=require("./routes/ratingPostroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -138,6 +140,8 @@ app.use("/favorite",favorite);
 app.use("/showroomPosts",showroomPostsroutes);
 app.use("/centerComments",centerCommentsroutes);
 app.use("/centerReplies",centerRepliesroutes);
+app.use("/report",reportroutes);
+app.use("/ratingPost",ratingPost);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
