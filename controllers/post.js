@@ -5,7 +5,6 @@ const Reply = require("../models/centerReplies");
 const saveImage = require("../configration/saveImage");
 const MainCategory = require("../models/mainCategoryActivity");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
-const ShowRoomPosts = require("../models/showroomPost");
 const mongoose = require("mongoose");
 const addPost = async (req, res, next) => {
   try {
@@ -225,11 +224,13 @@ const getPostById = async (req, res, next) => {
       .populate("userId", "username image")
       .lean();
 
-    if (!post) {
-      post = await ShowRoomPosts.findById(postId)
-        .populate("showroomId", "username image")
-        .lean();
-    }
+    const relevantPosts=await Post.find({subCategoryId:post.subCategoryId,_id: { $ne:postId}});
+    const formatedRelevantPosts=relevantPosts.map((post)=>{
+      return {
+        id:post._id,
+        image:post.images[0]
+      }
+    })
 
     if (!post) {
       return res.status(404).send({
@@ -296,20 +297,15 @@ const getPostById = async (req, res, next) => {
         lang === "en"
           ? "Post retrieved successfully"
           : "تم استرجاع المنشور بنجاح",
-      data: formatedPost,
+      data:{
+        posts:formatedPost,
+        relevantPosts:formatedRelevantPosts
+      } ,
     });
   } catch (error) {
     next(error);
   }
 };
-
-
-
-
-
-
-
-
 module.exports = {
   addPost,
   getPostsByMainCategory,

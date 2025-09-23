@@ -1,10 +1,27 @@
 const CarPlatePost = require("../models/carPlate");
 const carPlatePostSchema = require("../validation/carPlateValidition");
 const getNextOrderNumber = require("../controllers/counter");
+const Favorite = require("../models/favorite");
 const addCarPlatePost = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const userId = req.user.id;
+        const platen = req.body.plateLettersEn;
+        const platar = req.body.plateLettersAr;
+        req.body.createdAt = new Date();
+        if (!platen || !platen) {
+            return res.status(400).send({
+                code: 400,
+                status: false,
+                message: lang == "en" ? "plateLetters must be english and arabic" : "حروف اللوحه يجب ان تكون بالعربى والانجليزى"
+            })
+        }
+        req.body.plateLetters = {
+            en: platen,
+            ar: platar
+        }
+        delete req.body['plateLettersEn'];
+        delete req.body['plateLettersAr'];
         const { error } = carPlatePostSchema(lang).validate(req.body);
         if (error) {
             return res.status(400).send({
@@ -14,8 +31,9 @@ const addCarPlatePost = async (req, res, next) => {
             });
         }
         const counter = await getNextOrderNumber("carPlate");
-        req.body.postNumber = counter.seq;
-        await CarPlatePost.create(...req.body, userId);
+        req.body.postNumber = counter;
+        console.log(req.body)
+        await CarPlatePost.create({ ...req.body, userId });
         return res.status(200).send({
             status: true,
             code: 200,
@@ -33,11 +51,14 @@ const getCarPlatesPosts = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-
         // 🟢 تجهيز الفلترة
         const filteration = {};
-        if (req.query.isFixedPrice !== undefined) {
+        if (req.query.isFixedPrice !== undefined && req.query.digites !== undefined) {
             filteration.isFixedPrice = req.query.isFixedPrice === "true";
+            filteration.digites = Number(req.query.digites)
+        }
+        if (req.query.cityId) {
+            filteration.cityId = req.query.cityId;
         }
 
         // 🟢 هات البيانات
@@ -51,18 +72,31 @@ const getCarPlatesPosts = async (req, res, next) => {
         // 🟢 حساب إجمالي الصفحات
         const totalDocs = await CarPlatePost.countDocuments(filteration);
         const totalPages = Math.ceil(totalDocs / limit);
-
         // 🟢 تجهيز الشكل النهائي
-        const formatedCarPlates = carPlates.map((carPlate) => ({
-            plateNumber: carPlate.plateNumber,
-            plateLetters: carPlate.plateLetters,
-            isFixedPrice: carPlate.isFixedPrice,
-            userData: {
-                userName: carPlate.userId?.name,
-                image: carPlate.userId?.image
-            },
-            cityName: carPlate.cityId?.name?.[lang] || "",
-        }));
+        const formatedCarPlates = await Promise.all(
+            carPlates.map(async (carPlate) => {
+                const favorite = await Favorite.findOne({
+                    entityId: carPlate._id,
+                    entityType: "CarPlate"
+                });
+
+                return {
+                    id: carPlate._id,
+                    plateNumber: carPlate.plateNumber,
+                    plateLetters: carPlate.plateLetters,
+                    isFixedPrice: carPlate.isFixedPrice,
+                    userData: {
+                        userName: carPlate.userId?.username,
+                        image: carPlate.userId?.image,
+                    },
+                    price: carPlate.price,
+                    plateType: carPlate.plateType === "commercial" ? 2 : 1,
+                    cityName: carPlate.cityId?.name?.[lang] || "",
+                    isFavorite: !!favorite
+                };
+            })
+        );
+
 
         return res.status(200).send({
             status: true,
@@ -87,15 +121,43 @@ const getCarPlatesPostById = async (req, res, next) => {
             .populate("cityId")
             .populate("userId")
             .lean();
-        const formatedCarPlate = {
-            ...carPlate,
-            priceAfterAuction:undefined,
-            userData: {
-                userName: carPlate.userId?.name,
-                image: carPlate.userId?.image
-            },
-            cityName: carPlate.cityId?.name?.[lang],
-        };
+        let formatedCarPlate = {}
+        if (carPlate.isFixedPrice == true) {
+            formatedCarPlate = {
+                phone: carPlate.phoneNumber,
+                price: carPlate.price,
+                plateLetters: carPlate.plateLetters,
+                priceAfterAuction: undefined,
+                plateType: carPlate.plateType === "commercial" ? 2 : 1,
+                postNumber: carPlate.postNumber,
+                userData: {
+                    userName: carPlate.userId?.username,
+                    image: carPlate.userId?.image
+                },
+                cityName: carPlate.cityId?.name?.[lang],
+            };
+
+        }
+        else
+        {
+            formatedCarPlate = {
+                phone: carPlate.phoneNumber,
+                price: carPlate.price,
+                plateLetters: carPlate.plateLetters,
+                auctionStart:carPlate.auctionStart,
+                auctionEnd:carPlate.auctionEnd,
+                priceAfterAuction: undefined,
+                plateType: carPlate.plateType === "commercial" ? 2 : 1,
+                postNumber: carPlate.postNumber,
+                userData: {
+                    userName: carPlate.userId?.username,
+                    image: carPlate.userId?.image
+                },
+                cityName: carPlate.cityId?.name?.[lang],
+            };
+            
+        }
+
         return res.status(200).send({
             status: true,
             code: 200,
@@ -108,4 +170,4 @@ const getCarPlatesPostById = async (req, res, next) => {
 };
 
 
-module.exports = { addCarPlatePost, getCarPlatesPosts,getCarPlatesPostById }
+module.exports = { addCarPlatePost, getCarPlatesPosts, getCarPlatesPostById }

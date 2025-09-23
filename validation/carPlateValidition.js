@@ -9,13 +9,29 @@ const carPlatePostSchema = (lang = "en") => {
     plateNumber: Joi.string().required().messages({
       "any.required": t.plateNumberRequired
     }),
-    plateLetters: Joi.string().required().messages({
-      "any.required": t.plateLettersRequired
-    }),
+    digites: Joi.number()
+      .valid(1, 2, 3, 4)
+      .required()
+      .messages({
+        "any.required": t.digitesRequired,
+        "any.only": t.digitesInvalid
+      }),
+    // 🟢 متوافق مع schema (object en/ar)
+    plateLetters: Joi.object({
+      en: Joi.string().required().messages({
+        "any.required": t.plateLettersRequired
+      }),
+      ar: Joi.string().required().messages({
+        "any.required": t.plateLettersRequired
+      })
+    }).required(),
+
     cityId: Joi.string().required().messages({
       "any.required": t.cityRequired
     }),
+
     notes: Joi.string().allow(""),
+
     ownershipFeesIncluded: Joi.boolean().default(false),
     isFixedPrice: Joi.boolean().default(false),
 
@@ -24,6 +40,8 @@ const carPlatePostSchema = (lang = "en") => {
       "any.required": t.priceRequired
     }),
 
+    priceAfterAuction: Joi.number().optional(),
+
     auctionStart: Joi.date().when("isFixedPrice", {
       is: false,
       then: Joi.required().messages({
@@ -31,6 +49,7 @@ const carPlatePostSchema = (lang = "en") => {
       }),
       otherwise: Joi.optional()
     }),
+
     auctionEnd: Joi.date().when("isFixedPrice", {
       is: false,
       then: Joi.required().messages({
@@ -38,30 +57,37 @@ const carPlatePostSchema = (lang = "en") => {
       }),
       otherwise: Joi.optional()
     }),
-
+    plateType: Joi.string()
+      .valid("private", "commercial")
+      .required()
+      .messages({
+        "any.required": t.plateTypeRequired,
+        "any.only": t.plateTypeInvalid
+      }),
     phoneNumber: Joi.string().required().messages({
       "any.required": t.phoneNumberRequired
     }),
 
-    // 🟢 وقت الإنشاء ييجي من السيرفر
+    // 🟢 يجي من السيرفر مش من اليوزر
     createdAt: Joi.date().optional()
   })
     .custom((obj, helpers) => {
-      if (obj.isFixedPrice === false && obj.auctionStart && obj.auctionEnd) {
-        if (new Date(obj.auctionEnd) <= new Date(obj.auctionStart)) {
-          return helpers.error("auctionEnd.lessThanStart");
-        }
-      }
-
-      // 🟢 التحقق من أن auctionStart = createdAt
       if (obj.isFixedPrice === false && obj.auctionStart && obj.createdAt) {
-        if (new Date(obj.auctionStart).getTime() !== new Date(obj.createdAt).getTime()) {
+        const start = new Date(obj.auctionStart);
+        const created = new Date(obj.createdAt);
+
+        const sameDate =
+          start.getFullYear() === created.getFullYear() &&
+          start.getMonth() === created.getMonth() &&
+          start.getDate() === created.getDate();
+
+        if (!sameDate) {
           return helpers.error("auctionStart.notEqualCreatedAt");
         }
       }
-
       return obj;
     })
+
     .messages({
       "auctionEnd.lessThanStart": t.auctionEndGreater,
       "auctionStart.notEqualCreatedAt": t.auctionStartEqualCreatedAt

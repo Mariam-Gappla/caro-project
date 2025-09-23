@@ -57,6 +57,8 @@ const centerCommentsroutes=require("./routes/centerCommentsroutes.js");
 const centerRepliesroutes=require("./routes/centerRepliesroutes.js");
 const reportroutes=require("./routes/repoerroutes.js");
 const ratingPost=require("./routes/ratingPostroutes.js");
+const carPlates=require("./routes/carPlateroutes.js");
+const car=require("./routes/car.js")
 // 🟢 Middleware
 app.use(express.json());
 
@@ -142,6 +144,8 @@ app.use("/centerComments",centerCommentsroutes);
 app.use("/centerReplies",centerRepliesroutes);
 app.use("/report",reportroutes);
 app.use("/ratingPost",ratingPost);
+app.use("/carPlates",carPlates);
+app.use("/car",car)
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
