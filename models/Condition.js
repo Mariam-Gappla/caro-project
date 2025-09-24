@@ -1,3 +1,4 @@
+const mongoose=require("mongoose");
 const conditionSchema = new mongoose.Schema({
   name: {
     en:{required:true,type:String},

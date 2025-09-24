@@ -1,3 +1,4 @@
+const mongoose=require("mongoose");
 const fuelTypeSchema = new mongoose.Schema({
   name: {
     en:{type: String,required: true},

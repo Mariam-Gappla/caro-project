@@ -1,13 +1,8 @@
 const Cylinder=require("../models/cylinder")
 const addCylinder = async (req, res, next) => {
     try {
-        const { nameEn, nameAr } = req.body;
-        await Cylinder.create({
-            name: {
-                en: nameEn,
-                ar: nameAr
-            }
-        });
+        const { name} = req.body;
+        await Cylinder.create({name:name});
         return res.status(200).send({
             message: "Cylinder added succesfully"
         })
@@ -23,7 +18,7 @@ const getCylinder = async (req, res, next) => {
         const formated = cylinders.map((body) => {
             return {
                 id: body._id,
-                text: body.name[lang]
+                text: body.name
             }
         });
         return res.status(200).send({

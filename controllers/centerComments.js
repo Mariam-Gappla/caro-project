@@ -37,6 +37,9 @@ const getCommentsByPostId = async (req, res, next) => {
     res.status(200).send({
       status: true,
       code: 200,
+      message: lang == "en"
+        ? "Your request has been completed successfully"
+        : "تمت معالجة الطلب بنجاح",
       data: comments
     });
   } catch (error) {
@@ -61,6 +64,9 @@ const getCommentsByShowRoomPostId = async (req, res, next) => {
   res.status(200).send({
     status: true,
     code: 200,
+    message: lang == "en"
+      ? "Your request has been completed successfully"
+      : "تمت معالجة الطلب بنجاح",
     data: comments
   });
 }
@@ -182,10 +188,95 @@ const getShowRoomPostCommentsWithReplies = async (req, res, next) => {
     next(error);
   }
 };
+const getCommentsByCenterId = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const centerId = req.params.id;
+    if (!centerId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === 'ar' ? 'معرف المنشور مطلوب' : 'Post ID is required'
+      });
+    }
+    const comments = await CenterComment.find({ entityId: centerId, entityType: "User" }).populate('userId', 'username image');
+    res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "en"
+        ? "Your request has been completed successfully"
+        : "تمت معالجة الطلب بنجاح",
+      data: comments
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+const getCenterCommentswithReplies= async (req,res,next)=>{
+   try {
+    const lang = req.headers["accept-language"] || "en";
+    const centerId = req.params.id;
+
+    if (!centerId) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "center ID is required" : "معرف السنتر مطلوب",
+      });
+    }
+
+    // 📌 هات التعليقات الخاصة بالبوست
+    const comments = await CenterComment.find({ entityId: centerId, entityType: "User" })
+      .populate("userId", "username image") // المستخدم اللي كتب الكومنت
+      .lean();
+
+    // 📌 هات الـ replies لكل كومنت
+    const commentsWithReplies = await Promise.all(
+      comments.map(async (comment) => {
+        const replies = await CenterReply.find({ commentId: comment._id })
+          .populate("userId", "username image") // المستخدم اللي رد
+          .lean();
+
+        return {
+          _id: comment._id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          user: {
+            username: comment.userId?.username,
+            image: comment.userId?.image,
+          },
+          replies: replies.map((reply) => ({
+            _id: reply._id,
+            content: reply.content,
+            createdAt: reply.createdAt,
+            user: {
+              username: reply.userId?.username,
+              image: reply.userId?.image,
+            },
+          })),
+        };
+      })
+    );
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en"
+        ? "Comments and replies retrieved successfully"
+        : "تم جلب التعليقات والردود بنجاح",
+      data: commentsWithReplies,
+
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 module.exports = {
   addComment,
   getCommentsByPostId,
   getCommentsByShowRoomPostId,
   getPostCommentsWithReplies,
-  getShowRoomPostCommentsWithReplies
+  getShowRoomPostCommentsWithReplies,
+  getCommentsByCenterId,
+  getCenterCommentswithReplies
 }

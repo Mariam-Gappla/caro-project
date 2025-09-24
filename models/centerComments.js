@@ -12,7 +12,7 @@ const centerCommentSchema=new mongoose.Schema({
     entityType:{
         type:String,
         required:true,
-        enum:["ShowRoomPosts","Post"]
+        enum:["ShowRoomPosts","Post","User"]
     },
     userId:{
         type:mongoose.Types.ObjectId,

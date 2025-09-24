@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const transmissionSchema = new mongoose.Schema({
   name: {
     en: {

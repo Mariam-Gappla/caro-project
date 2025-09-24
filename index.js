@@ -58,7 +58,14 @@ const centerRepliesroutes=require("./routes/centerRepliesroutes.js");
 const reportroutes=require("./routes/repoerroutes.js");
 const ratingPost=require("./routes/ratingPostroutes.js");
 const carPlates=require("./routes/carPlateroutes.js");
-const car=require("./routes/car.js")
+const car=require("./routes/car.js");
+const conditionroutes=require("./routes/Conditionroutes.js");
+const carBodyroutes=require("./routes/carBodyroutes.js");
+const cylinderroutes=require("./routes/cylinderroutes.js");
+const fuelTyperoutes=require("./routes/fuelTyperoutes.js");
+const transimissionroutes=require("./routes/transmissionroutes.js");
+const deliveryOptionroutes=require("./routes/deliveryOptionroutes.js");
+
 // 🟢 Middleware
 app.use(express.json());
 
@@ -146,6 +153,13 @@ app.use("/report",reportroutes);
 app.use("/ratingPost",ratingPost);
 app.use("/carPlates",carPlates);
 app.use("/car",car);
+app.use("/condition",conditionroutes);
+app.use("/carBody",carBodyroutes);
+app.use("/cylinder",cylinderroutes);
+app.use("/fuelType",fuelTyperoutes);
+app.use("/transimission",transimissionroutes);
+app.use("/deliveryOption",deliveryOptionroutes)
+
 
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {

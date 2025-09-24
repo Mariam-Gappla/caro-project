@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const deliveryOptionSchema = new mongoose.Schema({
   name: { 
     en:{type: String, required: true},
