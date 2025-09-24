@@ -145,7 +145,8 @@ app.use("/centerReplies",centerRepliesroutes);
 app.use("/report",reportroutes);
 app.use("/ratingPost",ratingPost);
 app.use("/carPlates",carPlates);
-app.use("/car",car)
+app.use("/car",car);
+
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

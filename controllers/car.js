@@ -67,10 +67,9 @@ const getCarPosts = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        let filteration={};
-        if(req.query.cityId)
-        {
-            filteration.cityId=req.query.cityId
+        let filteration = {};
+        if (req.query.cityId) {
+            filteration.cityId = req.query.cityId
         }
         const totalCars = await Car.countDocuments(filteration);
         const cars = await Car.find(filteration)
@@ -89,7 +88,7 @@ const getCarPosts = async (req, res, next) => {
                 : car.carNew ? "New Car" : "Used Car";
 
             // الأيام المتبقية لو السعر مش ثابت
-            let remainingDays=null;
+            let remainingDays = null;
             if (!car.isFixedPrice && car.auctionEnd) {
                 const now = new Date();
                 const endDate = new Date(car.auctionEnd);
@@ -119,11 +118,14 @@ const getCarPosts = async (req, res, next) => {
             message: lang == "en"
                 ? "Your request has been completed successfully"
                 : "تمت معالجة الطلب بنجاح",
-            data: formatedCars,
-            pagination: {
-                page,
-                totalPages: Math.ceil(totalCars / limit),
-            },
+            data: {
+                cars: formatedCars,
+                pagination: {
+                    page,
+                    totalPages: Math.ceil(totalCars / limit),
+                },
+            }
+
         });
     } catch (err) {
         next(err);
@@ -155,9 +157,9 @@ const getCarPostById = async (req, res, next) => {
                 auctionEnd: car.isFixedPrice == false ? car.auctionEnd : undefined,
                 notes: car.notes,
                 phoneNumber: car.phoneNumber,
-                userdata:{
-                    username:car.userId.username,
-                    image:car.userId.image
+                userdata: {
+                    username: car.userId.username,
+                    image: car.userId.image
                 }
             }
         })

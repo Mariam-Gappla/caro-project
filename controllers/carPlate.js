@@ -101,6 +101,9 @@ const getCarPlatesPosts = async (req, res, next) => {
         return res.status(200).send({
             status: true,
             code: 200,
+            message: lang == "en"
+                ? "Your request has been completed successfully"
+                : "تمت معالجة الطلب بنجاح",
             data: {
                 posts: formatedCarPlates,
                 pagination: {
@@ -129,7 +132,8 @@ const getCarPlatesPostById = async (req, res, next) => {
                 plateLetters: carPlate.plateLetters,
                 priceAfterAuction: undefined,
                 plateType: carPlate.plateType === "commercial" ? 2 : 1,
-                postNumber: carPlate.postNumber,
+                createdAt:carPlate.createdAt,
+                notes:carPlate.notes || "",
                 userData: {
                     userName: carPlate.userId?.username,
                     image: carPlate.userId?.image
@@ -138,29 +142,32 @@ const getCarPlatesPostById = async (req, res, next) => {
             };
 
         }
-        else
-        {
+        else {
             formatedCarPlate = {
                 phone: carPlate.phoneNumber,
                 price: carPlate.price,
                 plateLetters: carPlate.plateLetters,
-                auctionStart:carPlate.auctionStart,
-                auctionEnd:carPlate.auctionEnd,
+                auctionStart: carPlate.auctionStart,
+                auctionEnd: carPlate.auctionEnd,
                 priceAfterAuction: undefined,
                 plateType: carPlate.plateType === "commercial" ? 2 : 1,
-                postNumber: carPlate.postNumber,
+                createdAt:carPlate.createdAt,
+                notes:carPlate.notes || "",
                 userData: {
                     userName: carPlate.userId?.username,
                     image: carPlate.userId?.image
                 },
                 cityName: carPlate.cityId?.name?.[lang],
             };
-            
+
         }
 
         return res.status(200).send({
             status: true,
             code: 200,
+            message: lang == "en"
+                ? "Your request has been completed successfully"
+                : "تمت معالجة الطلب بنجاح",
             data: formatedCarPlate,
         });
     }

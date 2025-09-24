@@ -45,7 +45,6 @@ const addShowroomPost = async (req, res, next) => {
 
     const images = req.files.images;
     const video = req.files.video;
-
     const imagePaths = images.map(img => BASE_URL + saveImage(img));
     const videoPath = video ? BASE_URL + saveImage(video[0]) : "";
     const counter = await getNextOrderNumber("showroomPost");
@@ -149,19 +148,19 @@ const getPostById = async (req, res, next) => {
       images: post.images || [],
       title: post.title,
       price: post.price,
+      specifications:[
+        {financing:post.financing},
+        {year:post.year},{fuelType:post.fuelType},
+        {cylinders:post.cylinders},{carCondition:post.carCondition},
+        {interiorColor:post.interiorColor},{exteriorColor:post.exteriorColor},
+       {transmissionType:post.transmissionType}],
       discount: post.discount,
       discountedPrice: post.discountedPrice,
       financing: post.financing,
-      year: post.year,
-      transmissionType: post.transmissionType,
-      fuelType: post.fuelType,
-      cylinders: post.cylinders,
-      carCondition: post.carCondition,
-      interiorColor: post.interiorColor,
-      exteriorColor: post.exteriorColor,
-      description: post.description,
+      description: post.discription,
       services: post.services,
       advantages: post.advantages,
+      postNumber:post.postNumber,
 
       // ✅ ناخد بس النصوص بدل الـ object كله
       carType: post.carTypeId?.type?.[lang] || "",
