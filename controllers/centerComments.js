@@ -34,13 +34,23 @@ const getCommentsByPostId = async (req, res, next) => {
       });
     }
     const comments = await CenterComment.find({ entityId: postId, entityType: "Post" }).populate('userId', 'username image');
+    const formatedComment = comments.map((comment) => {
+      return {
+        id: comment._id,
+        content: comment.content,
+        userData: {
+          username: comment.userId.username,
+          image: comment.userId.image,
+        }
+      }
+    })
     res.status(200).send({
       status: true,
       code: 200,
       message: lang == "en"
         ? "Your request has been completed successfully"
         : "تمت معالجة الطلب بنجاح",
-      data: comments
+      data: formatedComment
     });
   } catch (error) {
     next(error);
@@ -61,13 +71,23 @@ const getCommentsByShowRoomPostId = async (req, res, next) => {
     next(error);
   }
   const comments = await CenterComment.find({ entityId: postId, entityType: "ShowRoomPosts" }).populate('userId', 'username image');
+  const formatedComment = comments.map((comment) => {
+    return {
+      id: comment._id,
+      content: comment.content,
+      userData: {
+        username: comment.userId.username,
+        image: comment.userId.image,
+      }
+    }
+  })
   res.status(200).send({
     status: true,
     code: 200,
     message: lang == "en"
       ? "Your request has been completed successfully"
       : "تمت معالجة الطلب بنجاح",
-    data: comments
+    data: formatedComment
   });
 }
 const getPostCommentsWithReplies = async (req, res, next) => {
@@ -99,7 +119,7 @@ const getPostCommentsWithReplies = async (req, res, next) => {
           _id: comment._id,
           content: comment.content,
           createdAt: comment.createdAt,
-          user: {
+          userData: {
             username: comment.userId?.username,
             image: comment.userId?.image,
           },
@@ -158,7 +178,7 @@ const getShowRoomPostCommentsWithReplies = async (req, res, next) => {
           _id: comment._id,
           content: comment.content,
           createdAt: comment.createdAt,
-          user: {
+          userData: {
             username: comment.userId?.username,
             image: comment.userId?.image,
           },
@@ -200,20 +220,30 @@ const getCommentsByCenterId = async (req, res, next) => {
       });
     }
     const comments = await CenterComment.find({ entityId: centerId, entityType: "User" }).populate('userId', 'username image');
+    const formatedComment = comments.map((comment) => {
+      return {
+        id: comment._id,
+        content: comment.content,
+        userData: {
+          username: comment.userId.username,
+          image: comment.userId.image,
+        }
+      }
+    })
     res.status(200).send({
       status: true,
       code: 200,
       message: lang == "en"
         ? "Your request has been completed successfully"
         : "تمت معالجة الطلب بنجاح",
-      data: comments
+      data: formatedComment
     });
   } catch (error) {
     next(error);
   }
 }
-const getCenterCommentswithReplies= async (req,res,next)=>{
-   try {
+const getCenterCommentswithReplies = async (req, res, next) => {
+  try {
     const lang = req.headers["accept-language"] || "en";
     const centerId = req.params.id;
 
@@ -241,7 +271,7 @@ const getCenterCommentswithReplies= async (req,res,next)=>{
           _id: comment._id,
           content: comment.content,
           createdAt: comment.createdAt,
-          user: {
+          userData: {
             username: comment.userId?.username,
             image: comment.userId?.image,
           },
