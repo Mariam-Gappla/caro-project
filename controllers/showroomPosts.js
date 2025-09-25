@@ -84,18 +84,33 @@ const getShowroomPosts = async (req, res, next) => {
       filteration.carTypeId = req.query.typeId; // ObjectId
     }
     if (req.query.carCondition) {
-      filteration.carCondition = req.query.carCondition; // new/used
+      filteration.carConditionId = req.query.carConditionId; // new/used
     }
     if (req.query.year) {
       filteration.year = parseInt(req.query.year); // year as number
     }
 
     // 🟢 query مع الفلترة
-    const showroomPosts = await ShowRoomPosts.find(filteration)
+    const showroomPosts = await ShowRoomPosts.find(filteration).populate("transmissionTypeId").populate("carConditionId")
+    .populate("carNameId").populate("carModelId").populate("carTypeId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+      
+    const formatedShowRoomPosts=showroomPosts.map((post)=>{
+      return {
+        id:post._id,
+        title:lang=="en"?"Car":"سياره",
+        transmissionType:post.transmissionTypeId.name[lang],
+        carCondition:post.carConditionId.name[lang],
+        carType:post.carTypeId.type[lang],
+        carModel:post.carModelId.model[lang],
+        carName:post.carNameId.carName[lang],
+        financing:post.financing
 
+
+      }
+    })
     // 🟢 عدد الصفحات
     const totalDocs = await ShowRoomPosts.countDocuments(filteration);
     const totalPages = Math.ceil(totalDocs / limit);
@@ -108,7 +123,7 @@ const getShowroomPosts = async (req, res, next) => {
           ? "Showroom posts retrieved successfully"
           : "تم استرجاع منشورات المعرض بنجاح",
       data: {
-        posts: showroomPosts,
+        posts: formatedShowRoomPosts,
         pagination: {
           page,
           totalPages,
@@ -129,6 +144,11 @@ const getPostById = async (req, res, next) => {
       .populate("carModelId", `model.${lang}`)
       .populate("carTypeId", `type.${lang}`)
       .populate("cityId", `name.${lang}`)
+      .populate("transmissionTypeId",`name.${lang}`)
+      .populate("fuelTypeId",`name.${lang}`)
+      .populate("carBodyId",`name.${lang}`)
+      .populate("cylindersId",`name.${lang}`)
+      .populate("carConditionId",`name.${lang}`)
       .lean();
 
     if (!post) {
@@ -150,10 +170,10 @@ const getPostById = async (req, res, next) => {
       price: post.price,
       specifications:[
         {financing:post.financing},
-        {year:post.year},{fuelType:post.fuelType},
-        {cylinders:post.cylinders},{carCondition:post.carCondition},
+        {year:post.year},{fuelType:post.fuelTypeId.name},
+        {cylinders:post.cylindersId.name},{carCondition:post.carConditionId.name},
         {interiorColor:post.interiorColor},{exteriorColor:post.exteriorColor},
-       {transmissionType:post.transmissionType}],
+       {transmissionType:post.transmissionTypeId.name}],
       discount: post.discount,
       discountedPrice: post.discountedPrice,
       financing: post.financing,
