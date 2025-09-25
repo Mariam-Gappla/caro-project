@@ -140,15 +140,16 @@ const getPostById = async (req, res, next) => {
     const postId = req.params.id;
 
     const post = await ShowRoomPosts.findById(postId)
-      .populate("carNameId", `carName.${lang}`)
-      .populate("carModelId", `model.${lang}`)
-      .populate("carTypeId", `type.${lang}`)
-      .populate("cityId", `name.${lang}`)
-      .populate("transmissionTypeId",`name.${lang}`)
-      .populate("fuelTypeId",`name.${lang}`)
-      .populate("carBodyId",`name.${lang}`)
-      .populate("cylindersId",`name.${lang}`)
-      .populate("carConditionId",`name.${lang}`)
+      .populate("carNameId")
+      .populate("carModelId")
+      .populate("carTypeId")
+      .populate("cityId")
+      .populate("transmissionTypeId")
+      .populate("fuelTypeId")
+      .populate("carBodyId")
+      .populate("cylindersId")
+      .populate("carConditionId")
+      .populate("deliveryOptionId")
       .lean();
 
     if (!post) {
@@ -170,15 +171,15 @@ const getPostById = async (req, res, next) => {
       price: post.price,
       specifications:[
         {financing:post.financing},
-        {year:post.year},{fuelType:post.fuelTypeId.name},
-        {cylinders:post.cylindersId.name},{carCondition:post.carConditionId.name},
+        {year:post.year},{fuelType:post.fuelTypeId.name[lang]},
+        {cylinders:post.cylindersId.name[lang]},{carCondition:post.carConditionId.name[lang]},
         {interiorColor:post.interiorColor},{exteriorColor:post.exteriorColor},
-       {transmissionType:post.transmissionTypeId.name}],
+       {transmissionType:post.transmissionTypeId.name[lang]}],
       discount: post.discount,
       discountedPrice: post.discountedPrice,
       financing: post.financing,
       description: post.discription,
-      services: post.services,
+      services: post.deliveryOptionId.name[lang],
       advantages: post.advantages,
       postNumber:post.postNumber,
 
