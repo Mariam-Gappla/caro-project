@@ -65,7 +65,7 @@ const cylinderroutes=require("./routes/cylinderroutes.js");
 const fuelTyperoutes=require("./routes/fuelTyperoutes.js");
 const transimissionroutes=require("./routes/transmissionroutes.js");
 const deliveryOptionroutes=require("./routes/deliveryOptionroutes.js");
-
+const searchroutes=require("./routes/searchroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -158,7 +158,8 @@ app.use("/carBody",carBodyroutes);
 app.use("/cylinder",cylinderroutes);
 app.use("/fuelType",fuelTyperoutes);
 app.use("/transimission",transimissionroutes);
-app.use("/deliveryOption",deliveryOptionroutes)
+app.use("/deliveryOption",deliveryOptionroutes);
+app.use("/search",searchroutes)
 
 
 // ❌ Global Error Handler
