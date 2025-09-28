@@ -224,6 +224,7 @@ const getCommentsByCenterId = async (req, res, next) => {
       return {
         id: comment._id,
         content: comment.content,
+        createdAt:comment.createdAt,
         userData: {
           username: comment.userId.username,
           image: comment.userId.image,
