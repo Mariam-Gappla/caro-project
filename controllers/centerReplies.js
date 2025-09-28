@@ -24,7 +24,7 @@ const addReply = async (req,res,next)=>{
 const getReplies=async (req,res,next)=>{
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const {commentId} = req.params;
+        const commentId = req.params.id;
         if (!commentId) {
             return res.status(400).send({
                 status: false,
@@ -33,10 +33,21 @@ const getReplies=async (req,res,next)=>{
             });
         }
         const replies = await CenterReply.find({commentId}).populate('userId', 'username image');
+        const formatedReplies=replies.map((rep)=>{
+            return {
+                id:rep._id,
+                content:rep.content,
+                createdAt:rep.createdAt,
+                userData:{
+                    username:rep.userId.username,
+                    image:rep.userId.image
+                }
+            }
+        })
         res.status(200).send({
             status:true,
             code:200,
-            data:replies
+            data:formatedReplies
         });
     } catch (error) {
         next(error);
