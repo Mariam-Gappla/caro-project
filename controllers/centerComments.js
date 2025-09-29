@@ -116,7 +116,7 @@ const getPostCommentsWithReplies = async (req, res, next) => {
           .lean();
 
         return {
-          _id: comment._id,
+          id: comment._id,
           content: comment.content,
           createdAt: comment.createdAt,
           userData: {
@@ -124,7 +124,7 @@ const getPostCommentsWithReplies = async (req, res, next) => {
             image: comment.userId?.image,
           },
           replies: replies.map((reply) => ({
-            _id: reply._id,
+            id: reply._id,
             content: reply.content,
             createdAt: reply.createdAt,
             user: {
@@ -175,7 +175,7 @@ const getShowRoomPostCommentsWithReplies = async (req, res, next) => {
           .lean();
 
         return {
-          _id: comment._id,
+          id: comment._id,
           content: comment.content,
           createdAt: comment.createdAt,
           userData: {
@@ -183,7 +183,7 @@ const getShowRoomPostCommentsWithReplies = async (req, res, next) => {
             image: comment.userId?.image,
           },
           replies: replies.map((reply) => ({
-            _id: reply._id,
+            id: reply._id,
             content: reply.content,
             createdAt: reply.createdAt,
             user: {
@@ -224,7 +224,7 @@ const getCommentsByCenterId = async (req, res, next) => {
       return {
         id: comment._id,
         content: comment.content,
-        createdAt:comment.createdAt,
+        createdAt: comment.createdAt,
         userData: {
           username: comment.userId.username,
           image: comment.userId.image,
@@ -269,7 +269,7 @@ const getCenterCommentswithReplies = async (req, res, next) => {
           .lean();
 
         return {
-          _id: comment._id,
+          id: comment._id,
           content: comment.content,
           createdAt: comment.createdAt,
           userData: {
@@ -277,7 +277,7 @@ const getCenterCommentswithReplies = async (req, res, next) => {
             image: comment.userId?.image,
           },
           replies: replies.map((reply) => ({
-            _id: reply._id,
+            id: reply._id,
             content: reply.content,
             createdAt: reply.createdAt,
             user: {

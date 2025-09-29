@@ -1,5 +1,7 @@
+
 const mongoose = require('mongoose');
 const carRentalSchema = new mongoose.Schema({
+  title:{type:String,required:true},
   nameId: { type: mongoose.Schema.Types.ObjectId, ref: "CarName", required: true },
   modelId: { type: mongoose.Schema.Types.ObjectId, ref: "CarModel", required: true },
   rentalType: { type: String, required: true,enum:["weekly/daily","rent to own"]},           

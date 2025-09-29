@@ -2,6 +2,7 @@ const ShowRoomPosts = require("../models/showroomPost");
 const getNextOrderNumber = require("../controllers/counter");
 const showroomPostSchema = require("../validation/showroomPostsValidition");
 const saveImage = require("../configration/saveImage");
+const Reel = require("../models/reels")
 const addShowroomPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -50,11 +51,18 @@ const addShowroomPost = async (req, res, next) => {
     const counter = await getNextOrderNumber("showroomPost");
     req.body.postNumber = counter;
 
-    await ShowRoomPosts.create({
+    const showroom = await ShowRoomPosts.create({
       ...req.body,
       images: imagePaths,
       video: videoPath
     });
+    if (videoPath) {
+      await Reel.create({
+        video: showroom.video,
+        title: showroom.title,
+        createdBy: showroom.showroomId
+      });
+    }
 
     return res.status(200).send({
       status: true,
@@ -92,21 +100,21 @@ const getShowroomPosts = async (req, res, next) => {
 
     // 🟢 query مع الفلترة
     const showroomPosts = await ShowRoomPosts.find(filteration).populate("transmissionTypeId").populate("carConditionId")
-    .populate("carNameId").populate("carModelId").populate("carTypeId")
+      .populate("carNameId").populate("carModelId").populate("carTypeId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-      
-    const formatedShowRoomPosts=showroomPosts.map((post)=>{
+
+    const formatedShowRoomPosts = showroomPosts.map((post) => {
       return {
-        id:post._id,
-        title:lang=="en"?"Car":"سياره",
-        transmissionType:post.transmissionTypeId.name[lang],
-        carCondition:post.carConditionId.name[lang],
-        carType:post.carTypeId.type[lang],
-        carModel:post.carModelId.model[lang],
-        carName:post.carNameId.carName[lang],
-        financing:post.financing
+        id: post._id,
+        title: lang == "en" ? "Car" : "سياره",
+        transmissionType: post.transmissionTypeId.name[lang],
+        carCondition: post.carConditionId.name[lang],
+        carType: post.carTypeId.type[lang],
+        carModel: post.carModelId.model[lang],
+        carName: post.carNameId.carName[lang],
+        financing: post.financing
 
 
       }
@@ -169,19 +177,19 @@ const getPostById = async (req, res, next) => {
       images: post.images || [],
       title: post.title,
       price: post.price,
-      specifications:[
-        {financing:post.financing},
-        {year:post.year},{fuelType:post.fuelTypeId.name[lang]},
-        {cylinders:post.cylindersId.name[lang]},{carCondition:post.carConditionId.name[lang]},
-        {interiorColor:post.interiorColor},{exteriorColor:post.exteriorColor},
-       {transmissionType:post.transmissionTypeId.name[lang]}],
+      specifications: [
+        { financing: post.financing },
+        { year: post.year }, { fuelType: post.fuelTypeId.name[lang] },
+        { cylinders: post.cylindersId.name[lang] }, { carCondition: post.carConditionId.name[lang] },
+        { interiorColor: post.interiorColor }, { exteriorColor: post.exteriorColor },
+        { transmissionType: post.transmissionTypeId.name[lang] }],
       discount: post.discount,
       discountedPrice: post.discountedPrice,
       financing: post.financing,
       description: post.discription,
       services: post.deliveryOptionId.name[lang],
       advantages: post.advantages,
-      postNumber:post.postNumber,
+      postNumber: post.postNumber,
 
       // ✅ ناخد بس النصوص بدل الـ object كله
       carType: post.carTypeId?.type?.[lang] || "",

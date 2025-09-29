@@ -1,5 +1,6 @@
 const messages = {
   en: {
+    title: "العنوان مطلوب",
     rentalType: {
       required: "Rental type is required",
       only: "Rental type must be 'weekly/daily'",
@@ -59,6 +60,7 @@ const messages = {
   },
 
   ar: {
+    title: "Title is required",
     rentalType: {
       required: "نوع الإيجار مطلوب",
       only: "نوع الإيجار يجب أن يكون 'weekly/daily'",

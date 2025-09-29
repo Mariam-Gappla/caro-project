@@ -66,7 +66,10 @@ const fuelTyperoutes=require("./routes/fuelTyperoutes.js");
 const transimissionroutes=require("./routes/transmissionroutes.js");
 const deliveryOptionroutes=require("./routes/deliveryOptionroutes.js");
 const searchroutes=require("./routes/searchroutes.js");
-const reelsroutes=require("./routes/reels.js")
+const reelsroutes=require("./routes/reels.js");
+const walletroutes=require("./routes/wallet.js");
+const reelcommentroutes=require("./routes/reelCommentroutes.js");
+const reelreplyroutes=require("./routes/reelReplyroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -161,8 +164,10 @@ app.use("/fuelType",fuelTyperoutes);
 app.use("/transimission",transimissionroutes);
 app.use("/deliveryOption",deliveryOptionroutes);
 app.use("/search",searchroutes);
-app.use("/reels",reelsroutes)
-
+app.use("/reels",reelsroutes);
+app.use("/wallet",walletroutes);
+app.use("/reelcomment",reelcommentroutes);
+app.use("/reelreply",reelreplyroutes)
 
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {

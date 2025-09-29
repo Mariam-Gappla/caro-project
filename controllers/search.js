@@ -2,6 +2,7 @@ const Search = require("../models/searchForAnyThing");
 const searchValidationSchema = require("../validation/searchValidition");
 const Comment=require("../models/centerComments");
 const Reply=require("../models/centerReplies");
+const Reel=require("../models/reels");
 const saveImage = require("../configration/saveImage");
 const addPost = async (req, res, next) => {
   try {
@@ -51,12 +52,19 @@ const addPost = async (req, res, next) => {
     if (video && video.length === 1) {
       videoPath = `${BASE_URL}${saveImage(video[0])}`;
     }
-    await Search.create({
+    const search=await Search.create({
       ...req.body,
       userId: userId,
       images: imagePaths,
       video: videoPath || ""
     });
+     if (videoPath) {
+          await Reel.create({
+            video: search.video,
+            title: search.title,
+            createdBy: search.userId
+          });
+        }
 
     return res.status(200).send({
       status: true,

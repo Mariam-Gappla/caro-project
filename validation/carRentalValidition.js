@@ -5,6 +5,10 @@ const getRentToOwnMessages = require("../locales/schemaValiditionMessages/rentTo
 const carRentalWeeklyValiditionSchema = (lang = "en") => {
   const messages = getMessages(lang)
   return Joi.object({
+    title: Joi.string().required().messages({
+      "string.empty": messages.title,
+      "any.required": messages.title
+    }),
     rentalType: Joi.string()
       .valid("weekly/daily")
       .required()
@@ -58,7 +62,7 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
     }),
-     nameId: Joi.string().required().messages({
+    nameId: Joi.string().required().messages({
       "any.required": messages.nameId.required,
       "string.base": messages.nameId.string,
     }),
@@ -72,6 +76,10 @@ const rentToOwnSchema = (lang = "en") => {
   const messages = getRentToOwnMessages(lang);
 
   return Joi.object({
+    title: Joi.string().required().messages({
+      "string.empty": messages.title,
+      "any.required": messages.title
+    }),
     rentalType: Joi.string()
       .valid("rent to own")
       .required()
@@ -94,7 +102,7 @@ const rentToOwnSchema = (lang = "en") => {
         'string.base': messages.ownershipPeriod.base
       }),
 
-   carTypeId: Joi.string().required().messages({
+    carTypeId: Joi.string().required().messages({
       'string.base': messages.carType.string,
       'any.required': messages.carType.required
     }),
@@ -138,7 +146,7 @@ const rentToOwnSchema = (lang = "en") => {
     deliveryOption: Joi.boolean().messages({
       'boolean.base': messages.deliveryOption.boolean
     }),
-     nameId: Joi.string().required().messages({
+    nameId: Joi.string().required().messages({
       "any.required": messages.nameId.required,
       "string.base": messages.nameId.string,
     }),
@@ -146,9 +154,9 @@ const rentToOwnSchema = (lang = "en") => {
       "any.required": messages.modelId.required,
       "string.base": messages.modelId.string,
     })
-    
+
   });
- 
+
 };
 const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
   const messages = getMessages(lang)
@@ -170,7 +178,7 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
     carTypeId: Joi.string().optional().messages({
       'string.base': messages.carType.string,
     }),
-    
+
     licensePlateNumber: Joi.string().optional().messages({
       'string.base': messages.licensePlateNumber.string,
     }),
@@ -210,7 +218,7 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
         'array.base': 'imagesToDelete يجب أن تكون قائمة.',
         'string.uri': 'كل عنصر في imagesToDelete يجب أن يكون رابطًا صحيحًا.'
       }),
-       nameId: Joi.string().required().messages({
+    nameId: Joi.string().required().messages({
       "any.required": messages.nameId.required,
       "string.base": messages.nameId.string,
     }),
@@ -284,7 +292,7 @@ const rentToOwnUpdateSchema = (lang = "en") => {
         'array.base': messages.imagesToDelete.base,
         'string.uri': messages.imagesToDelete.uri
       }),
-      nameId: Joi.string().required().messages({
+    nameId: Joi.string().required().messages({
       "any.required": messages.nameId.required,
       "string.base": messages.nameId.string,
     }),

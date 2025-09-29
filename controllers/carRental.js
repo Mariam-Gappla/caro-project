@@ -2,8 +2,10 @@ const carRental = require("../models/carRental");
 const { carRentalWeeklyValiditionSchema, rentToOwnSchema, carRentalWeeklyValiditionUpdateSchema, rentToOwnUpdateSchema } = require("../validation/carRentalValidition");
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
+const Reel=require("../models/reels");
 const Model = require("../models/carModel");
-const rentalOfficeOrder = require("../models/rentalOfficeOrders")
+const rentalOfficeOrder = require("../models/rentalOfficeOrders");
+const saveImage = require("../configration/saveImage");
 const carRentalArchive = require("../models/carArchive");
 const path = require("path");
 const fs = require("fs");
@@ -38,7 +40,13 @@ const addCar = async (req, res, next) => {
           message: error.details[0].message
         });
       }
+      const video = req.files.video;
+      let videoPath;
+      if (video && video.length === 1) {
+        videoPath = `${BASE_URL}${saveImage(video[0])}`;
+      }
       await carRental.create({
+        title: req.body.title,
         rentalType: req.body.rentalType,
         images: imagePaths,
         nameId: req.body.nameId,
@@ -53,7 +61,8 @@ const addCar = async (req, res, next) => {
         carDescription: req.body.carDescription,
         deliveryOption: req.body.deliveryOption,
         odoMeter: req.body.odoMeter,
-        rentalOfficeId: req.user.id
+        rentalOfficeId: req.user.id,
+        videoCar: videoPath
       });
 
     }
@@ -69,7 +78,13 @@ const addCar = async (req, res, next) => {
           message: error.details[0].message
         });
       }
+      const video = req.files.video;
+      let videoPath;
+      if (video && video.length === 1) {
+        videoPath = `${BASE_URL}${saveImage(video[0])}`;
+      }
       await carRental.create({
+        title: req.body.title,
         rentalType: req.body.rentalType,
         images: imagePaths,
         nameId: req.body.nameId,
@@ -85,18 +100,22 @@ const addCar = async (req, res, next) => {
         carDescription: req.body.carDescription,
         deliveryOption: req.body.deliveryOption,
         ownershipPeriod: req.body.ownershipPeriod,
-        rentalOfficeId: req.user.id
+        rentalOfficeId: req.user.id,
+        videoCar: videoPath
       });
     }
-
-
-
-
     // 💾 احفظ الملفات باستخدام الأسماء اللي جهزناها
     fileInfos.forEach(file => {
       fs.writeFileSync(file.filePath, file.buffer);
       console.log('Saved file at:', file.filePath);
     });
+    if (videoPath) {
+      await Reel.create({
+        video: post.video,
+        title: post.title,
+        createdBy: post.userId
+      });
+    }
 
 
 
