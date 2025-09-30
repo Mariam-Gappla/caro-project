@@ -39,7 +39,7 @@ const carPostSchema = (lang = "en") => {
       "any.required": t.odeoMeterRequired,
     }),
 
-    carNew: Joi.boolean().required().messages({
+    carConditionId: Joi.string().required().messages({
       "any.required": t.isNewRequired,
     }),
 

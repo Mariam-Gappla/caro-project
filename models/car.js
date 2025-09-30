@@ -11,7 +11,7 @@ const carSchema = new mongoose.Schema({
     isFixedPrice: { type: Boolean, default: false },
     ownershipFeesIncluded: { type: Boolean, default: false },
     odeoMeter:{type:String,required:true},
-    carNew:{type:Boolean,required:true},
+    carConditionId:{type:mongoose.Schema.Types.ObjectId, ref: 'Condition', required: true},
     auctionStart: { type: Date },
     auctionEnd: { type: Date },
     phoneNumber: { type: String, required: true },

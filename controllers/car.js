@@ -78,6 +78,7 @@ const getCarPosts = async (req, res, next) => {
             .populate("carTypeId")
             .populate("cityId")
             .populate("userId")
+            .populate("carConditionId")
             .skip(skip)
             .limit(limit);
 
@@ -106,7 +107,7 @@ const getCarPosts = async (req, res, next) => {
                 name: car.nameId?.carName?.[lang] || "",
                 model: car.modelId?.model?.[lang] || "",
                 carType: car.carTypeId?.type?.[lang] || "",
-                isNew: car.carNew,
+                carCondition: car.carConditionId.name[lang],
                 isFixedPrice: car.isFixedPrice,
                 remainingDays,
             };
@@ -135,11 +136,9 @@ const getCarPostById = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const postId = req.params.id;
-        const car = await Car.findOne({ _id: postId }).populate("cityId").populate("userId");
-        // عنوان حسب حالة العربية
-        let title = lang === "ar"
-            ? car.carNew ? "عربية جديدة" : "عربية مستعملة"
-            : car.carNew ? "New Car" : "Used Car";
+        const car = await Car.findOne({ _id: postId }).populate("cityId").populate("userId").populate("carConditionId") .populate("nameId")
+            .populate("modelId")
+            .populate("carTypeId");
         return res.status(200).send({
             status: true,
             code: 200,
@@ -147,14 +146,16 @@ const getCarPostById = async (req, res, next) => {
                 ? "Your request has been completed successfully"
                 : "تمت معالجة الطلب بنجاح",
             data: {
-                title,
                 images: car.images,
                 odometer: car.odeoMeter,
                 price: car.price,
                 city: car.cityId.name[lang],
-                isNew: car.isNew,
+                carCondition:car.carConditionId.name[lang],
                 auctionStart: car.isFixedPrice == false ? car.auctionStart : undefined,
                 auctionEnd: car.isFixedPrice == false ? car.auctionEnd : undefined,
+                 name: car.nameId?.carName?.[lang] || "",
+                model: car.modelId?.model?.[lang] || "",
+                carType: car.carTypeId?.type?.[lang] || "",
                 notes: car.notes,
                 phoneNumber: car.phoneNumber,
                 userdata: {
