@@ -5,7 +5,7 @@ const Reply = require("../models/centerReplies");
 const saveImage = require("../configration/saveImage");
 const MainCategory = require("../models/mainCategoryActivity");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
-const Reel=require("../models/reels");
+const Reel = require("../models/reels");
 const mongoose = require("mongoose");
 const addPost = async (req, res, next) => {
   try {
@@ -66,19 +66,19 @@ const addPost = async (req, res, next) => {
       videoPath = `${BASE_URL}${saveImage(video[0])}`;
     }
 
-   const post= await Post.create({
+    const post = await Post.create({
       ...req.body,
       userId: userId,
       images: imagePaths,
       video: videoPath || undefined
     });
-     if (videoPath) {
-          await Reel.create({
-            video: post.video,
-            title: post.title,
-            createdBy: post.userId
-          });
-        }
+    if (videoPath) {
+      await Reel.create({
+        video: post.video,
+        title: post.title,
+        createdBy: post.userId
+      });
+    }
 
     return res.status(200).send({
       status: true,
@@ -231,15 +231,6 @@ const getPostById = async (req, res, next) => {
     let post = await Post.findById(postId)
       .populate("userId", "username image")
       .lean();
-
-    const relevantPosts = await Post.find({ subCategoryId: post.subCategoryId, _id: { $ne: postId } });
-    const formatedRelevantPosts = relevantPosts.map((post) => {
-      return {
-        id: post._id,
-        image: post.images[0]
-      }
-    })
-
     if (!post) {
       return res.status(404).send({
         status: false,
@@ -292,7 +283,7 @@ const getPostById = async (req, res, next) => {
       contactValue: post.contactValue,
       priceType: priceTypeCode, // 🟢 هنا الرقم بدل النص
       price: price,             // 🟢 يرجع السعر لو best أو fixed فقط
-      user: {
+      userData: {
         username: post.userId?.username,
         image: post.userId?.image
       },
@@ -305,10 +296,7 @@ const getPostById = async (req, res, next) => {
         lang === "en"
           ? "Post retrieved successfully"
           : "تم استرجاع المنشور بنجاح",
-      data: {
-        posts: formatedPost,
-        relevantPosts: formatedRelevantPosts
-      },
+      data: formatedPost
     });
   } catch (error) {
     next(error);
@@ -331,13 +319,13 @@ const getrelevantPosts = async (req, res, next) => {
       }
     });
     return res.status(200).send({
-      status:false,
-      code:400,
+      status: false,
+      code: 400,
       message:
         lang === "en"
           ? "Post retrieved successfully"
           : "تم استرجاع المنشور بنجاح",
-      data:formatedRelevantPosts
+      data: formatedRelevantPosts
     })
 
   }

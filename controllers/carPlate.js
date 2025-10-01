@@ -86,7 +86,7 @@ const getCarPlatesPosts = async (req, res, next) => {
                     plateLetters: carPlate.plateLetters,
                     isFixedPrice: carPlate.isFixedPrice,
                     userData: {
-                        userName: carPlate.userId?.username,
+                        username: carPlate.userId?.username,
                         image: carPlate.userId?.image,
                     },
                     price: carPlate.price,
@@ -136,7 +136,7 @@ const getCarPlatesPostById = async (req, res, next) => {
                 createdAt:carPlate.createdAt,
                 notes:carPlate.notes || "",
                 userData: {
-                    userName: carPlate.userId?.username,
+                    username: carPlate.userId?.username,
                     image: carPlate.userId?.image
                 },
                 cityName: carPlate.cityId?.name?.[lang],
@@ -156,7 +156,7 @@ const getCarPlatesPostById = async (req, res, next) => {
                 createdAt:carPlate.createdAt,
                 notes:carPlate.notes || "",
                 userData: {
-                    userName: carPlate.userId?.username,
+                    username: carPlate.userId?.username,
                     image: carPlate.userId?.image
                 },
                 cityName: carPlate.cityId?.name?.[lang],

@@ -13,6 +13,13 @@ const connectDB = require("./configration/dbconfig.js");
 // 🟢 Socket.IO
 const socketConnection = require("./configration/socket.js");
 
+
+
+
+
+
+
+
 // 🟢 Routes
 const userRoutes = require("./routes/userroutes.js");
 const tweetRoutes = require("./routes/tweetroutes.js");
@@ -70,6 +77,7 @@ const reelsroutes=require("./routes/reels.js");
 const walletroutes=require("./routes/wallet.js");
 const reelcommentroutes=require("./routes/reelCommentroutes.js");
 const reelreplyroutes=require("./routes/reelReplyroutes.js");
+const userChatRoutes=require("./routes/userChats.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -168,7 +176,7 @@ app.use("/reels",reelsroutes);
 app.use("/wallet",walletroutes);
 app.use("/reelcomment",reelcommentroutes);
 app.use("/reelreply",reelreplyroutes)
-
+app.use("/chat",userChatRoutes)
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

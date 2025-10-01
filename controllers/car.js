@@ -148,7 +148,7 @@ const getCarPostById = async (req, res, next) => {
             data: {
                 images: car.images,
                 odometer: car.odeoMeter,
-                price: car.price,
+                price: car.carPrice,
                 city: car.cityId.name[lang],
                 carCondition:car.carConditionId.name[lang],
                 auctionStart: car.isFixedPrice == false ? car.auctionStart : undefined,
@@ -156,7 +156,7 @@ const getCarPostById = async (req, res, next) => {
                  name: car.nameId?.carName?.[lang] || "",
                 model: car.modelId?.model?.[lang] || "",
                 carType: car.carTypeId?.type?.[lang] || "",
-                notes: car.notes,
+                notes: car.notes || "",
                 phoneNumber: car.phoneNumber,
                 userdata: {
                     username: car.userId.username,
