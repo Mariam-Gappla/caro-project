@@ -319,8 +319,8 @@ const getrelevantPosts = async (req, res, next) => {
       }
     });
     return res.status(200).send({
-      status: false,
-      code: 400,
+      status: true,
+      code: 200,
       message:
         lang === "en"
           ? "Post retrieved successfully"

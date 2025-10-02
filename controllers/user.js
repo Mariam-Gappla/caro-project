@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Otp = require("../models/otp");
 const { registerSchema, loginSchema, registerProviderSchema } = require("../validation/registerAndLoginSchema");
+const userAsAutoSalvageSchema = require("../validation/userAsAutoSalvagesValidition");
 const changePasswordSchema = require("../validation/changePasswordValidition");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
@@ -12,6 +13,7 @@ const RatingCenter = require("../models/ratingCenter");
 const CenterService = require("../models/centerServices")
 const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
+const MainCategoryCenter = require("../models/mainCategoryCenter");
 const centerFollower = require("../models/followerCenter");
 const Favorite = require("../models/favorite");
 const Tire = require("../models/tire");
@@ -43,6 +45,10 @@ const register = async (req, res, next) => {
       const { username, email, password, phone, role } = req.body;
       const existUser = await User.findOne({ phone });
       if (existUser) {
+        const existWallet = await Wallet.findOne({ userId: existUser._id });
+        if (!existWallet) {
+          await Wallet.create({ userId: existUser._id });
+        }
         return res.status(400).send({
           status: false,
           code: 400,
@@ -55,10 +61,7 @@ const register = async (req, res, next) => {
         password: hashedPassword,
         phone
       });
-      const existWallet = await Wallet.findOne({ userId: existUser._id });
-      if (!existWallet) {
-        await Wallet.create({ userId: existUser._id });
-      }
+
       return res.status(200).send({
         status: true,
         code: 200,
@@ -956,6 +959,65 @@ const getProfileDataForCenters = async (req, res, next) => {
     next(error)
   }
 }
+const userAsAutoSalvage = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const id = req.user.id;
+
+    const existUser = await User.findOne({ _id: id });
+    if (!existUser) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "هذا المستخدم غير موجود" : "This user does not exist"
+      });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الصورة مطلوبة" : "Image is required"
+      });
+    }
+    if (!Array.isArray(req.body.brand)) {
+      req.body.brand = [req.body.brand];
+    }
+    const { error } = userAsAutoSalvageSchema(lang).validate(req.body);
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: error.details[0].message
+      });
+    }
+
+    // ✅ حفظ الصورة
+    let imageUrl = saveImage(file);
+    imageUrl = `${process.env.BASE_URL}${imageUrl}`;
+    const centercategory = await MainCategoryCenter.find({})
+    const existcategory = centercategory.find((cat) => cat.name[en] == "Auto Salvage");
+    await User.findByIdAndUpdate(id, {
+      image: imageUrl,
+      username: req.body.username,
+      mainCategoryCenterId: existcategory._id,
+      brand: req.body.brand,
+      service: req.body.service,
+      cityId: req.body.cityId
+    });
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "ar" ? "تم التقديم بنجاح" : "Submitted successfully"
+    });
+
+  }
+  catch (err) {
+
+  }
+}
 const getUserData = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -1021,5 +1083,6 @@ module.exports = {
   logout,
   userAsProvider,
   getProfileDataForCenters,
-  getUserData
+  getUserData,
+  userAsAutoSalvage
 }

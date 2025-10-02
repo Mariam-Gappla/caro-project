@@ -78,6 +78,7 @@ const walletroutes=require("./routes/wallet.js");
 const reelcommentroutes=require("./routes/reelCommentroutes.js");
 const reelreplyroutes=require("./routes/reelReplyroutes.js");
 const userChatRoutes=require("./routes/userChats.js");
+const slavgePostRoutes=require("./routes/slavgePostroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -175,8 +176,9 @@ app.use("/search",searchroutes);
 app.use("/reels",reelsroutes);
 app.use("/wallet",walletroutes);
 app.use("/reelcomment",reelcommentroutes);
-app.use("/reelreply",reelreplyroutes)
-app.use("/chat",userChatRoutes)
+app.use("/reelreply",reelreplyroutes);
+app.use("/chat",userChatRoutes);
+app.use("/slavgePost",slavgePostRoutes);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

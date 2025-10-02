@@ -10,22 +10,11 @@ const addPost = async (req, res, next) => {
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const userId = req.user.id
     const images = req.files.images;
-    const video = req.files.video;
     if (!images || images.length === 0) {
       return res.status(400).send({
         status: false,
         code: 400,
         message: lang === "en" ? "Images are required" : "الصور مطلوبة"
-      });
-    }
-
-    if (video && video.length > 1) {
-      return res.status(400).send({
-        status: false,
-        code: 400,
-        message: lang === "en"
-          ? "Only one video is allowed"
-          : "مسموح برفع فيديو واحد فقط"
       });
     }
      if (req.body.contactMethods) {
@@ -48,24 +37,11 @@ const addPost = async (req, res, next) => {
       imagePaths.push(`${BASE_URL}${imagePath}`);
     });
 
-    let videoPath;
-    if (video && video.length === 1) {
-      videoPath = `${BASE_URL}${saveImage(video[0])}`;
-    }
     const search=await Search.create({
       ...req.body,
       userId: userId,
       images: imagePaths,
-      video: videoPath || ""
     });
-     if (videoPath) {
-          await Reel.create({
-            video: search.video,
-            title: search.title,
-            createdBy: search.userId
-          });
-        }
-
     return res.status(200).send({
       status: true,
       code: 200,
@@ -248,7 +224,6 @@ const getPostById = async (req, res, next) => {
       title: post.title,
       details: post.details,
       images: post.images,
-      video: post.video || "",
       contactMethods: contactTypes,
       contactValue: contactValue,
     };

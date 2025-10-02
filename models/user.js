@@ -1,4 +1,4 @@
-const { required } = require('joi');
+
 const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   username: {
@@ -65,6 +65,17 @@ const userSchema = new mongoose.Schema({
     coordinates: {
       type: [Number], // [longitude, latitude]
     },
+  },
+  service:{
+   type:String
+  },
+  brand: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "CarName"
+}],
+  cityId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "City"
   },
   role: {
     type: String,

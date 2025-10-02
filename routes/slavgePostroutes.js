@@ -1,10 +1,8 @@
 const express=require("express");
 const router=express.Router();
-const {addPost,getPosts,getPostById}=require("../controllers/search");
+const {addPost}=require("../controllers/slavgPost");
 const upload=require("../configration/uploadFile");
 router.post("/",upload.fields([
     {name:"images"},
 ]),addPost);
-router.get("/",getPosts);
-router.get("/:id",getPostById)
 module.exports=router;
