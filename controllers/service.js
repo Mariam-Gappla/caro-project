@@ -47,7 +47,7 @@ const getServicesInCenter = async (req, res, next) => {
         const formatedServices=services.map((service)=>{
             return {
                 id:service._id,
-                name:service.name,
+                text:service.name[lang],
                 image:service.image
             }
         })
