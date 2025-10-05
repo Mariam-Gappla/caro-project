@@ -10,7 +10,7 @@ const messages = {
       "any.only": "Contact method must be WhatsApp, Call, or Chat" 
     },
     cityId: { "any.required": "City is required" },
-    price: { "any.required": "Price is required", "number.base": "Price must be a number" },
+    price: {"number.base": "Price must be a number" },
     phoneNumberRequired: { "any.required": "Phone number is required when WhatsApp or Call is selected" }
   },
 
@@ -24,7 +24,7 @@ const messages = {
       "array.min": "يجب اختيار وسيلة اتصال واحدة على الأقل", 
       "any.only": "وسيلة الاتصال يجب أن تكون واتساب أو مكالمة أو محادثة" 
     },
-    price: { "any.required": "السعر مطلوب", "number.base": "السعر يجب أن يكون رقماً" },
+    price: {"number.base": "السعر يجب أن يكون رقماً" },
     cityId: { "any.required": "المدينة مطلوبة" },
     phoneNumberRequired: { "any.required": "رقم الهاتف مطلوب عند اختيار واتساب أو مكالمة" }
   },

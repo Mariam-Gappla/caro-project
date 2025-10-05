@@ -75,7 +75,7 @@ const addPost = async (req, res, next) => {
     if (videoPath) {
       await Reel.create({
         video: post.video,
-        title: post.title,
+        discription: post.description,
         createdBy: post.userId
       });
     }
@@ -193,6 +193,7 @@ const getPostsByMainCategory = async (req, res, next) => {
         city: post.cityId?.name?.[lang] || "",
         totalCommentsAndReplies: commentCount + replyCount,
         user: {
+          id:post.userId._id,
           username: post.userId.username,
           image: post.userId.image,
           status: post.userId.status,
@@ -284,6 +285,7 @@ const getPostById = async (req, res, next) => {
       priceType: priceTypeCode, // 🟢 هنا الرقم بدل النص
       price: price,             // 🟢 يرجع السعر لو best أو fixed فقط
       userData: {
+        id:post.userId?._id,
         username: post.userId?.username,
         image: post.userId?.image
       },

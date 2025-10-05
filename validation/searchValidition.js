@@ -12,7 +12,7 @@ const searchValidationSchema = (lang = "en") => {
       .required()
       .messages(msg.contactMethods),
     cityId: Joi.string().required().messages(msg.cityId),
-    price: Joi.number().required().messages(msg.price),
+    price: Joi.number().messages(msg.price),
     phoneNumber: Joi.when("contactMethods", {
       is: Joi.array().items(Joi.string().valid("WhatsApp", "Call")).has(Joi.string().valid("WhatsApp", "Call")),
       then: Joi.string().required().messages(msg.phoneNumberRequired),

@@ -139,7 +139,8 @@ const getPosts = async (req, res, next) => {
         price: post.price,
         city: post.cityId?.name?.[lang] || "",
         totalCommentsAndReplies: commentCount + replyCount,
-        user: {
+        userData: {
+          id:post.userId._id,
           username: post.userId.username,
           image: post.userId.image,
           status: post.userId.status,

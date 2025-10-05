@@ -22,7 +22,7 @@ const addMessage = async (req, res, next) => {
             senderId,
             receiverId,
             text,
-            createdAt: Date.now(),
+            createdAt: new Date().toISOString(),
             isRead: false,
         };
 

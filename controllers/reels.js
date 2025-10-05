@@ -1,8 +1,10 @@
 const Reel = require("../models/reels");
 const ReelComment=require("../models/reelsComment");
+const FollowerCenter=require("../models/followerCenter");
 const ReelReply=require("../models/reelsReply");
 const getReels = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const lang = req.headers["accept-language"] || "en";
 
     // نجيب الريلز
@@ -22,33 +24,50 @@ const getReels = async (req, res, next) => {
     const commentsCountMap = {};
     comments.forEach((comment) => {
       const reelId = comment.reelId.toString();
-      if (!commentsCountMap[reelId]) commentsCountMap[reelId] = { comments: 0, replies: 0 };
+      if (!commentsCountMap[reelId])
+        commentsCountMap[reelId] = { comments: 0, replies: 0 };
       commentsCountMap[reelId].comments++;
     });
 
     replies.forEach((reply) => {
-      const comment = comments.find((c) => c._id.toString() === reply.commentId.toString());
+      const comment = comments.find(
+        (c) => c._id.toString() === reply.commentId.toString()
+      );
       if (comment) {
         const reelId = comment.reelId.toString();
-        if (!commentsCountMap[reelId]) commentsCountMap[reelId] = { comments: 0, replies: 0 };
+        if (!commentsCountMap[reelId])
+          commentsCountMap[reelId] = { comments: 0, replies: 0 };
         commentsCountMap[reelId].replies++;
       }
     });
 
-    const formatedReels = reels.map((rel) => {
-      const counts = commentsCountMap[rel._id.toString()] || { comments: 0, replies: 0 };
-      return {
-        id: rel._id,
-        title: rel.title,
-        video: rel.video,
-        likes: rel.likedBy.length,
-        totalCommentsAndReplies: counts.comments + counts.replies,
-        userData: {
-          username: rel.createdBy.username,
-          image: rel.createdBy.image,
-        },
-      };
-    });
+    // نكوّن الداتا النهائية
+    const formatedReels = await Promise.all(
+      reels.map(async (rel) => {
+        const existFollower = await FollowerCenter.findOne({
+          userId,
+          centerId: rel.createdBy._id,
+        });
+
+        const counts =
+          commentsCountMap[rel._id.toString()] || { comments: 0, replies: 0 };
+
+        return {
+          id: rel._id,
+          description: rel.title,
+          video: rel.video,
+          likes: rel.likedBy.length,
+          totalCommentsAndReplies: counts.comments + counts.replies,
+          shareCount:rel.shareCount,
+          userData: {
+            username: rel.createdBy.username,
+            image: rel.createdBy.image,
+            status: rel.createdBy.status,
+            isFollowed: !!existFollower,
+          },
+        };
+      })
+    );
 
     return res.status(200).send({
       status: true,
@@ -63,7 +82,6 @@ const getReels = async (req, res, next) => {
     next(error);
   }
 };
-
 const addLike = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -111,9 +129,32 @@ const addLike = async (req, res, next) => {
     next(err)
   }
 }
+const makeShare = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const { reelId } = req.body;
+    const reel = await Reel.findByIdAndUpdate(
+      reelId,
+      { $inc: { shareCount: 1 } }, 
+      { new: true } 
+    );
+    
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message:
+        lang === "en"
+          ? "Share count updated successfully"
+          : "تم تحديث عدد المشاركات بنجاح",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 module.exports = {
   getReels,
-  addLike
+  addLike,
+  makeShare
 }
 
 

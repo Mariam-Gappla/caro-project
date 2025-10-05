@@ -2,14 +2,13 @@ const mongoose = require("mongoose");
 const searchSchema = new mongoose.Schema({
   title: { type: String, required: true },
   images: { type: [String], required: true },
-  video: { type: String },
   details: { type: String, required: true },
   contactMethods: {
     type: [String],
     enum: ["WhatsApp", "Call", "Chat"],
     required: true,
   },
-  price:{type:Number,required:true},
+  price:{type:Number},
   cityId:{type:mongoose.Schema.Types.ObjectId,required:true,ref:"City"},
   phoneNumber: { type: String },
   userId: {

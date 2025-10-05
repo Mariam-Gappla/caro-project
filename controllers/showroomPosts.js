@@ -59,7 +59,7 @@ const addShowroomPost = async (req, res, next) => {
     if (videoPath) {
       await Reel.create({
         video: showroom.video,
-        title: showroom.title,
+        discription: showroom.discription,
         createdBy: showroom.showroomId
       });
     }

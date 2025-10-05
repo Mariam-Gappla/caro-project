@@ -159,6 +159,7 @@ const getCarPostById = async (req, res, next) => {
                 notes: car.notes || "",
                 phoneNumber: car.phoneNumber,
                 userdata: {
+                    id:car.userId._id,
                     username: car.userId.username,
                     image: car.userId.image
                 }
