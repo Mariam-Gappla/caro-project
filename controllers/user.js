@@ -997,11 +997,11 @@ const userAsAutoSalvage = async (req, res, next) => {
     let imageUrl = saveImage(file);
     imageUrl = `${process.env.BASE_URL}${imageUrl}`;
     const centercategory = await MainCategoryCenter.find({})
-    const existcategory = centercategory.find((cat) => cat.name[en] == "Auto Salvage");
+    const existcategory = centercategory.find((cat) => cat.name.en == "Auto Salvage");
     await User.findByIdAndUpdate(id, {
       image: imageUrl,
       username: req.body.username,
-      mainCategoryCenterId: existcategory._id,
+      categoryCenterId: existcategory._id,
       brand: req.body.brand,
       service: req.body.service,
       cityId: req.body.cityId
@@ -1015,7 +1015,7 @@ const userAsAutoSalvage = async (req, res, next) => {
 
   }
   catch (err) {
-
+     next(err)
   }
 }
 const getUserData = async (req, res, next) => {

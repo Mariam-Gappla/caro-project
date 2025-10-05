@@ -18,5 +18,5 @@ router.get("/get-centers/:id",getCenters);
 router.get("/",getProfileData);
 router.get("/get-center-profile/:id",getProfileDataForCenters);
 router.get("/user-data",getUserData);
-router.post("/userAsAutoSalvage",userAsAutoSalvage);
+router.post("/userAsAutoSalvage",upload.single("image"),userAsAutoSalvage);
 module.exports=router;
