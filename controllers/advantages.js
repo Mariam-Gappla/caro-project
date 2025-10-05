@@ -46,7 +46,7 @@ const getAdvantage = async (req, res, next) => {
             status: true,
             code: 200,
             message: lang === "ar" ? "تم جلب المميزات بنجاح" : "Advantages fetched successfully",
-            advantages: formattedAdvantages
+            data: formattedAdvantages
         });
     }
     catch (err) {
