@@ -49,9 +49,6 @@ const showroomPostSchema = (lang = "en") => {
     financing: Joi.boolean().required().messages(messages.financing),
 
     price: Joi.number().required().messages(messages.price),
-
-    year: Joi.number().integer().required().messages(messages.year),
-
     discountedPrice: Joi.number().when("discount", {
       is: true,
       then: Joi.number()

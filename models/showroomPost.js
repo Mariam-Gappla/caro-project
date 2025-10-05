@@ -25,7 +25,6 @@ advantages:[{
 discount:{type:Boolean,required:true},
 financing:{type:Boolean,required:true},
 price:{type:Number,required:true},
-year:{type:Number,required:true},
 discountedPrice:{type:Number},
 postNumber:{type:Number,required:true}
 },{timestamps:true});

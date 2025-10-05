@@ -7,7 +7,6 @@ const addShowroomPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
-    console.log(req.body.year);
     // ✅ نتأكد إن services و advantages Arrays
     if (req.body.services && !Array.isArray(req.body.services)) {
       req.body.services = [req.body.services];
@@ -15,8 +14,6 @@ const addShowroomPost = async (req, res, next) => {
     if (req.body.advantages && !Array.isArray(req.body.advantages)) {
       req.body.advantages = [req.body.advantages];
     }
-    req.body.year = Number(req.body.year);
-
     const { error } = showroomPostSchema(lang).validate(req.body);
     if (error) {
       return res.status(400).send({
@@ -94,10 +91,6 @@ const getShowroomPosts = async (req, res, next) => {
     if (req.query.carCondition) {
       filteration.carConditionId = req.query.carConditionId; // new/used
     }
-    if (req.query.year) {
-      filteration.year = parseInt(req.query.year); // year as number
-    }
-
     // 🟢 query مع الفلترة
     const showroomPosts = await ShowRoomPosts.find(filteration).populate("transmissionTypeId").populate("carConditionId")
       .populate("carNameId").populate("carModelId").populate("carTypeId")
@@ -180,7 +173,7 @@ const getPostById = async (req, res, next) => {
       price: post.price,
       specifications: [
         { financing: post.financing },
-        { year: post.year }, { fuelType: post.fuelTypeId.name[lang] },
+        { year: post.modelId.name[lang] }, { fuelType: post.fuelTypeId.name[lang] },
         { cylinders: post.cylindersId.name[lang] }, { carCondition: post.carConditionId.name[lang] },
         { interiorColor: post.interiorColor }, { exteriorColor: post.exteriorColor },
         { transmissionType: post.transmissionTypeId.name[lang] }],
