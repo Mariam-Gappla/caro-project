@@ -17,7 +17,11 @@ carConditionId:{type:mongoose.Schema.Types.ObjectId,required:true,ref:"Condition
 interiorColor:{type:String,required:true},
 exteriorColor:{type:String,required:true},
 discription:{type:String,required:true},
-advantages:{type:[String],required:true},
+advantages:[{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Advantage", 
+    required: true
+  }],
 discount:{type:Boolean,required:true},
 financing:{type:Boolean,required:true},
 price:{type:Number,required:true},

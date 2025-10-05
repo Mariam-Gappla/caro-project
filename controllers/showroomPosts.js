@@ -158,6 +158,7 @@ const getPostById = async (req, res, next) => {
       .populate("cylindersId")
       .populate("carConditionId")
       .populate("deliveryOptionId")
+      .populate("advantages")
       .lean();
 
     if (!post) {
@@ -188,7 +189,7 @@ const getPostById = async (req, res, next) => {
       financing: post.financing,
       description: post.discription,
       services: post.deliveryOptionId.name[lang],
-      advantages: post.advantages,
+      advantages: post.advantages?.map(a => a.name?.[lang]),
       postNumber: post.postNumber,
 
       // ✅ ناخد بس النصوص بدل الـ object كله

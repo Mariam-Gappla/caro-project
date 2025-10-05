@@ -79,6 +79,7 @@ const reelcommentroutes=require("./routes/reelCommentroutes.js");
 const reelreplyroutes=require("./routes/reelReplyroutes.js");
 const userChatRoutes=require("./routes/userChats.js");
 const slavgePostRoutes=require("./routes/slavgePostroutes.js");
+const advantagesRoutes=require("./routes/advantagesroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -179,6 +180,7 @@ app.use("/reelcomment",reelcommentroutes);
 app.use("/reelreply",reelreplyroutes);
 app.use("/chat",userChatRoutes);
 app.use("/slavgePost",slavgePostRoutes);
+app.use("/advantages",advantagesRoutes)
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
