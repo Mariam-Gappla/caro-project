@@ -5,6 +5,7 @@ const Reply = require("../models/centerReplies");
 const saveImage = require("../configration/saveImage");
 const MainCategory = require("../models/mainCategoryActivity");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
+const Counter=require("../controllers/counter");
 const Reel = require("../models/reels");
 const mongoose = require("mongoose");
 const addPost = async (req, res, next) => {

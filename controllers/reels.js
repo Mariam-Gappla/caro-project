@@ -54,7 +54,7 @@ const getReels = async (req, res, next) => {
 
         return {
           id: rel._id,
-          description: rel.title,
+          description: rel.discription,
           video: rel.video,
           likes: rel.likedBy.length,
           totalCommentsAndReplies: counts.comments + counts.replies,

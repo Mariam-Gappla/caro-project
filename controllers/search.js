@@ -1,8 +1,9 @@
 const Search = require("../models/searchForAnyThing");
 const searchValidationSchema = require("../validation/searchValidition");
-const Comment=require("../models/centerComments");
-const Reply=require("../models/centerReplies");
-const Reel=require("../models/reels");
+const getNextOrderNumber = require("../controllers/counter");
+const Comment = require("../models/centerComments");
+const Reply = require("../models/centerReplies");
+const Reel = require("../models/reels");
 const saveImage = require("../configration/saveImage");
 const addPost = async (req, res, next) => {
   try {
@@ -17,7 +18,7 @@ const addPost = async (req, res, next) => {
         message: lang === "en" ? "Images are required" : "الصور مطلوبة"
       });
     }
-     if (req.body.contactMethods) {
+    if (req.body.contactMethods) {
       if (!Array.isArray(req.body.contactMethods)) {
         req.body.contactMethods = [req.body.contactMethods];
       }
@@ -36,8 +37,9 @@ const addPost = async (req, res, next) => {
       const imagePath = saveImage(file);
       imagePaths.push(`${BASE_URL}${imagePath}`);
     });
-
-    const search=await Search.create({
+     const counter = await getNextOrderNumber("search");
+     req.body.postNumber = counter;
+    const search = await Search.create({
       ...req.body,
       userId: userId,
       images: imagePaths,
@@ -61,8 +63,12 @@ const getPosts = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    let filter = {}
+    if (req.query.title) {
+      filter.title = { $regex: req.query.title, $options: "i" };
+    }
     // ✅ نجيب البوستات فقط من Post
-    const posts = await Search.find({})
+    const posts = await Search.find(filter)
       .populate({
         path: "userId",
         select: "username image status phone categoryCenterId",
@@ -76,8 +82,6 @@ const getPosts = async (req, res, next) => {
       .skip(skip)
       .limit(limit)
       .lean();
-
-
     const totalCount = await Search.countDocuments();
 
     // ✅ نحسب التعليقات والردود
@@ -136,11 +140,10 @@ const getPosts = async (req, res, next) => {
         createdAt: post.createdAt,
         images: post.images || [],
         title: post.title,
-        price: post.price,
         city: post.cityId?.name?.[lang] || "",
         totalCommentsAndReplies: commentCount + replyCount,
         userData: {
-          id:post.userId._id,
+          id: post.userId._id,
           username: post.userId.username,
           image: post.userId.image,
           status: post.userId.status,
@@ -177,7 +180,7 @@ const getPostById = async (req, res, next) => {
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const postId = req.params.id;
 
-    const post = await Search.findOne({ _id: postId });
+    const post = await Search.findOne({ _id: postId }).populate("userId");
     if (!post) {
       return res.status(404).send({
         status: false,
@@ -206,14 +209,14 @@ const getPostById = async (req, res, next) => {
     let contactValue = null;
     if (
       contactTypes.includes(mapContactType.Call) &&
-      contactTypes.includes(mapContactType.whatsapp)
+      contactTypes.includes(mapContactType.Whatsapp)
     ) {
       // ✅ لو Call + WhatsApp مع بعض
       contactValue = post.phoneNumber;
     } else if (contactTypes.includes(mapContactType.Call)) {
       // ✅ لو Call فقط
       contactValue = post.phoneNumber;
-    } else if (contactTypes.includes(mapContactType.whatsapp)) {
+    } else if (contactTypes.includes(mapContactType.WhatsApp)) {
       // ✅ لو WhatsApp فقط
       contactValue = post.phoneNumber;
     } else if (contactTypes.includes(mapContactType.Chat)) {
@@ -225,8 +228,15 @@ const getPostById = async (req, res, next) => {
       title: post.title,
       details: post.details,
       images: post.images,
+      price: post.price || null,
       contactMethods: contactTypes,
       contactValue: contactValue,
+      postNumber:post.postNumber,
+      userData: {
+        id: post.userId._id,
+        username: post.userId.username,
+        image: post.userId.image
+      }
     };
 
     return res.status(200).send({

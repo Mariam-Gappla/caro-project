@@ -11,6 +11,7 @@ const searchSchema = new mongoose.Schema({
   price:{type:Number},
   cityId:{type:mongoose.Schema.Types.ObjectId,required:true,ref:"City"},
   phoneNumber: { type: String },
+  postNumber:{type:Number},
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
