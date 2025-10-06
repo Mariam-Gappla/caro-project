@@ -64,8 +64,8 @@ const getPosts = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     let filter = {}
-    if (req.query.title) {
-      filter.title = { $regex: req.query.title, $options: "i" };
+    if (req.query.search) {
+      filter.title = { $regex: req.query.search, $options: "i" };
     }
     // ✅ نجيب البوستات فقط من Post
     const posts = await Search.find(filter)

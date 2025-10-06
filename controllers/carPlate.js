@@ -52,13 +52,21 @@ const getCarPlatesPosts = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         // 🟢 تجهيز الفلترة
-        const filteration = {};
+        let filteration = {};
         if (req.query.isFixedPrice !== undefined && req.query.digites !== undefined) {
             filteration.isFixedPrice = req.query.isFixedPrice === "true";
             filteration.digites = Number(req.query.digites)
         }
         if (req.query.cityId) {
             filteration.cityId = req.query.cityId;
+        }
+        if (req.query.search) {
+            const searchValue = req.query.search;
+            filteration.$or = [
+                { "plateLetters.en": { $regex: searchValue, $options: "i" } },
+                { "plateLetters.ar": { $regex: searchValue, $options: "i" } },
+            ];
+
         }
 
         // 🟢 هات البيانات
@@ -86,7 +94,7 @@ const getCarPlatesPosts = async (req, res, next) => {
                     plateLetters: carPlate.plateLetters,
                     isFixedPrice: carPlate.isFixedPrice,
                     userData: {
-                        id:carPlate.userId._id,
+                        id: carPlate.userId._id,
                         username: carPlate.userId?.username,
                         image: carPlate.userId?.image,
                     },
@@ -131,13 +139,14 @@ const getCarPlatesPostById = async (req, res, next) => {
                 phone: carPlate.phoneNumber,
                 price: carPlate.price,
                 plateLetters: carPlate.plateLetters,
-                plateNumber:carPlate.plateNumber,
+                plateNumber: carPlate.plateNumber,
                 priceAfterAuction: undefined,
+                isFixedPrice: carPlate.isFixedPrice,
                 plateType: carPlate.plateType === "commercial" ? 2 : 1,
-                createdAt:carPlate.createdAt,
-                notes:carPlate.notes || "",
+                createdAt: carPlate.createdAt,
+                notes: carPlate.notes || "",
                 userData: {
-                    id:carPlate.userId._id,
+                    id: carPlate.userId._id,
                     username: carPlate.userId?.username,
                     image: carPlate.userId?.image
                 },
@@ -150,15 +159,16 @@ const getCarPlatesPostById = async (req, res, next) => {
                 phone: carPlate.phoneNumber,
                 price: carPlate.price,
                 plateLetters: carPlate.plateLetters,
-                plateNumber:carPlate.plateNumber,
+                plateNumber: carPlate.plateNumber,
+                isFixedPrice: carPlate.isFixedPrice,
                 auctionStart: carPlate.auctionStart,
                 auctionEnd: carPlate.auctionEnd,
                 priceAfterAuction: undefined,
                 plateType: carPlate.plateType === "commercial" ? 2 : 1,
-                createdAt:carPlate.createdAt,
-                notes:carPlate.notes || "",
+                createdAt: carPlate.createdAt,
+                notes: carPlate.notes || "",
                 userData: {
-                    id:carPlate.userId._id,
+                    id: carPlate.userId._id,
                     username: carPlate.userId?.username,
                     image: carPlate.userId?.image
                 },

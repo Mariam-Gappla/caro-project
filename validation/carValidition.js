@@ -4,6 +4,10 @@ const carPostSchema = (lang = "en") => {
   const t = getMessages(lang);
 
   return Joi.object({
+    title: Joi.string().required().messages({
+      "any.required": t.titleRequired,
+      "string.base": t.titleMustBeString
+    }),
     nameId: Joi.string().required().messages({
       "any.required": t.nameIdRequired,
     }),
@@ -87,4 +91,4 @@ const carPostSchema = (lang = "en") => {
       "auctionStart.notEqualCreatedAt": t.auctionStartEqualCreatedAt
     });
 };
-module.exports=carPostSchema;
+module.exports = carPostSchema;

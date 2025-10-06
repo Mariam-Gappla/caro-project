@@ -16,8 +16,9 @@ const messages = {
     auctionStartRequired: "Auction start date is required",
     auctionEndRequired: "Auction end date is required",
     auctionEndGreater: "Auction end date must be after auction start date",
-    auctionStartEqualCreatedAt:
-      "Auction start date must equal post creation date",
+    auctionStartEqualCreatedAt:"Auction start date must equal post creation date",
+    titleRequired: "Title is required",
+    titleMustBeString: "Title must be a string"
   },
 
   ar: {
@@ -38,6 +39,8 @@ const messages = {
     auctionEndRequired: "تاريخ نهاية المزاد مطلوب",
     auctionEndGreater: "تاريخ نهاية المزاد يجب أن يكون بعد تاريخ البداية",
     auctionStartEqualCreatedAt: "تاريخ بداية المزاد يجب أن يساوي تاريخ إنشاء البوست",
+     titleRequired: "العنوان مطلوب",
+    titleMustBeString: "العنوان يجب أن يكون نصًا"
   },
 };
 

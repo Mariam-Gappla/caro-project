@@ -7,14 +7,13 @@ const messages = {
     priceRequired: "Price is required",
     plateTypeRequired: "Plate type is required",
     plateTypeInvalid: "Plate type must be either private or commercial",
-     digitesRequired: "Digits count is required",
+    digitesRequired: "Digits count is required",
     digitesInvalid: "Digits count must be one of [1, 2, 3, 4]",
     auctionStartRequired: "Auction start date is required when price is not fixed",
     auctionEndRequired: "Auction end date is required when price is not fixed",
     auctionEndGreater: "Auction end date must be greater than auction start date",
     auctionStartEqualCreatedAt: "Auction start date must be equal to createdAt date",
-
-    phoneNumberRequired: "Phone number is required"
+    phoneNumberRequired: "Phone number is required",
   },
 
   ar: {

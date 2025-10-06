@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const carSchema = new mongoose.Schema({
+    title:{type: String,required:true},
     nameId: { type: mongoose.Schema.Types.ObjectId, ref: "CarName", required: true },
     modelId: { type: mongoose.Schema.Types.ObjectId, ref: "CarModel", required: true },
     images: [{ type: String }],

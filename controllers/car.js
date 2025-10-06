@@ -71,6 +71,21 @@ const getCarPosts = async (req, res, next) => {
         if (req.query.cityId) {
             filteration.cityId = req.query.cityId
         }
+        if (req.query.carConditionId) {
+            filteration.cityId = req.query.carConditionId
+        }
+        if (req.query.nameId) {
+            filteration.nameId = req.query.nameId
+        }
+        if (req.query.carTypeId) {
+            filteration.carTypeId = req.query.carTypeId
+        }
+        if (req.query.modelId) {
+            filteration.modelId = req.query.modelId
+        }
+        if (req.query.search) {
+            filteration.title = { $regex: req.query.search, $options: "i" };
+        }
         const totalCars = await Car.countDocuments(filteration);
         const cars = await Car.find(filteration)
             .populate("nameId")
@@ -83,11 +98,6 @@ const getCarPosts = async (req, res, next) => {
             .limit(limit);
 
         const formatedCars = cars.map((car) => {
-            // عنوان حسب حالة العربية
-            let title = lang === "ar"
-                ? car.carNew ? "عربية جديدة" : "عربية مستعملة"
-                : car.carNew ? "New Car" : "Used Car";
-
             // الأيام المتبقية لو السعر مش ثابت
             let remainingDays = null;
             if (!car.isFixedPrice && car.auctionEnd) {
@@ -96,14 +106,13 @@ const getCarPosts = async (req, res, next) => {
                 const diffTime = endDate - now;
                 remainingDays = diffTime > 0 ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : 0;
             }
-            console.log(remainingDays)
             return {
                 id: car._id,
                 images: car.images,
                 odometer: car.odeoMeter,
                 price: car.carPrice, // خلي بالك الحقل carPrice مش price
                 city: car.cityId?.name?.[lang] || "",
-                title,
+                title: car.title,
                 name: car.nameId?.carName?.[lang] || "",
                 model: car.modelId?.model?.[lang] || "",
                 carType: car.carTypeId?.type?.[lang] || "",
@@ -136,7 +145,7 @@ const getCarPostById = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const postId = req.params.id;
-        const car = await Car.findOne({ _id: postId }).populate("cityId").populate("userId").populate("carConditionId") .populate("nameId")
+        const car = await Car.findOne({ _id: postId }).populate("cityId").populate("userId").populate("carConditionId").populate("nameId")
             .populate("modelId")
             .populate("carTypeId");
         return res.status(200).send({
@@ -148,18 +157,19 @@ const getCarPostById = async (req, res, next) => {
             data: {
                 images: car.images,
                 odometer: car.odeoMeter,
+                isFixedPrice: car.isFixedPrice,
                 price: car.carPrice,
                 city: car.cityId.name[lang],
-                carCondition:car.carConditionId.name[lang],
+                carCondition: car.carConditionId.name[lang],
                 auctionStart: car.isFixedPrice == false ? car.auctionStart : undefined,
                 auctionEnd: car.isFixedPrice == false ? car.auctionEnd : undefined,
-                 name: car.nameId?.carName?.[lang] || "",
+                name: car.nameId?.carName?.[lang] || "",
                 model: car.modelId?.model?.[lang] || "",
                 carType: car.carTypeId?.type?.[lang] || "",
                 notes: car.notes || "",
                 phoneNumber: car.phoneNumber,
                 userdata: {
-                    id:car.userId._id,
+                    id: car.userId._id,
                     username: car.userId.username,
                     image: car.userId.image
                 }
