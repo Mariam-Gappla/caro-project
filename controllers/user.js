@@ -44,8 +44,10 @@ const register = async (req, res, next) => {
       }
       const { username, email, password, phone, role } = req.body;
       const existUser = await User.findOne({ phone });
+      
       if (existUser) {
         const existWallet = await Wallet.findOne({ userId: existUser._id });
+        console.log(existWallet)
         if (!existWallet) {
           await Wallet.create({ userId: existUser._id });
         }
@@ -55,12 +57,13 @@ const register = async (req, res, next) => {
           message: messages.register.emailExists.user
         })
       }
-      await User.create({
+      const user=await User.create({
         username,
         email,
         password: hashedPassword,
         phone
       });
+      await Wallet.create({ userId: user._id });
 
       return res.status(200).send({
         status: true,
