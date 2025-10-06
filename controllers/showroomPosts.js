@@ -101,15 +101,13 @@ const getShowroomPosts = async (req, res, next) => {
     const formatedShowRoomPosts = showroomPosts.map((post) => {
       return {
         id: post._id,
-        title: lang == "en" ? "Car" : "سياره",
+        title: post.title,
+        image:post.images,
+        discount:post.discount,
+        discountedPrice:post.discount==true?post.discountedPrice:0,
         transmissionType: post.transmissionTypeId.name[lang],
         carCondition: post.carConditionId.name[lang],
-        carType: post.carTypeId.type[lang],
-        carModel: post.carModelId.model[lang],
-        carName: post.carNameId.carName[lang],
         financing: post.financing
-
-
       }
     })
     // 🟢 عدد الصفحات
@@ -153,6 +151,8 @@ const getPostById = async (req, res, next) => {
       .populate("deliveryOptionId")
       .populate("advantages")
       .lean();
+      
+      console.log(post)
 
     if (!post) {
       return res.status(404).send({
@@ -173,21 +173,20 @@ const getPostById = async (req, res, next) => {
       price: post.price,
       specifications: [
         { financing: post.financing },
-        { year: post.modelId.name[lang] }, { fuelType: post.fuelTypeId.name[lang] },
-        { cylinders: post.cylindersId.name[lang] }, { carCondition: post.carConditionId.name[lang] },
+        { year: post.modelId?.model[lang]}, { fuelType: post.fuelTypeId?.name[lang]},
+        { cylinders: post.cylindersId.name}, { carCondition: post.carConditionId?.name[lang]},
         { interiorColor: post.interiorColor }, { exteriorColor: post.exteriorColor },
-        { transmissionType: post.transmissionTypeId.name[lang] }],
+        { transmissionType: post.transmissionTypeId?.name[lang] || null }],
       discount: post.discount,
       discountedPrice: post.discountedPrice,
       financing: post.financing,
       description: post.discription,
-      services: post.deliveryOptionId.name[lang],
+      services: post.deliveryOptionId?.name[lang] || null,
       advantages: post.advantages?.map(a => a.name?.[lang]),
       postNumber: post.postNumber,
 
       // ✅ ناخد بس النصوص بدل الـ object كله
       carType: post.carTypeId?.type?.[lang] || "",
-      carModel: post.carModelId?.model?.[lang] || "",
       carName: post.carNameId?.carName?.[lang] || "",
       city: post.cityId?.name?.[lang] || "",
 
@@ -207,10 +206,6 @@ const getPostById = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
-
 
 module.exports = { addShowroomPost, getShowroomPosts, getPostById };
 

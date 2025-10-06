@@ -67,7 +67,8 @@ const userSchema = new mongoose.Schema({
     },
   },
   service:{
-   type:String
+   type:mongoose.Schema.Types.ObjectId,
+   ref:"SlavgeService"
   },
   brand: [{
   type: mongoose.Schema.Types.ObjectId,
