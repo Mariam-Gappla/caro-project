@@ -16,8 +16,10 @@ const addFollowerCenter = async (req, res, next) => {
         message: error.details[0].message
       });
     }
-     const center=await User.findOne({_id:userId});
-     const user=await User.findOne({_id:centerId});
+     const center=await User.findOne({_id:centerId});
+     const user=await User.findOne({_id:userId});
+     console.log(`center:${center}`);
+     console.log(`user:${user}`);
      if(center.isProvider==true && user.isProvider==true)
      {
       return res.status(400).send({
