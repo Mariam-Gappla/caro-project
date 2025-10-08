@@ -44,7 +44,7 @@ const addTweet = async (req, res, next) => {
             : "مسموح بحد أقصى صوره واحدة فقط"
         });
       }
-      const file=req.files.image
+      const file = req.files.image
       imageUrl = BASE_URL + saveImage(file[0])
 
 
@@ -121,7 +121,6 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
     const totalTweets = await Tweet.countDocuments();
 
     const result = await Tweet.aggregate([
-      // جلب التعليقات المرتبطة بالتغريدة
       {
         $lookup: {
           from: 'comments',
@@ -130,7 +129,6 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           as: 'comments'
         }
       },
-      // جلب الردود على التعليقات
       {
         $lookup: {
           from: 'replyoncomments',
@@ -139,22 +137,11 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           as: 'replies'
         }
       },
-      // حساب عدد التعليقات + الردود + اللايكات
       {
         $addFields: {
-          totalComments: {
-            $add: [{ $size: '$comments' }, { $size: '$replies' }]
-          },
-          likesCount: {
-            $cond: {
-              if: { $isArray: '$likedBy' },
-              then: { $size: '$likedBy' },
-              else: 0
-            }
-          }
+          userId: { $toObjectId: "$userId" }
         }
       },
-      // جلب بيانات صاحب التغريدة
       {
         $lookup: {
           from: 'users',
@@ -169,7 +156,6 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
-      // تحديد البيانات التي سيتم عرضها
       {
         $project: {
           title: 1,
@@ -177,16 +163,32 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           images: 1,
           video: 1,
           createdAt: 1,
-          totalComments: 1,
-          likesCount: 1,
-          'user.username': 1,
-          'user.image': 1
+          totalComments: {
+            $add: [
+              { $ifNull: [{ $size: '$comments' }, 0] },
+              { $ifNull: [{ $size: '$replies' }, 0] }
+            ]
+          },
+          likesCount: {
+            $cond: {
+              if: { $isArray: '$likedBy' },
+              then: { $size: '$likedBy' },
+              else: 0
+            }
+          },
+          userData: {
+            username: "$user.username",
+            image: "$user.image"
+          }
         }
       },
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit }
     ]);
+
+
+
 
     const totalPages = Math.ceil(totalTweets / limit);
 
@@ -199,7 +201,7 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
       data: {
         tweets: result,
         pagination: {
-          currentPage: page,
+          page: page,
           totalPages: totalPages
         }
       }

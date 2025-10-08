@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   image: {
-    type: "string",
+    type: String,
     default: `${process.env.BASE_URL}images/rentalOffice.PNG`,
   },
   resetOtp: {
