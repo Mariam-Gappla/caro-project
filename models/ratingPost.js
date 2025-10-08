@@ -12,7 +12,7 @@ const ratingSchema = new mongoose.Schema({
     },
     entityType: {
         type: String,
-        enum: ["Post","CarPlate",], // أو اللي انتي عايزاه
+        enum: ["Post","CarPlate","Car"], // أو اللي انتي عايزاه
         required: true
     },
     rating: {
@@ -23,11 +23,9 @@ const ratingSchema = new mongoose.Schema({
     },
     ques1: {
         type: Boolean,
-        required: true
     },
     ques2: {
         type: Boolean,
-        required: true
     },
     comment: {
         type: String,

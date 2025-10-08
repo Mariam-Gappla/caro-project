@@ -7,7 +7,7 @@ const ratingSchema = (lang = "en") => {
         userId: Joi.string().required().messages(messages.userId),
         entityId: Joi.string().required().messages(messages.entityId),
         entityType: Joi.string()
-            .valid("Post")
+            .valid("Post","Car","CarPlate")
             .required()
             .messages(messages.entityType),
         rating: Joi.number().min(1).max(5).required().messages(messages.rating),
