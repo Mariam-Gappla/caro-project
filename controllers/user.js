@@ -8,6 +8,8 @@ const changePasswordSchema = require("../validation/changePasswordValidition");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
+const CenterFollower = require("../models/followerCenter");
+const Favorite = require("../models/favorite");
 const serviceProvider = require("../models/serviceProvider");
 const RatingCenter = require("../models/ratingCenter");
 const CenterService = require("../models/centerServices")
@@ -15,7 +17,6 @@ const userAsProviderSchema = require("../validation/userAsProviderValidition");
 const Winsh = require("../models/winsh");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
 const centerFollower = require("../models/followerCenter");
-const Favorite = require("../models/favorite");
 const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
@@ -44,7 +45,7 @@ const register = async (req, res, next) => {
       }
       const { username, email, password, phone, role } = req.body;
       const existUser = await User.findOne({ phone });
-      
+
       if (existUser) {
         const existWallet = await Wallet.findOne({ userId: existUser._id });
         console.log(existWallet)
@@ -57,7 +58,7 @@ const register = async (req, res, next) => {
           message: messages.register.emailExists.user
         })
       }
-      const user=await User.create({
+      const user = await User.create({
         username,
         email,
         password: hashedPassword,
@@ -337,6 +338,15 @@ const login = async (req, res, next) => {
 
       const token = jwt.sign({ id: existUser._id, role: "user" }, process.env.JWT_SECRET);
       const haveService = await CenterService.findOne({ centerId: existUser._id });
+      const following = await CenterFollower.find({ userId: existUser._id });
+      const followers = await CenterFollower.find({ centerId: existUser._id });
+      const favorite = await Favorite.find({ userId: existUser._id, entityType: "User" });
+      const ratings = await RatingCenter.find({ userId: existUser._id });
+      const allRatings = ratings.map(r => r.rating);
+      const avgRating =
+        allRatings.length > 0
+          ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
+          : 0;
       return res.status(200).send({
         code: 200,
         status: true,
@@ -350,6 +360,10 @@ const login = async (req, res, next) => {
             email: existUser.email,
             password: existUser.password,
             likedBy: existUser.likedBy,
+            avgRating: avgRating,
+            favorite: favorite.length,
+            followers: followers.length,
+            following: following.length,
             createdAt: existUser.createdAt,
             subscribeAsRntalOffice: userAsRentalOffice ? true : false,
             categoryId: existUser.categoryCenterId || "user",
@@ -1018,7 +1032,7 @@ const userAsAutoSalvage = async (req, res, next) => {
 
   }
   catch (err) {
-     next(err)
+    next(err)
   }
 }
 const getUserData = async (req, res, next) => {

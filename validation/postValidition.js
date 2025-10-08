@@ -26,15 +26,26 @@ const postSchema = (lang = "en") => {
       "any.required": messages.userId
     }),
     location: Joi.object({
-      lat: Joi.number().required().messages({
-        "number.base": messages.location.lat,
-        "any.required": messages.location.lat
+      type: Joi.string().valid("Point").required().messages({
+        "any.only": messages.location.locationType, // لازم يكون Point
+        "any.required": messages.location.locationType,
       }),
-      long: Joi.number().required().messages({
-        "number.base": messages.location.long,
-        "any.required": messages.location.long
-      })
-    }).required(),
+      coordinates: Joi.array()
+        .items(
+          Joi.number().required().messages({
+            "number.base": messages.location.coordinateNumber,
+            "any.required": messages.location.coordinateNumber,
+          })
+        )
+        .length(2) // [lng, lat]
+        .required()
+        .messages({
+          "array.length": messages.location.coordinatesLength,
+          "any.required": messages.location.coordinatesRequired,
+        }),
+    }).required().messages({
+      "any.required": messages.location.locationRequired,
+    }),
     priceType: Joi.string().valid("fixed", "negotiable", "best").required().messages({
       "any.only": messages.priceType.only,
       "any.required": messages.priceType.required,

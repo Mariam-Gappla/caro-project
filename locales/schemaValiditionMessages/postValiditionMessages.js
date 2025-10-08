@@ -7,8 +7,11 @@ const messages = {
         subCategoryId: "المجموعة الفرعية مطلوبة",
         userId: "معرف المستخدم مطلوب",
         location: {
-            lat: "خط العرض مطلوب ويجب أن يكون رقم",
-            long: "خط الطول مطلوب ويجب أن يكون رقم"
+            locationRequired: "الموقع مطلوب",
+            locationType: "نوع الموقع يجب أن يكون 'Point'",
+            coordinatesRequired: "الإحداثيات مطلوبة",
+            coordinateNumber: "كل إحداثي يجب أن يكون رقمًا",
+            coordinatesLength: "الإحداثيات يجب أن تحتوي على [خط الطول, خط العرض] فقط",
         },
         priceType: {
             only: "نوع السعر يجب أن يكون إما ثابت أو قابل للتفاوض أو الأفضل",
@@ -47,8 +50,11 @@ const messages = {
         subCategoryId: "Sub category is required",
         userId: "User ID is required",
         location: {
-            lat: "Latitude is required and must be a number",
-            long: "Longitude is required and must be a number"
+            locationRequired: "Location is required",
+            locationType: "Location type must be 'Point'",
+            coordinatesRequired: "Coordinates are required",
+            coordinateNumber: "Each coordinate must be a number",
+            coordinatesLength: "Coordinates must contain exactly [longitude, latitude]",
         },
         priceType: {
             only: "Price type must be either fixed, negotiable, or best",

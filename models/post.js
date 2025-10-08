@@ -7,8 +7,13 @@ const postSchema = new mongoose.Schema({
     subCategoryId: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory", required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     location: {
-        lat: { type: Number, required: true },
-        long: { type: Number, required: true },
+        type: {
+            type: String,
+            enum: ['Point'], // لازم "Point"
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+        },
     },
     priceType: { type: String, enum: ["fixed", "negotiable", "best"], default: "fixed", required: true },
     price: { type: Number },
@@ -18,20 +23,21 @@ const postSchema = new mongoose.Schema({
         required: true,
     },
     cityId: {
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "City", 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "City",
         required: true
-     },
-    areaId: {  
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Area", 
+    },
+    areaId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Area",
         required: true
     },
     contactValue: {
         type: String,
     },
-    video:{
-        type:String,
+    video: {
+        type: String,
     }
 }, { timestamps: true });
+postSchema.index({ location: "2dsphere" });
 module.exports = mongoose.model("Post", postSchema);

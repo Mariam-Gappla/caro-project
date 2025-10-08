@@ -172,8 +172,7 @@ const getPostById = async (req, res, next) => {
       title: post.title,
       price: post.price,
       specifications: [
-        { financing: post.financing },
-        { year: post.modelId?.model[lang]}, { fuelType: post.fuelTypeId?.name[lang]},
+        { financing: post.financing },{year:post.carModelId.model[lang]},{ fuelType: post.fuelTypeId?.name[lang]},
         { cylinders: post.cylindersId.name}, { carCondition: post.carConditionId?.name[lang]},
         { interiorColor: post.interiorColor }, { exteriorColor: post.exteriorColor },
         { transmissionType: post.transmissionTypeId?.name[lang] || null }],

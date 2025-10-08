@@ -36,13 +36,22 @@ const addPost = async (req, res, next) => {
           : "مسموح برفع فيديو واحد فقط"
       });
     }
+      const { lat, long } = req.body;
 
+    if (!lat || !long) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الموقع (lat, long) مطلوب" : "Location (lat, long) is required"
+      });
+    }
+
+    // ✅ جهز location object
     req.body.location = {
-      lat: parseFloat(req.body["location.lat"]),
-      long: parseFloat(req.body["location.long"])
+      type: "Point",
+      coordinates: [parseFloat(long), parseFloat(lat)] // [longitude, latitude]
     };
-    delete req.body["location.lat"];
-    delete req.body["location.long"];
+
 
     if (req.body.contactType) {
       if (!Array.isArray(req.body.contactType)) {
@@ -98,12 +107,17 @@ const getPostsByMainCategory = async (req, res, next) => {
     const lang = req.headers["accept-language"] || "en";
     const categoryId = req.params.categoryId;
 
-    // pagination params
+    // 🟢 pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // فلتر عام
+    // 🟢 location params
+    const longitude = parseFloat(req.query.long);
+    const latitude = parseFloat(req.query.lat);
+    const radiusKm = 5; // ثابت = 5 كم
+
+    // 🟢 الفلتر الأساسي
     let matchFilter = { mainCategoryId: new mongoose.Types.ObjectId(categoryId) };
 
     // city filter
@@ -114,80 +128,89 @@ const getPostsByMainCategory = async (req, res, next) => {
     // search filter
     if (req.query.search) {
       matchFilter.$or = [
-        { title: { $regex: req.query.search, $options: "i" } }
+        { title: { $regex: req.query.search, $options: "i" } },
       ];
     }
 
-    // ✅ نجيب البوستات فقط من Post
-    const posts = await Post.find(matchFilter)
-      .populate({
-        path: "userId",
-        select: "username image status phone categoryCenterId",
-        populate: {
-          path: "categoryCenterId",
-          select: `name.${lang}`, // علشان يجيب الاسم باللغه
+    let posts = [];
+    let totalCount = 0;
+
+    // ✅ لو فيه location يبقى نفلتر بالأقرب
+    if (!isNaN(longitude) && !isNaN(latitude)) {
+      posts = await Post.aggregate([
+        {
+          $geoNear: {
+            near: { type: "Point", coordinates: [longitude, latitude] },
+            distanceField: "distanceInKm",
+            distanceMultiplier: 0.001, // متر -> كم
+            maxDistance: radiusKm * 1000, // 5 كم
+            spherical: true,
+            query: matchFilter, // باقي الفلاتر
+          },
         },
-      })
-      .populate("cityId", `name.${lang}`)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+        { $sort: { distanceInKm: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+      ]);
 
+      totalCount = posts.length;
+    } else {
+      // ✅ من غير location
+      posts = await Post.find(matchFilter)
+        .populate({
+          path: "userId",
+          select: "username image status phone categoryCenterId",
+          populate: {
+            path: "categoryCenterId",
+            select: `name.${lang}`,
+          },
+        })
+        .populate("cityId", `name.${lang}`)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
 
-    const totalCount = await Post.countDocuments(matchFilter);
+      totalCount = await Post.countDocuments(matchFilter);
+    }
 
-    // ✅ نحسب التعليقات والردود
-    const postIds = posts.map(p => p._id);
-    console.log("postIds:", postIds);
+    // 🟢 نجيب التعليقات والردود
+    const postIds = posts.map((p) => p._id);
     const [comments, replies] = await Promise.all([
-      // 🟢 1) التعليقات
       Comment.aggregate([
         { $match: { entityId: { $in: postIds }, entityType: "Post" } },
-        { $group: { _id: "$entityId", count: { $sum: 1 } } }
+        { $group: { _id: "$entityId", count: { $sum: 1 } } },
       ]),
-
-      // 🟢 2) الردود
       Reply.aggregate([
         {
           $lookup: {
-            from: "centercomments",    // مش Comment, اسم الكولكشن جوه MongoDB
-            localField: "commentId",   // اللي في Reply
-            foreignField: "_id",       // اللي في CenterComment
-            as: "commentData"
-          }
+            from: "centercomments",
+            localField: "commentId",
+            foreignField: "_id",
+            as: "commentData",
+          },
         },
         { $unwind: "$commentData" },
-
-        {
-          $match: { "commentData.entityId": { $in: postIds } }
-        },
-
-        {
-          $group: {
-            _id: "$commentData.entityId",
-            count: { $sum: 1 }
-          }
-        }
-      ])
+        { $match: { "commentData.entityId": { $in: postIds } } },
+        { $group: { _id: "$commentData.entityId", count: { $sum: 1 } } },
+      ]),
     ]);
 
-
-    console.log("replies:", replies);
+    // 🟢 map counts
     const commentMap = {};
-    comments.forEach(c => {
+    comments.forEach((c) => {
       commentMap[c._id.toString()] = c.count;
     });
-    console.log("commentMap:", commentMap);
     const replyMap = {};
-    replies.forEach(r => {
+    replies.forEach((r) => {
       replyMap[r._id.toString()] = r.count;
     });
 
-    // ✅ format
-    const formattedPosts = posts.map(post => {
-      const commentCount = commentMap[post._id.toString()] || 0;
-      const replyCount = replyMap[post._id.toString()] || 0;
+    // 🟢 format output
+    const formattedPosts = posts.map((post) => {
+      const commentCount = commentMap[post._id?.toString()] || 0;
+      const replyCount = replyMap[post._id?.toString()] || 0;
+
       return {
         id: post._id,
         createdAt: post.createdAt,
@@ -195,17 +218,24 @@ const getPostsByMainCategory = async (req, res, next) => {
         title: post.title,
         price: post.price,
         city: post.cityId?.name?.[lang] || "",
+        distanceInKm: post.distanceInKm
+          ? Number(post.distanceInKm.toFixed(2))
+          : null, // يظهر لو geoNear اشتغل
         totalCommentsAndReplies: commentCount + replyCount,
-        user: {
-          id:post.userId._id,
-          username: post.userId.username,
-          image: post.userId.image,
-          status: post.userId.status,
-          isShowRoom: post.userId?.categoryCenterId?.name?.en == "showrooms" ? true : false, // ✅ أهو هنا
-        }
+        user: post.userId
+          ? {
+              id: post.userId._id,
+              username: post.userId.username,
+              image: post.userId.image,
+              status: post.userId.status,
+              isShowRoom:
+                post.userId?.categoryCenterId?.name?.en == "showrooms"
+                  ? true
+                  : false,
+            }
+          : null,
       };
     });
-
 
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
@@ -218,11 +248,8 @@ const getPostsByMainCategory = async (req, res, next) => {
           : "تم استرجاع المنشورات بنجاح",
       data: {
         posts: formattedPosts,
-        pagination: {
-          page,
-          totalPages
-        }
-      }
+        pagination: { page, totalPages },
+      },
     });
   } catch (err) {
     next(err);
