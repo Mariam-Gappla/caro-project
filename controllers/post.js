@@ -6,8 +6,11 @@ const saveImage = require("../configration/saveImage");
 const MainCategory = require("../models/mainCategoryActivity");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
 const Counter=require("../controllers/counter");
+const centerFollower=require("../models/followerCenter");
+const favorite=require("../models/favorite");
 const Reel = require("../models/reels");
 const mongoose = require("mongoose");
+const Favorite = require("../models/favorite");
 const addPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -229,7 +232,7 @@ const getPostById = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const postId = req.params.id;
-
+    const userId=req.user.id;
     let post = await Post.findById(postId)
       .populate("userId", "username image")
       .lean();
@@ -241,7 +244,8 @@ const getPostById = async (req, res, next) => {
           lang === "en" ? "Post not found" : "المنشور غير موجود",
       });
     }
-
+    const isFollower=await centerFollower.findOne({userId:userId,centerId:post.userId._id});
+    const isFavorite=await Favorite.findOne({entityType:"Post",entityId:postId,userId:userId});
     // 🟢 contactType mapping
     const mapContactType = {
       call: 1,
@@ -281,6 +285,8 @@ const getPostById = async (req, res, next) => {
       images: post.images || null,
       title: post.title,
       description: post.description,
+      isFavorite:isFavorite?true:false,
+      isFollower:isFollower?true:false,
       contactTypes: contactTypes,
       contactValue: post.contactValue,
       priceType: priceTypeCode, // 🟢 هنا الرقم بدل النص
