@@ -88,8 +88,16 @@ const getShowroomPosts = async (req, res, next) => {
     if (req.query.carNameId) {
       filteration.carNameId = req.query.carNameId; // ObjectId
     }
-    if (req.query.carCondition) {
+    if (req.query.carConditionId) {
       filteration.carConditionId = req.query.carConditionId; // new/used
+    }
+    if(req.query.fuelTypeId)
+    {
+      filteration.fuelTypeId=req.query.fuelTypeId
+    }
+    if(req.query.deliveryOptionId)
+    {
+       filteration.deliveryOptionId=req.query.deliveryOptionId
     }
     // 🟢 query مع الفلترة
     const showroomPosts = await ShowRoomPosts.find(filteration).populate("transmissionTypeId").populate("carConditionId")
