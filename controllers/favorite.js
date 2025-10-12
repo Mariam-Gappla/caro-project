@@ -70,6 +70,30 @@ const getFavoritesForUser = async (req, res, next) => {
             populate: { path: "rentalOfficeId" }
           });
         }
+        else if (fav.entityType === "Post") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "userId" },
+          });
+        }
+        else if (fav.entityType === "CarPlate") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "userId" },
+          });
+        }
+        else if (fav.entityType === "Car") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "userId" },
+          });
+        }
+        else if (fav.entityType === "Search") {
+          await fav.populate({
+            path: "entityId",
+            populate: { path: "userId" },
+          });
+        }
         return fav;
       })
     );
@@ -123,6 +147,33 @@ const getFavoritesForUser = async (req, res, next) => {
           title: entityId.rentalOfficeId.username || "",
           subTitle: req.query.title,
           image: entityId.images?.[0] || "",
+          createdAt,
+        };
+      }
+      if (entityType === "Search") {
+        return {
+          type: "search",
+          title: entityId.userId.username,
+          subTitle: lang=="en"?"search posts":"بوستات ابحثلى",
+          image: entityId.userId.image,
+          createdAt,
+        };
+      }
+      if (entityType === "CarPlate") {
+        return {
+          type: "carPlate",
+          title: entityId.userId.username,
+          subTitle:lang=="en"?"CarPlate":"لوحات",
+          image: entityId.userId.image,
+          createdAt,
+        };
+      }
+      if (entityType === "Car") {
+        return {
+          type: "car",
+          title: entityId.userId.username,
+          subTitle: lang=="en"?"Cars":"عربيات",
+          image: entityId.userId.image,
           createdAt,
         };
       }

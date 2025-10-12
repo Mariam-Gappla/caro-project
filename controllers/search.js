@@ -228,6 +228,7 @@ const getPostById = async (req, res, next) => {
     }
 
     const formatedPost = {
+      id:post._id,
       title: post.title,
       details: post.details,
       images: post.images,
