@@ -64,20 +64,6 @@ const serviceWinchValidationSchema = (lang = 'en') => {
         'any.required': messages.paymentTypeRequired,
         'any.only': messages.paymentTypeInvalid,
       }),
-
-    carLocation: Joi.object({
-      lat: Joi.number().required().messages({
-        'any.required': messages.carLatRequired,
-        'number.base': messages.carLatInvalid,
-      }),
-      long: Joi.number().required().messages({
-        'any.required': messages.carLongRequired,
-        'number.base': messages.carLongInvalid,
-      }),
-    }).required().messages({
-      'any.required': messages.carLocationRequired,
-    }),
-
     dropoffLocation: Joi.object({
       lat: Joi.number().required().messages({
         'any.required': messages.dropoffLatRequired,

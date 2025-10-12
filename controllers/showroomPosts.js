@@ -82,11 +82,11 @@ const getShowroomPosts = async (req, res, next) => {
     // 🟢 فلترة ديناميكية
     const filteration = {};
 
-    if (req.query.model) {
-      filteration.carModelId = req.query.modelId; // ObjectId
+    if (req.query.cityId) {
+      filteration.cityId = req.query.cityId; // ObjectId
     }
-    if (req.query.type) {
-      filteration.carTypeId = req.query.typeId; // ObjectId
+    if (req.query.carNameId) {
+      filteration.carNameId = req.query.carNameId; // ObjectId
     }
     if (req.query.carCondition) {
       filteration.carConditionId = req.query.carConditionId; // new/used
@@ -103,6 +103,7 @@ const getShowroomPosts = async (req, res, next) => {
         id: post._id,
         title: post.title,
         image:post.images,
+        price:post.price,
         discount:post.discount,
         discountedPrice:post.discount==true?post.discountedPrice:0,
         transmissionType: post.transmissionTypeId.name[lang],

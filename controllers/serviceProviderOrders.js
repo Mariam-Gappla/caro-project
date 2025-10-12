@@ -221,10 +221,6 @@ const addWinchOrder = async (req, res, next) => {
       lat: Number(req.body['location.lat']),
       long: Number(req.body['location.long'])
     };
-    req.body.carLocation = {
-      lat: Number(req.body['carLocation.lat']),
-      long: Number(req.body['carLocation.long'])
-    };
     req.body.dropoffLocation = {
       lat: Number(req.body['dropoffLocation.lat']),
       long: Number(req.body['dropoffLocation.long'])
@@ -233,8 +229,6 @@ const addWinchOrder = async (req, res, next) => {
 
     delete req.body['location.lat'];
     delete req.body['location.long'];
-    delete req.body['carLocation.lat'];
-    delete req.body['carLocation.long'];
     delete req.body['dropoffLocation.lat'];
     delete req.body['dropoffLocation.long'];
     const formatedData = {
@@ -662,7 +656,6 @@ const getOrderById = async (req, res, next) => {
     next(error);
   }
 };
-
 const endOrder = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';

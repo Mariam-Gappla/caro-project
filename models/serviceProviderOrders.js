@@ -46,14 +46,6 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
       enum: ['inProgress', 'paid'],
       default:"inProgress"
     },
-    carLocation: {
-      lat: {
-        type: Number,
-      },
-      long: {
-        type: Number,
-      },
-    },
     dropoffLocation: {
       lat: {
         type: Number,

@@ -883,19 +883,27 @@ const getCenters = async (req, res, next) => {
     const centers = await User.aggregate(pipeline);
 
     // 🟢 collect centerIds
-    const centerIds = centers.map((c) => c._id);
+    const centerIds = centers.map((c) => c._id.toString());
 
-    // 🟢 ratings aggregation
     const ratings = await RatingCenter.aggregate([
-      { $match: { centerId: { $in: centerIds } } },
+      {
+        $addFields: {
+          centerIdStr: { $toString: "$centerId" }
+        }
+      },
+      {
+        $match: { centerIdStr: { $in: centerIds } }
+      },
       {
         $group: {
-          _id: "$centerId",
-          avgRating: { $avg: "$rate" },
+          _id: "$centerIdStr",
+          avgRating: { $avg: "$rating" },
           count: { $sum: 1 },
         },
       },
     ]);
+
+    console.log("✅ Ratings found:", ratings);
 
     // 🟢 rating map
     const ratingMap = {};
