@@ -3,7 +3,9 @@ const searchValidationSchema = require("../validation/searchValidition");
 const getNextOrderNumber = require("../controllers/counter");
 const Comment = require("../models/centerComments");
 const Reply = require("../models/centerReplies");
+const Favorite=require("../models/favorite");
 const Reel = require("../models/reels");
+const FollowerCenter=require("../models/followerCenter")
 const saveImage = require("../configration/saveImage");
 const addPost = async (req, res, next) => {
   try {
@@ -179,8 +181,9 @@ const getPostById = async (req, res, next) => {
     const lang = req.headers["accept-language"] || "en";
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const postId = req.params.id;
-
-    const post = await Search.findOne({ _id: postId }).populate("userId");
+    const userId=req.user.id;
+    const isFavorite=await Favorite.findOne({entityId:postId,entityType:"Search",userId:userId});
+    const post = await Search.findOne({ _id: postId }).populate("userId").populate("cityId");
     if (!post) {
       return res.status(404).send({
         status: false,
@@ -188,7 +191,7 @@ const getPostById = async (req, res, next) => {
         message: lang === "en" ? "Post not found" : "المنشور غير موجود",
       });
     }
-
+    const isFollow=await FollowerCenter.findOne({userId:userId,centerId:post.userId.id});
     const mapContactType = {
       Call: 1,
       WhatsApp: 2,
@@ -231,7 +234,10 @@ const getPostById = async (req, res, next) => {
       price: post.price || null,
       contactMethods: contactTypes,
       contactValue: contactValue,
+      city:post.cityId.name[lang],
       postNumber:post.postNumber,
+      isFavorite:!!isFavorite,
+      isFollow:!!isFollow,
       userData: {
         id: post.userId._id,
         username: post.userId.username,

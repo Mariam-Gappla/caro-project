@@ -112,50 +112,68 @@ const addLike = async (req, res, next) => {
 }
 const tweetsWithFullCommentCount = async (req, res, next) => {
   try {
-    const lang = req.headers['accept-language'] || 'en';
-
+    const lang = req.headers["accept-language"] || "en";
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const userId = req.user.id; // string
 
     const totalTweets = await Tweet.countDocuments();
 
     const result = await Tweet.aggregate([
+      // 🟢 Get comments
       {
         $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'tweetId',
-          as: 'comments'
-        }
+          from: "comments",
+          localField: "_id",
+          foreignField: "tweetId",
+          as: "comments",
+        },
       },
+      // 🟢 Get replies
       {
         $lookup: {
-          from: 'replyoncomments',
-          localField: 'comments._id',
-          foreignField: 'commentId',
-          as: 'replies'
-        }
+          from: "replyoncomments",
+          localField: "comments._id",
+          foreignField: "commentId",
+          as: "replies",
+        },
       },
+      // 🟢 Convert tweet.userId to ObjectId to fetch user info
       {
         $addFields: {
-          userId: { $toObjectId: "$userId" }
-        }
+          userId: { $toObjectId: "$userId" },
+        },
       },
+      // 🟢 Fetch user data
       {
         $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user'
-        }
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
       },
       {
         $unwind: {
-          path: '$user',
-          preserveNullAndEmptyArrays: true
-        }
+          path: "$user",
+          preserveNullAndEmptyArrays: true,
+        },
       },
+
+      // 🟢 Check if current user liked this tweet
+      {
+        $addFields: {
+          isLiked: {
+            $in: [
+              { $toObjectId: userId }, // 👈 هنا نحول userId فقط
+              { $ifNull: ["$likedBy", []] },
+            ],
+          },
+        },
+      },
+
+      // 🟢 Project output
       {
         $project: {
           title: 1,
@@ -165,48 +183,47 @@ const tweetsWithFullCommentCount = async (req, res, next) => {
           createdAt: 1,
           totalComments: {
             $add: [
-              { $ifNull: [{ $size: '$comments' }, 0] },
-              { $ifNull: [{ $size: '$replies' }, 0] }
-            ]
+              { $ifNull: [{ $size: "$comments" }, 0] },
+              { $ifNull: [{ $size: "$replies" }, 0] },
+            ],
           },
           likesCount: {
             $cond: {
-              if: { $isArray: '$likedBy' },
-              then: { $size: '$likedBy' },
-              else: 0
-            }
+              if: { $isArray: "$likedBy" },
+              then: { $size: "$likedBy" },
+              else: 0,
+            },
           },
           userData: {
             username: "$user.username",
-            image: "$user.image"
-          }
-        }
+            image: "$user.image",
+          },
+          isLiked: 1, // ✅ include it in final output
+        },
       },
+
       { $sort: { createdAt: -1 } },
       { $skip: skip },
-      { $limit: limit }
+      { $limit: limit },
     ]);
-
-
-
 
     const totalPages = Math.ceil(totalTweets / limit);
 
     res.status(200).send({
       code: 200,
       status: true,
-      message: lang === "en"
-        ? "Tweets fetched successfully"
-        : "تم جلب التغريدات بنجاح",
+      message:
+        lang === "en"
+          ? "Tweets fetched successfully"
+          : "تم جلب التغريدات بنجاح",
       data: {
         tweets: result,
         pagination: {
-          page: page,
-          totalPages: totalPages
-        }
-      }
+          page,
+          totalPages,
+        },
+      },
     });
-
   } catch (err) {
     next(err);
   }
@@ -216,200 +233,227 @@ const getTweetWithCommentsAndReplies = async (req, res, next) => {
     const tweetId = req.params.id;
     const lang = req.headers['accept-language'] || 'en';
     const messages = getMessages(lang);
+    const userId = req.user.id;
 
     if (!mongoose.Types.ObjectId.isValid(tweetId)) {
       return res.status(400).send({
         code: 400,
         status: false,
-        message: lang === "en" ? "Tweet ID is not valid" : "معرف التويت غير صحيح"
+        message: lang === "en" ? "Tweet ID is not valid" : "معرف التويت غير صحيح",
       });
     }
 
     const result = await Tweet.aggregate([
+      // ✅ أولاً نجيب التويته نفسها
       {
-        $match: { _id: new mongoose.Types.ObjectId(tweetId) }
+        $match: { _id: new mongoose.Types.ObjectId(tweetId) },
       },
       {
         $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'userData'
-        }
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
       },
-      { $unwind: { path: '$userData', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$userData", preserveNullAndEmptyArrays: true } },
+
+      // ✅ جلب التعليقات
       {
         $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'tweetId',
-          as: 'comments'
-        }
+          from: "comments",
+          localField: "_id",
+          foreignField: "tweetId",
+          as: "comments",
+        },
       },
-      { $unwind: { path: '$comments', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
-          from: 'users',
-          localField: 'comments.userId',
-          foreignField: '_id',
-          as: 'commentUser'
-        }
+          from: "users",
+          localField: "comments.userId",
+          foreignField: "_id",
+          as: "commentUsers",
+        },
       },
-      { $unwind: { path: '$commentUser', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
-          from: 'replyoncomments',
-          localField: 'comments._id',
-          foreignField: 'commentId',
-          as: 'replies'
-        }
+          from: "replyoncomments",
+          localField: "comments._id",
+          foreignField: "commentId",
+          as: "replies",
+        },
       },
-      { $unwind: { path: '$replies', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
-          from: 'users',
-          localField: 'replies.userId',
-          foreignField: '_id',
-          as: 'replyUser'
-        }
+          from: "users",
+          localField: "replies.userId",
+          foreignField: "_id",
+          as: "replyUsers",
+        },
       },
-      { $unwind: { path: '$replyUser', preserveNullAndEmptyArrays: true } },
-      {
-        $group: {
-          _id: {
-            tweetId: '$_id',
-            commentId: '$comments._id'
-          },
-          tweet: { $first: '$$ROOT' },
-          comment: { $first: '$comments' },
-          commentUser: { $first: '$commentUser' },
-          replies: {
-            $push: {
-              $cond: [
-                { $ifNull: ['$replies._id', false] },
-                {
-                  _id: '$replies._id',
-                  content: '$replies.content',
-                  createdAt: '$replies.createdAt',
-                  userData: {
-                    username: '$replyUser.username',
-                    image: '$replyUser.image'
-                  }
-                },
-                '$$REMOVE'
-              ]
-            }
-          },
-          repliesCount: {
-            $sum: {
-              $cond: [{ $ifNull: ['$replies._id', false] }, 1, 0]
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: '$_id.tweetId',
-          tweet: { $first: '$tweet' },
-          tweetUser: { $first: '$tweet.userData' },
-          comments: {
-            $push: {
-              $mergeObjects: [
-                {
-                  _id: '$comment._id',
-                  content: '$comment.content',
-                  createdAt: '$comment.createdAt'
-                },
-                {
-                  userData: {
-                    username: '$commentUser.username',
-                    image: '$commentUser.image'
-                  },
-                  replies: '$replies',
-                  repliesCount: '$repliesCount'
-                }
-              ]
-            }
-          }
-        }
-      },
+
+      // ✅ تجهيز البيانات بتاعت التعليقات والردود مع المستخدمين
       {
         $addFields: {
-          totalCommentsCount: { $size: '$comments' },
+          comments: {
+            $map: {
+              input: { $ifNull: ["$comments", []] },
+              as: "comment",
+              in: {
+                _id: "$$comment._id",
+                content: "$$comment.content",
+                createdAt: "$$comment.createdAt",
+                userData: {
+                  $arrayElemAt: [
+                    {
+                      $filter: {
+                        input: "$commentUsers",
+                        as: "cu",
+                        cond: { $eq: ["$$cu._id", "$$comment.userId"] },
+                      },
+                    },
+                    0,
+                  ],
+                },
+                replies: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: { $ifNull: ["$replies", []] },
+                        as: "r",
+                        cond: { $eq: ["$$r.commentId", "$$comment._id"] },
+                      },
+                    },
+                    as: "reply",
+                    in: {
+                      _id: "$$reply._id",
+                      content: "$$reply.content",
+                      createdAt: "$$reply.createdAt",
+                      userData: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: "$replyUsers",
+                              as: "ru",
+                              cond: { $eq: ["$$ru._id", "$$reply.userId"] },
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                    },
+                  },
+                },
+                repliesCount: {
+                  $size: {
+                    $filter: {
+                      input: { $ifNull: ["$replies", []] },
+                      as: "r",
+                      cond: { $eq: ["$$r.commentId", "$$comment._id"] },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      // ✅ حساب الإجماليات بطريقة آمنة
+      {
+        $addFields: {
+          totalCommentsCount: {
+            $cond: {
+              if: { $gt: [{ $size: { $ifNull: ["$comments", []] } }, 0] },
+              then: { $size: { $ifNull: ["$comments", []] } },
+              else: 0,
+            },
+          },
           totalCommentsAndRepliesCount: {
-            $sum: {
-              $map: {
-                input: '$comments',
-                as: 'comment',
-                in: {
-                  $add: [1, { $ifNull: ['$$comment.repliesCount', 0] }]
-                }
-              }
-            }
+            $cond: {
+              if: { $gt: [{ $size: { $ifNull: ["$comments", []] } }, 0] },
+              then: {
+                $sum: {
+                  $map: {
+                    input: { $ifNull: ["$comments", []] },
+                    as: "comment",
+                    in: {
+                      $add: [1, { $ifNull: ["$$comment.repliesCount", 0] }],
+                    },
+                  },
+                },
+              },
+              else: 0,
+            },
           },
           likesCount: {
-            $size: {
-              $ifNull: ['$tweet.likedBy', []]
-            }
+            $size: { $ifNull: ["$likedBy", []] },
+          },
+          // ✅ هل المستخدم الحالي عامل لايك؟
+          isLiked: {
+            $in: [
+              { $toObjectId: userId },
+              { $ifNull: ["$likedBy", []] }
+            ]
           }
-        }
+        },
       },
+
+      // ✅ اختيار الحقول اللي هنرجعها
       {
         $project: {
           _id: 0,
           tweet: {
-            _id: '$tweet._id',
-            title: '$tweet.title',
-            content: '$tweet.content',
-            images: '$tweet.images',
-            video: '$tweet.video',
-            createdAt: '$tweet.createdAt',
+            _id: "$_id",
+            title: "$title",
+            content: "$content",
+            images: "$images",
+            video: "$video",
+            createdAt: "$createdAt",
             userData: {
-              username: '$tweetUser.username',
-              image: '$tweetUser.image'
-            }
+              username: "$userData.username",
+              image: "$userData.image",
+            },
           },
           comments: 1,
           totalCommentsCount: 1,
           totalCommentsAndRepliesCount: 1,
-          likesCount: {
-            $cond: {
-              if: { $isArray: '$tweet.likedBy' },
-              then: { $size: '$tweet.likedBy' },
-              else: 0
-            }
-          }
-        }
-      }
+          likesCount: 1,
+          isLiked: 1,
+        },
+      },
     ]);
 
     if (!result || result.length === 0) {
       return res.status(400).send({
         status: false,
         code: 400,
-        message: lang === "en" ? "Tweet not found" : "التويته غير موجوده"
+        message: lang === "en" ? "Tweet not found" : "التويته غير موجوده",
       });
     }
 
     return res.status(200).send({
       code: 200,
       status: true,
-      message: lang === "en"
-        ? "Tweet, comments, replies, and likes fetched successfully"
-        : "تم جلب التويته والتعليقات والردود والاعجابات بنجاح",
+      message:
+        lang === "en"
+          ? "Tweet, comments, replies, and likes fetched successfully"
+          : "تم جلب التويته والتعليقات والردود والاعجابات بنجاح",
       data: {
         tweet: result[0].tweet,
         comments: result[0].comments,
         totalCommentsCount: result[0].totalCommentsCount,
-        totalCommentsAndRepliesCount: result[0].totalCommentsAndRepliesCount,
-        likesCount: result[0].likesCount
-      }
+        totalCommentsAndRepliesCount:
+          result[0].totalCommentsAndRepliesCount,
+        likesCount: result[0].likesCount,
+        isLiked: result[0].isLiked,
+      },
     });
-
   } catch (err) {
     next(err);
   }
 };
+
 
 
 
