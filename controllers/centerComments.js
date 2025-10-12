@@ -280,7 +280,7 @@ const getCenterCommentswithReplies = async (req, res, next) => {
             id: reply._id,
             content: reply.content,
             createdAt: reply.createdAt,
-            user: {
+            userData: {
               username: reply.userId?.username,
               image: reply.userId?.image,
             },
