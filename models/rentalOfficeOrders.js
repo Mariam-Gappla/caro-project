@@ -30,7 +30,7 @@ const rentalOfficeOrderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: true,
-    enum:["cash","online"]
+    enum:["cash","bank","mada"]
   },
   pickupLocation: {
     lat: {

@@ -12,7 +12,7 @@ const ratingSchema = new mongoose.Schema({
     },
     entityType: {
         type: String,
-        enum: ["Post","CarPlate","Car"], // أو اللي انتي عايزاه
+        enum: ["Post","CarPlate","Car","rentalOffice"], // أو اللي انتي عايزاه
         required: true
     },
     rating: {

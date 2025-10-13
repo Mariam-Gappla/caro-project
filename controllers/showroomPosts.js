@@ -192,7 +192,7 @@ const getPostById = async (req, res, next) => {
       discountedPrice: post.discountedPrice,
       financing: post.financing,
       description: post.discription,
-      services: post.deliveryOptionId?.name[lang] || null,
+      services: post.deliveryOptionId?.name.en=="Free Delivery"?1:2,
       advantages: post.advantages?.map(a => a.name?.[lang]),
       postNumber: post.postNumber,
 

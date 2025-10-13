@@ -27,13 +27,24 @@ const rentalOfficeSchema = new mongoose.Schema({
     resetOtpExpires: {
         type: Date
     },
-    likedBy: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-        }
-    ],
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'], // لازم "Point"
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+        },
+    },
+    cityId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "City"
+    },
+    details: {
+        type: String,
+    },
     createdAt: { type: Date, default: Date.now },
 });
+rentalOfficeSchema.index({ location: '2dsphere' });
 const rentalOffice = mongoose.model("rentalOffice", rentalOfficeSchema);
 module.exports = rentalOffice;

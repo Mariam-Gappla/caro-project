@@ -1,127 +1,147 @@
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages")
 const followersForRentalOffice = require("../models/followersForRentalOffice");
+const Favorite=require("../models/favorite");
 const ratingForOrder = require("../models/ratingForOrder");
+const saveImage = require("../configration/saveImage");
+const rentalOfficeSchema=require("../validation/rentalOfficeVerifyValidition");
 const carRental = require("../models/carRental");
+const Rating=require("../models/ratingPost");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
 const getAllRentallOffice = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const userId=req.user.id
-        // 📌 Pagination params
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const userId = req.user.id;
 
-        // 📌 هات المكاتب مع pagination
-        const allRentalOffice = await rentalOffice.find()
-            .skip(skip)
-            .limit(limit);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-        // 📌 هات التقييمات
-        const ratings = await ratingForOrder.aggregate([
-            {
-                $group: {
-                    _id: "$rentalOfficeId",
-                    avgRating: { $avg: "$rating" },
-                }
-            }
-        ]);
+    const { lat, lng, cityId, search } = req.query;
+    const maxDistance = 5000; // 5 كم افتراضي
 
-        // 📌 اعمل map للتقييمات عشان الوصول يبقى أسرع
-        const ratingMap = {};
-        ratings.forEach(r => {
-            ratingMap[r._id.toString()] = {
-                avgRating: r.avgRating
-            };
+    const filters = {};
+    if (cityId) filters.cityId = cityId;
+    if (search) filters.username = { $regex: search, $options: "i" };
+
+    let allRentalOffice;
+
+    if (lat && lng) {
+      const pipeline = [
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [parseFloat(lng), parseFloat(lat)],
+            },
+            distanceField: "distance",
+            spherical: true,
+            maxDistance,
+          },
+        },
+      ];
+
+      if (filters.cityId) {
+        pipeline.push({
+          $match: { cityId: new mongoose.Types.ObjectId(filters.cityId) },
         });
+      }
 
-        // 📌 دمج التقييمات مع المكاتب
-        const formattedOffices = await Promise.all(
-            allRentalOffice.map(async o => {
-                const isLiked = o.likes?.some(id => id.toString() === userId.toString());
+      if (filters.username) {
+        pipeline.push({ $match: { username: filters.username } });
+      }
 
-                const follow = await followersForRentalOffice.findOne({
-                    userId,
-                    rentalOfficeId: o._id
-                });
+      pipeline.push({ $skip: skip }, { $limit: limit });
 
-                return {
-                    username: o.username,
-                    id: o._id,
-                    image: o.image,
-                    rating: ratingMap[o._id.toString()] || 0,
-                    isLiked,
-                    isFollowed: !!follow
-                };
-            })
-        );
+      pipeline.push({
+        $lookup: {
+          from: "cities",
+          localField: "cityId",
+          foreignField: "_id",
+          as: "city",
+        },
+      });
+      pipeline.push({
+        $unwind: { path: "$city", preserveNullAndEmptyArrays: true },
+      });
 
-
-        // 📌 احسب عدد المكاتب الكلي
-        const total = await rentalOffice.countDocuments();
-
-        return res.status(200).send({
-            code: 200,
-            status: true,
-            message: lang === "en"
-                ? "Your request has been completed successfully"
-                : "تمت معالجة الطلب بنجاح",
-            data: {
-                offices: formattedOffices,
-                pagination: {
-                    page,
-                    totalPages: Math.ceil(total / limit)
-                }
-            }
-        });
-
-    } catch (err) {
-        next(err);
+      allRentalOffice = await rentalOffice.aggregate(pipeline);
+    } else {
+      allRentalOffice = await rentalOffice
+        .find(filters)
+        .populate("cityId")
+        .skip(skip)
+        .limit(limit);
     }
+
+    // 🎯 هات التقييمات لمكاتب التأجير فقط
+    const ratings = await Rating.aggregate([
+      { $match: { entityType: "rentalOffice" } },
+      {
+        $group: {
+          _id: "$entityId",
+          avgRating: { $avg: "$rating" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // 🗺️ خريطة للتقييمات
+    const ratingMap = {};
+    ratings.forEach((r) => {
+      ratingMap[r._id.toString()] = {
+        avgRating: r.avgRating,
+        count: r.count,
+      };
+    });
+
+    const formattedOffices = await Promise.all(
+      allRentalOffice.map(async (o) => {
+        const follow = await followersForRentalOffice.findOne({
+          userId,
+          rentalOfficeId: o._id,
+        });
+        const favorite = await Favorite.findOne({
+          entityType: "rentalOffice",
+          entityId: o._id,
+          userId,
+        });
+
+        return {
+          id: o._id,
+          username: o.username,
+          image: o.image,
+          details: o.details,
+          city: o.cityId?.name?.[lang] || o.city?.name?.[lang] || "",
+          rating: ratingMap[o._id.toString()]?.avgRating || 0,
+          isFavorite: !!favorite,
+          isFollowed: !!follow,
+        };
+      })
+    );
+
+    const total = await rentalOffice.countDocuments(filters);
+
+    return res.status(200).json({
+      code: 200,
+      status: true,
+      message:
+        lang === "en"
+          ? "Your request has been completed successfully"
+          : "تمت معالجة الطلب بنجاح",
+      data: {
+        offices: formattedOffices,
+        pagination: {
+          page,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
-const addLike = async (req, res, next) => {
-    try {
-        const userId = req.user.id;
-        const rentalOfficeId = req.params.id;
-        const lang = req.headers['accept-language'] || 'en';
-        const messages = getMessages(lang);
-        const existRentalOffice = await rentalOffice.findOne({ _id: rentalOfficeId });
-        if (!existRentalOffice) {
-            return res.status(400).send({
-                status: 400,
-                code: false,
-                message: messages.rentalOffice.existRentalOffice
-            });
-        }
-        const alreadyLiked = existRentalOffice.likedBy.includes(userId);
-        let updatedRentalOffice;
-        if (alreadyLiked) {
-            // Remove the like
-            updatedRentalOffice = await rentalOffice.findByIdAndUpdate(
-                rentalOfficeId,
-                { $pull: { likedBy: userId } },
-                { new: true }
-            );
-        } else {
-            // Add the like
-            updatedRentalOffice = await rentalOffice.findByIdAndUpdate(
-                rentalOfficeId,
-                { $addToSet: { likedBy: userId } }, // $addToSet prevents duplicates
-                { new: true }
-            );
-        }
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            message: alreadyLiked ? messages.rentalOffice.removeLike : messages.rentalOffice.addLike,
-        });
-    }
-    catch (err) {
-        next(err);
-    }
-}
 const getRentalOfficeCar = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const messages = getMessages(lang);
@@ -249,66 +269,148 @@ const getRentalOfficeById = async (req, res, next) => {
     }
 }
 const getProfileData = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const rentalOfficeId = req.user.id;
-        const existRentalOffice = await rentalOffice.findOne({ _id: rentalOfficeId });
-        if (!existRentalOffice) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: messages.rentalOffice.existRentalOffice
-            });
-        }
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const rentalOfficeId = req.user.id;
 
-        // لايكات
-        const likes = existRentalOffice.likedBy.length;
-
-        // المتابعين
-        const followersCount = await followersForRentalOffice.countDocuments({ rentalOfficeId });
-
-        // التقييم
-        const result = await ratingForOrder.aggregate([
-            {
-                $match: {
-                    targetId: existRentalOffice._id,
-                    targetType: 'rentalOffice'
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    averageRating: { $avg: "$rating" }
-                }
-            }
-        ]);
-        const averageRating = result.length > 0 ? result[0].averageRating.toFixed(1) : 0;
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            message: lang === "en"
-                ? "Your request has been completed successfully"
-                : "تمت معالجة الطلب بنجاح",
-            data: {
-                username: existRentalOffice.username,
-                image: existRentalOffice.image,
-                rating: averageRating,
-                likes: likes,
-                followers: followersCount,
-            }
-        });
-
+    // 🟢 تحقق من وجود المكتب
+    const existRentalOffice = await rentalOffice.findOne({ _id: rentalOfficeId });
+    console.log(existRentalOffice)
+    if (!existRentalOffice) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message:lang=="en"?"rentalOfice does not exist":"هذا المكتب غير موجود",
+      });
     }
-    catch (error) {
-        next(error)
-    }
-}
 
+    // ❤️ عدد اللايكات
+    const favorite=await Favorite.find({entityId:rentalOfficeId,entityType:'rentalOffice'})
+
+    // 👥 عدد المتابعين
+    const followersCount = await followersForRentalOffice.countDocuments({ rentalOfficeId });
+
+    // ⭐ حساب متوسط التقييم من RatingPost بناءً على entityId و entityType
+    const result = await Rating.aggregate([
+      {
+        $match: {
+          entityId: existRentalOffice._id,
+          entityType: "rentalOffice",
+        },
+      },
+      {
+        $group: {
+          _id: "$entityId", // ✅ كده هيكون id المكتب بدل null
+          averageRating: { $avg: "$rating" },
+        },
+      },
+    ]);
+
+    // ✅ لو فيه تقييمات
+    const averageRating = result.length > 0 ? result[0].averageRating.toFixed(1) : 0;
+
+    // ✅ إرسال البيانات
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message:
+        lang === "en"
+          ? "Your request has been completed successfully"
+          : "تمت معالجة الطلب بنجاح",
+      data: {
+        username: existRentalOffice.username,
+        image: existRentalOffice.image,
+        rating: averageRating,
+        likes:favorite.length,
+        followers: followersCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+const rentalOfficeVerified = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const id = req.user.id;
+
+    const existRentalOffice = await rentalOffice.findOne({ _id: id });
+    if (!existRentalOffice) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "هذا المكتب غير موجود" : "This rentalOffice does not exist"
+      });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الصورة مطلوبة" : "Image is required"
+      });
+    }
+
+    // ✅ استخرج lat,long من البودي
+    const { lat, long } = req.body;
+
+    if (!lat || !long) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الموقع (lat, long) مطلوب" : "Location (lat, long) is required"
+      });
+    }
+
+    // ✅ جهز location object
+    req.body.location = {
+      type: "Point",
+      coordinates: [parseFloat(long), parseFloat(lat)] // [longitude, latitude]
+    };
+
+    // ❌ امسح الـ lat,long علشان مش محتاجينهم في الموديل
+    delete req.body.lat;
+    delete req.body.long;
+
+    // ✅ Validation بعد ما ضفت location
+    const { error } = rentalOfficeSchema(lang).validate(req.body);
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: error.details[0].message
+      });
+    }
+
+    // ✅ حفظ الصورة
+    let imageUrl = saveImage(file);
+    imageUrl = `${process.env.BASE_URL}${imageUrl}`;
+
+    await rentalOffice.findByIdAndUpdate(id, {
+      image: imageUrl,
+      username: req.body.name,
+      cityId: req.body.cityId,
+      details: req.body.details,
+      tradeRegisterNumber: req.body.tradeRegisterNumber,
+      location: req.body.location // ✅ حفظ الموقع
+    });
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang == "ar" ? "تم التقديم بنجاح" : "Submitted successfully"
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
 
 module.exports = {
     getAllRentallOffice,
-    addLike,
     getRentalOfficeCar,
     getRentalOfficeById,
-    getProfileData
+    getProfileData,
+    rentalOfficeVerified
 }

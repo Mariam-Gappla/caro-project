@@ -2,7 +2,7 @@ const carRental = require("../models/carRental");
 const { carRentalWeeklyValiditionSchema, rentToOwnSchema, carRentalWeeklyValiditionUpdateSchema, rentToOwnUpdateSchema } = require("../validation/carRentalValidition");
 const getMessages = require("../configration/getmessages");
 const Name = require("../models/carName");
-const Reel=require("../models/reels");
+const Reel = require("../models/reels");
 const Model = require("../models/carModel");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
 const saveImage = require("../configration/saveImage");
@@ -141,11 +141,14 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
 
     // 📌 جايب rentalType من query
     const rentalType = req.query.rentalType; // مثال: weekly/daily أو rent to own
-
+    const search = req.query.search;
     // 📌 بناء الفلتر
     const filter = { rentalOfficeId: id };
     if (rentalType) {
       filter.rentalType = rentalType;
+    }
+    if (search) {
+      filter.title = search;
     }
 
     // 📌 اجمالي عدد العربيات
@@ -174,9 +177,7 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
         if (car.rentalType === "weekly/daily") {
           formattedOrder = {
             id: car._id,
-            title: lang === "ar"
-              ? `تأجير سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
-              : `Renting a car ${name?.carName?.en || ""} ${model?.model?.en || ""}`,
+            title: car.title,
             rentalType: car.rentalType,
             images: car.images,
             carDescription: car.carDescription,
@@ -189,9 +190,7 @@ const getCarsByRentalOfficeForUser = async (req, res, next) => {
         } else if (car.rentalType === "rent to own") {
           formattedOrder = {
             id: car._id,
-            title: lang === "ar"
-              ? `تملك سيارة ${name?.carName?.ar || ""} ${model?.model?.ar || ""}`
-              : `Owning a car ${name?.carName?.en || ""} ${model?.model?.en || ""}`,
+            title: car.title,
             rentalType: car.rentalType,
             images: car.images,
             carDescription: car.carDescription,
@@ -261,7 +260,6 @@ const getCarById = async (req, res, next) => {
           id: carTypeId._id,
           type: lang == "en" ? carTypeId.type.en : carTypeId.type.ar
         },
-        title: lang == "ar" ? `تأجير سياره ${name.carName.ar + " " + model.model.ar}` : `Renting a car ${name.carName.en + " " + model.model.en}`,
       }
     }
     else {
@@ -279,9 +277,6 @@ const getCarById = async (req, res, next) => {
           id: carTypeId._id,
           type: lang == "en" ? carTypeId.type.en : carTypeId.type.ar
         },
-        title: lang === "ar"
-          ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
-          : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
       }
 
     }
