@@ -25,29 +25,33 @@ const addFollower = async (req, res, next) => {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: lang=="en" ? "rental Office does not exist":"هذا المكتب غير موجود"
+                message: lang == "en" ? "rental Office does not exist" : "هذا المكتب غير موجود"
             });
         }
         if (!userId || !rentalOfficeId) {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: lang=="en" ? "userId and rentalOfficeId is required":"معرف المستخدم ومعرف المكتب مطلوبين"
+                message: lang == "en" ? "userId and rentalOfficeId is required" : "معرف المستخدم ومعرف المكتب مطلوبين"
             });
         }
         const followers = await follower.create({ userId, rentalOfficeId });
         res.status(200).send({
             status: true,
             code: 200,
-            message: messages.follower.success,
+            message: lang == "en"
+                ? "rentalOffice followed successfully"
+                : "تمت متابعة المكتب بنجاح"
         });
     }
     catch (err) {
         if (err.code === 11000) {
+             const lang = req.headers['accept-language'] || 'en';
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: messages.follower.exist
+                message: lang == "en"
+                    ? "you followed this rentalOffice" : "انت تتابع هذا المكتب بالفعل"
             });
         }
         next(err)
@@ -88,12 +92,12 @@ const getFollowersForRentalOffice = async (req, res, next) => {
                 code: 200,
                 message: messages.follower.noFollowers,
                 data: {
-                followers: followers,
-                pagination: {
-                    currentPage: page,
-                    totalPages: Math.ceil(totalCount / limit),
+                    followers: followers,
+                    pagination: {
+                        currentPage: page,
+                        totalPages: Math.ceil(totalCount / limit),
+                    }
                 }
-            }
             });
         }
 
