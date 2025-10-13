@@ -25,14 +25,14 @@ const addFollower = async (req, res, next) => {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: messages.rentalOffice.existRentalOffice
+                message: lang=="en" ? "rental Office does not exist":"هذا المكتب غير موجود"
             });
         }
         if (!userId || !rentalOfficeId) {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: messages.required.userIdAndRentalId
+                message: lang=="en" ? "userId and rentalOfficeId is required":"معرف المستخدم ومعرف المكتب مطلوبين"
             });
         }
         const followers = await follower.create({ userId, rentalOfficeId });

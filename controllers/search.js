@@ -233,7 +233,7 @@ const getPostById = async (req, res, next) => {
       details: post.details,
       images: post.images,
       price: post.price || null,
-      contactMethods: contactTypes,
+      contactTypes: contactTypes,
       contactValue: contactValue,
       city:post.cityId.name[lang],
       postNumber:post.postNumber,
