@@ -5,20 +5,21 @@ const Name = require("../models/carName");
 const Reel = require("../models/reels");
 const Model = require("../models/carModel");
 const rentalOfficeOrder = require("../models/rentalOfficeOrders");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const carRentalArchive = require("../models/carArchive");
 const path = require("path");
 const fs = require("fs");
 const addCar = async (req, res, next) => {
   try {
-    console.log(req.user.id)
+    console.log("🟢 Inside addCar route...");
+  console.log("📩 Body:", req.body);
+  console.log("📷 Files:", req.files);
     const files = req.files || [];
     const imageBuffers = req.files || [];
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || 'http://localhost:3000/';
     // ⏰ نحفظ اسم الصورة مرة واحدة لكل صورة
     const imagePaths = [];
-    const messages = getMessages(lang);
     const fileInfos = files.map(file => {
       const fileName = `${Date.now()}-${file.originalname}`;
       const filePath = path.join('/var/www/images', fileName);
@@ -125,7 +126,8 @@ const addCar = async (req, res, next) => {
       message: lang == "ar" ? "تم اضافه السياره بنجاح" : "car added successfully"
     });
   } catch (err) {
-    next(err);
+    console.error("🔥 Error inside addCar:", err);
+  next(err);
   }
 }
 const getCarsByRentalOfficeForUser = async (req, res, next) => {

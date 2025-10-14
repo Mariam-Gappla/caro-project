@@ -1,6 +1,6 @@
 const Car = require("../models/car");
 const carPostSchema = require("../validation/carValidition");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const addCarPost = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";

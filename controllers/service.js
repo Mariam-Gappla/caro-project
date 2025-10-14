@@ -1,5 +1,5 @@
 const Service = require("../models/service");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const addService = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";

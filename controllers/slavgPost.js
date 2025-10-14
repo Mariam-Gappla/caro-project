@@ -1,5 +1,5 @@
 const SlavagePost = require("../models/slavgePost");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const salvagePostSchema = require("../validation/postSlavgeValidition");
 const addPost = async (req, res, next) => {
     try {

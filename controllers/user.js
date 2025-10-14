@@ -21,7 +21,7 @@ const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
 const Wallet = require("../models/wallet");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const mongoose = require("mongoose");
 const register = async (req, res, next) => {
   try {

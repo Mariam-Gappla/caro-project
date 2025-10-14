@@ -1,5 +1,5 @@
 const CenterService = require("../models/centerServices");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const User=require("../models/user");
 const followerCenter=require("../models/followerCenter");
 const centerServiceSchema = require("../validation/centerServices");

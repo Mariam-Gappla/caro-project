@@ -19,5 +19,20 @@ const saveImage = (file, folder = '/var/www/images') => {
   // الرابط اللي هيتخزن في الداتابيز
   return `images/${fileName}`;
 };
+const deleteImage = (imgPath) => {
+  try {
+    if (!imgPath) return;
+    // نجيب اسم الملف فقط من المسار (لو imgPath = "images/test.jpg")
+    const fileName = path.basename(imgPath);
+    const fullPath = path.join("/var/www/images", fileName);
 
-module.exports = saveImage;
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+      console.log("🗑️ Deleted:", fullPath);
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to delete image:", imgPath, err.message);
+  }
+};
+
+module.exports = {saveImage,deleteImage};

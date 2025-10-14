@@ -6,7 +6,7 @@ const Replies = require("../models/replyOnComments.js");
 const path = require("path");
 const mongoose = require("mongoose")
 const fs = require("fs");
-const saveImage = require("../configration/saveImage.js");
+const {saveImage} = require("../configration/saveImage.js");
 const addTweet = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';

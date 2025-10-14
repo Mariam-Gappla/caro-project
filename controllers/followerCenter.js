@@ -48,9 +48,9 @@ const addFollowerCenter = async (req, res, next) => {
         userId: new mongoose.Types.ObjectId(userId),
         centerId: new mongoose.Types.ObjectId(centerId)
       })
-      return res.status(400).send({
-        status: false,
-        code: 400,
+      return res.status(200).send({
+        status: true,
+        code: 200,
         message: lang == "en" ? "follow canceled successfuly" : "تم الغاء المتابعه"
       });
     }

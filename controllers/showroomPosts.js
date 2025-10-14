@@ -1,7 +1,7 @@
 const ShowRoomPosts = require("../models/showroomPost");
 const getNextOrderNumber = require("../controllers/counter");
 const showroomPostSchema = require("../validation/showroomPostsValidition");
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const Reel = require("../models/reels")
 const addShowroomPost = async (req, res, next) => {
   try {

@@ -6,7 +6,7 @@ const Reply = require("../models/centerReplies");
 const Favorite=require("../models/favorite");
 const Reel = require("../models/reels");
 const FollowerCenter=require("../models/followerCenter")
-const saveImage = require("../configration/saveImage");
+const {saveImage} = require("../configration/saveImage");
 const addPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";

@@ -2,7 +2,7 @@ const Post = require("../models/post");
 const postSchema = require("../validation/postValidition");
 const Comment = require("../models/centerComments");
 const Reply = require("../models/centerReplies");
-const saveImage = require("../configration/saveImage");
+const { saveImage, deleteImage } = require("../configration/saveImage");
 const Tweet = require("../models/tweets");
 const MainCategory = require("../models/mainCategoryActivity");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
@@ -13,7 +13,7 @@ const centerFollower = require("../models/followerCenter");
 const ShowRoomPost = require("../models/showroomPost");
 const favorite = require("../models/favorite");
 const Reel = require("../models/reels");
-const Search=require("../models/searchForAnyThing");
+const Search = require("../models/searchForAnyThing");
 const mongoose = require("mongoose");
 const Favorite = require("../models/favorite");
 const addPost = async (req, res, next) => {
@@ -492,8 +492,7 @@ const getProfilePosts = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-
-    // 🟢 1. هات البوستات من كل الجداول
+    // 🟢 جلب البيانات من كل الجداول
     const [posts, showroomPosts, searchPosts, tweets] = await Promise.all([
       Post.find({ userId })
         .populate({
@@ -527,15 +526,14 @@ const getProfilePosts = async (req, res, next) => {
         .lean(),
     ]);
 
-    // 🟢 2. IDs لكل نوع
+    // 🟢 IDs
     const postIds = posts.map((p) => p._id);
     const showroomIds = showroomPosts.map((p) => p._id);
     const searchIds = searchPosts.map((p) => p._id);
     const tweetIds = tweets.map((t) => t._id);
 
-    // 🟢 3. هات الكومنتات والردود
+    // 🟢 comments + replies
     const [comments, replies, tweetComments, tweetReplies] = await Promise.all([
-      // comments/replies للـ Posts + Showroom + Search
       Comment.aggregate([
         { $match: { entityId: { $in: [...postIds, ...showroomIds, ...searchIds] } } },
         { $group: { _id: { entityId: "$entityId", entityType: "$entityType" }, count: { $sum: 1 } } },
@@ -561,12 +559,10 @@ const getProfilePosts = async (req, res, next) => {
           },
         },
       ]),
-      // 🟢 tweet comments
       Comments.aggregate([
         { $match: { tweetId: { $in: tweetIds } } },
         { $group: { _id: "$tweetId", count: { $sum: 1 } } },
       ]),
-      // 🟢 tweet replies
       ReplyOnComments.aggregate([
         {
           $lookup: {
@@ -582,7 +578,7 @@ const getProfilePosts = async (req, res, next) => {
       ]),
     ]);
 
-    // 🟢 4. جهّزي Maps للعدّ
+    // 🟢 maps
     const commentMap = {};
     comments.forEach((c) => {
       commentMap[`${c._id.entityType}_${c._id.entityId}`] = c.count;
@@ -603,12 +599,19 @@ const getProfilePosts = async (req, res, next) => {
       tweetReplyMap[r._id.toString()] = r.count;
     });
 
-    // 🟢 5. صياغة النتائج لكل نوع
+    // 🟢 formatter
     const formatData = (items, type) =>
       items.map((post) => {
         const idKey = `${type}_${post._id}`;
         const commentCount = commentMap[idKey] || 0;
         const replyCount = replyMap[idKey] || 0;
+
+        const user =
+          type === "Post"
+            ? post.userId
+            : type === "ShowRoomPost"
+            ? post.showroomId
+            : post.userId;
 
         return {
           id: post._id,
@@ -619,40 +622,44 @@ const getProfilePosts = async (req, res, next) => {
           createdAt: post.createdAt,
           city: post.cityId?.name?.[lang] || "",
           totalCommentsAndReplies: commentCount + replyCount,
-          userData: {
-            id: type == "Post" ? post.userId._id : post.showroomId._id,
-            username: type == "Post" ? post.userId.username : post.showroomId.username,
-            image: type == "Post" ? post.userId.image : post.showroomId.image,
-            status: type == "Post" ? post.userId.status : post.showroomId.status,
-          }
-
+          userData: user
+            ? {
+                id: user._id,
+                username: user.username,
+                image: user.image,
+                status: user.status,
+              }
+            : null,
         };
       });
 
+    // 🟢 tweets
     const formattedTweets = tweets.map((tweet) => {
       const commentCount = tweetCommentMap[tweet._id.toString()] || 0;
       const replyCount = tweetReplyMap[tweet._id.toString()] || 0;
+
+      const user = tweet.userId;
 
       return {
         id: tweet._id,
         type: "Tweet",
         title: tweet.title,
         content: tweet.content || "",
-        images: tweet.images || [],
+        images: tweet.images ? [tweet.images] : [],
         createdAt: tweet.createdAt,
         totalCommentsAndReplies: commentCount + replyCount,
-        userData: {
-          id: tweet.userId._id,
-          username: tweet.userId.username,
-          image: tweet.userId.image,
-          status: tweet.userId.status,
-
-        }
-
+        userData: user
+          ? {
+              id: user._id,
+              username: user.username,
+              image: user.image,
+              status: user.status,
+            }
+          : null,
       };
     });
 
-    // 🟢 6. دمج الكل
+    // 🟢 combine & paginate
     const allPosts = [
       ...formatData(posts, "Post"),
       ...formatData(showroomPosts, "ShowRoomPost"),
@@ -660,30 +667,266 @@ const getProfilePosts = async (req, res, next) => {
       ...formattedTweets,
     ];
 
-    // 🟢 7. ترتيبهم بالتاريخ وpagination
-    const sorted = allPosts.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-
+    const sorted = allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const paginated = sorted.slice(skip, skip + limit);
 
-    // 🟢 8. الرد النهائي
-    res.status(200).send({
+    res.status(200).json({
       status: true,
       code: 200,
       data: {
         posts: paginated,
         pagination: {
-          page: page,
+          page,
           totalPages: Math.ceil(allPosts.length / limit),
-        }
-      }
-
+        },
+      },
     });
   } catch (err) {
     next(err);
   }
 };
+const deleteProfilePost = async (req, res, next) => {
+  try {
+    const { type, id } = req.body;
+    const userId = req.user.id;
+    console.log(userId)
+    const lang = req.headers["accept-language"] || "en";
+    if (!type || !id) {
+      return res.status(400).json({ success: false, message: "Type and ID are required" });
+    }
+
+    // 🟢 تحديد الموديل حسب النوع
+    let Model;
+    switch (type) {
+      case "Post":
+        Model = Post;
+        break;
+      case "ShowRoomPost":
+        Model = ShowRoomPost;
+        break;
+      case "Search":
+        Model = Search;
+        break;
+      case "Service":
+        Model = Service;
+        break;
+      case "Tweet":
+        Model = Tweet;
+        break;
+      default:
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: "Invalid type provided"
+        });
+    }
+
+    // 🟢 التأكد إن البوست تابع للمستخدم
+    let query={}
+    if(type === "Service")
+     {
+      query={ _id:id, centerId:userId}
+     }
+     else if(type==="ShowRoomPost")
+     {
+      query={ _id:id, showroomId:userId};
+     }
+    else
+    {
+      query={ _id:id, userId:userId};
+    }
+    const post = await Model.findOne(query);
+    /*const post = await Model.findOne(query);*/
+    if (!post) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "ar"
+          ? "المنشور غير موجود أو ليس لديك صلاحية لحذفه"
+          : "Post not found or not authorized to delete"
+      });
+    }
+    if (type === "Service") {
+      // الصور داخل products
+      if (post.products && Array.isArray(post.products)) {
+        for (const p of post.products) {
+          if (p.image) deleteImage(p.image);
+        }
+      }
+    } else if (type === "Tweet") {
+      // Tweet عنده صورة واحدة فقط
+      if (post.image) {
+        deleteImage(post.image);
+      }
+    } else {
+      // باقي الأنواع عندها images array
+      if (post.images && Array.isArray(post.images)) {
+        for (const img of post.images) {
+          deleteImage(img);
+        }
+      }
+    }
+
+    // 🟢 حذف البوست نفسه
+    await Model.deleteOne({ _id: id });
+
+    // 🟢 حذف التعليقات والردود المرتبطة
+    if (type === "Tweet") {
+      // تعليقات وردود tweet
+      const comments = await Comments.find({ tweetId: id });
+      const commentIds = comments.map((c) => c._id);
+
+      await Comments.deleteMany({ tweetId: id });
+      await ReplyOnComments.deleteMany({ commentId: { $in: commentIds } });
+    } else {
+      // باقي الأنواع (CenterComments و Reply)
+      const entityType = type === "Service" ? "User" : type;
+
+      const comments = await Comment.find({ entityId: id, entityType });
+      const commentIds = comments.map((c) => c._id);
+
+      await Comment.deleteMany({ entityId: id, entityType });
+      await Reply.deleteMany({ commentId: { $in: commentIds } });
+    }
+
+    // ✅ الرد النهائي
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "ar"
+        ? `${type} تم حذفه بنجاح مع الصور والتعليقات والردود المرتبطة.`
+        : `${type} deleted successfully along with local images, comments, and replies.`
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+const updateEntityByType = async (req, res, next) => {
+  try {
+    const { type, id } = req.body;
+    const lang = req.headers["accept-language"] || "en";
+    const userId = req.user.id;
+
+    let Model;
+    switch (type) {
+      case "Post":
+        Model = Post;
+        break;
+      case "ShowRoomPost":
+        Model = ShowRoomPost;
+        break;
+      case "Service":
+        Model = Service;
+        break;
+      case "Tweet":
+        Model = Tweet;
+        break;
+      case "Search":
+        Model = Search;
+        break;
+      default:
+        return res.status(400).json({
+          success: false,
+          message:
+            lang === "ar"
+              ? "النوع المحدد غير صالح."
+              : "Invalid entity type provided.",
+        });
+    }
+
+    const existingDoc = await Model.findById(id);
+    if (!existingDoc) {
+      return res.status(404).json({
+        success: false,
+        message:
+          lang === "ar" ? "العنصر غير موجود." : "Entity not found.",
+      });
+    }
+
+    // تحقق من ملكية المستخدم
+    const ownerId =
+      type === "Service"
+        ? existingDoc.centerId?.toString()
+        : existingDoc.userId?.toString();
+
+    if (ownerId !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          lang === "ar"
+            ? "غير مصرح لك بتعديل هذا العنصر."
+            : "You are not authorized to update this entity.",
+      });
+    }
+
+    // معالجة الصور
+    let newImages = [];
+
+    if (req.files && req.files.length > 0) {
+      // حذف الصور القديمة فقط لو فيه صور جديدة
+      if (type === "Service") {
+        if (existingDoc.products?.length) {
+          existingDoc.products.forEach((p) => {
+            if (p.image) {
+              const imgPath = path.join("/var/www", p.image);
+              if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+            }
+          });
+        }
+      } else {
+        const images = type === "Tweet" ? [existingDoc.images] : existingDoc.images || [];
+        images.forEach((imgPath) => {
+          const fullPath = path.join("/var/www", imgPath);
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        });
+      }
+
+      // حفظ الصور الجديدة
+      newImages = req.files.map((file) => saveImage(file));
+    }
+
+    // البيانات الجديدة من المستخدم
+    const updatedData = { ...req.body };
+
+    // لو فيه صور جديدة نحدّثها
+    if (req.files && req.files.length > 0) {
+      if (type === "Service") {
+        updatedData.products = req.files.map((file) => ({
+          image: saveImage(file),
+        }));
+      } else if (type === "Tweet") {
+        updatedData.images = newImages[0]; // لأنها مش Array
+      } else {
+        updatedData.images = newImages;
+      }
+    } else {
+      // لو مفيش صور جديدة نخلي القديمة
+      if (type === "Service") updatedData.products = existingDoc.products;
+      else if (type === "Tweet") updatedData.images = existingDoc.images;
+      else updatedData.images = existingDoc.images;
+    }
+
+    await Model.findByIdAndUpdate(id, updatedData, {
+      new: true,
+    });
+
+    return res.status(200).send({
+      status: true,
+      code:200,
+      message:
+        lang === "ar"
+          ? `${type} تم تعديله بنجاح.`
+          : `${type} updated successfully.`,
+    });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+};
+
+
+
+
 
 
 module.exports = {
@@ -692,5 +935,7 @@ module.exports = {
   getPostById,
   getrelevantPosts,
   makeSearchByTitle,
-  getProfilePosts
+  getProfilePosts,
+  deleteProfilePost,
+  updateEntityByType
 }
