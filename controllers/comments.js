@@ -13,7 +13,7 @@ const addComment = async (req, res, next) => {
         }
         const id=req.user.id;
         const {content , tweetId}=req.body;
-        await Comment.create({
+        const comment=await Comment.create({
             content:content,
             userId:id,
             tweetId:tweetId
@@ -22,6 +22,9 @@ const addComment = async (req, res, next) => {
         status:true,
         code:200,
         message:"تم اضافه التعليق بنجاح",
+        data: {
+        id: comment._id
+      }
       })
     }
     catch (err) {

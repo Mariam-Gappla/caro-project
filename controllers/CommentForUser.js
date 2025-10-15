@@ -13,7 +13,7 @@ const addCommentForUser = async (req, res, next) => {
         }
         const id=req.user.id;
         const {content , postId}=req.body;
-        await CommentForUser.create({
+        const comment= await CommentForUser.create({
             content:content,
             userId:id,
             postId:postId
@@ -22,6 +22,9 @@ const addCommentForUser = async (req, res, next) => {
         status:true,
         code:200,
         message:"تم اضافه التعليق بنجاح",
+        data: {
+        id: comment._id
+      }
       })
     }
     catch (err) {

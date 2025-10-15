@@ -54,10 +54,6 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
         type: Number,
       },
     },
-    price:{
-      type: Number,
-      default:12
-    },
     ended:{
       type:Boolean,
       default:false

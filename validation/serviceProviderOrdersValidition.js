@@ -19,15 +19,6 @@ const serviceWinchValidationSchema = (lang = 'en') => {
         'any.required': messages.userIdRequired,
         'string.base': messages.userIdRequired,
       }),
-    price: Joi.number()
-      .positive()
-      .required()
-      .messages({
-        'any.required': messages.priceRequired,
-        'number.base': messages.priceInvalid,
-        'number.positive': messages.priceMustBePositive,
-      }),
-
     image: Joi.string()
       .uri()
       .required()

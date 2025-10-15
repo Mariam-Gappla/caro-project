@@ -5,18 +5,21 @@ const addComment = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const { content, reelId } = req.body;
         const userId = req.user.id;
-        if ( !content || !reelId) {
+        if (!content || !reelId) {
             return res.status(400).send({
                 status: false,
                 code: 400,
                 message: lang === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required'
             });
         }
-        await ReelComment.create({ content, reelId, userId });
+        const comment = await ReelComment.create({ content, reelId, userId });
         res.status(200).send({
             status: true,
             code: 200,
-            message: lang == "en" ? 'Comment added successfully' : 'تم إضافة التعليق بنجاح'
+            message: lang == "en" ? 'Comment added successfully' : 'تم إضافة التعليق بنجاح',
+            data: {
+                id: comment._id
+            }
         });
     } catch (error) {
         next(error);
