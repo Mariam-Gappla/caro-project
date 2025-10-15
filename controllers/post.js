@@ -8,10 +8,13 @@ const MainCategory = require("../models/mainCategoryActivity");
 const MainCategoryCenter = require("../models/mainCategoryCenter");
 const Comments = require("../models/comments");
 const ReplyOnComments = require("../models/replyOnComments");
+const RatingCenter = require("../models/ratingCenter");
 const Counter = require("../controllers/counter");
 const centerFollower = require("../models/followerCenter");
 const ShowRoomPost = require("../models/showroomPost");
 const favorite = require("../models/favorite");
+const User = require("../models/user");
+const Service = require("../models/centerServices");
 const Reel = require("../models/reels");
 const Search = require("../models/searchForAnyThing");
 const mongoose = require("mongoose");
@@ -491,7 +494,9 @@ const getProfilePosts = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
+    const haveService = await Service.findOne({ centerId: userId });
+    const user = await User.findOne({ _id: userId }).populate("cityId").populate("subCategoryCenterId").lean();
+    console.log(user);
     // 🟢 جلب البيانات من كل الجداول
     const [posts, showroomPosts, searchPosts, tweets] = await Promise.all([
       Post.find({ userId })
@@ -610,8 +615,8 @@ const getProfilePosts = async (req, res, next) => {
           type === "Post"
             ? post.userId
             : type === "ShowRoomPost"
-            ? post.showroomId
-            : post.userId;
+              ? post.showroomId
+              : post.userId;
 
         return {
           id: post._id,
@@ -624,11 +629,11 @@ const getProfilePosts = async (req, res, next) => {
           totalCommentsAndReplies: commentCount + replyCount,
           userData: user
             ? {
-                id: user._id,
-                username: user.username,
-                image: user.image,
-                status: user.status,
-              }
+              id: user._id,
+              username: user.username,
+              image: user.image,
+              status: user.status,
+            }
             : null,
         };
       });
@@ -650,11 +655,11 @@ const getProfilePosts = async (req, res, next) => {
         totalCommentsAndReplies: commentCount + replyCount,
         userData: user
           ? {
-              id: user._id,
-              username: user.username,
-              image: user.image,
-              status: user.status,
-            }
+            id: user._id,
+            username: user.username,
+            image: user.image,
+            status: user.status,
+          }
           : null,
       };
     });
@@ -666,14 +671,42 @@ const getProfilePosts = async (req, res, next) => {
       ...formatData(searchPosts, "Search"),
       ...formattedTweets,
     ];
+    // 🟢 لو عنده خدمة، نجيب المتوسط من RatingCenter
+    let serviceData = null;
+    if (haveService) {
+      let ratings;
+      console.log(user.isProvider);
+      if (user.isProvider) {
+        ratings = await RatingCenter.find({ centerId: user._id });
+      }
+      else
+      {
+        ratings = await RatingCenter.find({ userId: user._id });
+      }
+      const allRatings = ratings.map(r => r.rating);
+      const avgRating =
+        allRatings.length > 0
+          ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
+          : 0;
+
+
+      serviceData = {
+        username: user.username,
+        details: user.details || "",
+        subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
+        city: user.cityId?.name?.[lang] || "",
+        averageRate: avgRating.toFixed(1),
+      };
+    }
 
     const sorted = allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const paginated = sorted.slice(skip, skip + limit);
 
-    res.status(200).json({
+    res.status(200).send({
       status: true,
       code: 200,
       data: {
+        service: serviceData || null,
         posts: paginated,
         pagination: {
           page,
@@ -722,18 +755,15 @@ const deleteProfilePost = async (req, res, next) => {
     }
 
     // 🟢 التأكد إن البوست تابع للمستخدم
-    let query={}
-    if(type === "Service")
-     {
-      query={ _id:id, centerId:userId}
-     }
-     else if(type==="ShowRoomPost")
-     {
-      query={ _id:id, showroomId:userId};
-     }
-    else
-    {
-      query={ _id:id, userId:userId};
+    let query = {}
+    if (type === "Service") {
+      query = { _id: id, centerId: userId }
+    }
+    else if (type === "ShowRoomPost") {
+      query = { _id: id, showroomId: userId };
+    }
+    else {
+      query = { _id: id, userId: userId };
     }
     const post = await Model.findOne(query);
     /*const post = await Model.findOne(query);*/
@@ -912,7 +942,7 @@ const updateEntityByType = async (req, res, next) => {
 
     return res.status(200).send({
       status: true,
-      code:200,
+      code: 200,
       message:
         lang === "ar"
           ? `${type} تم تعديله بنجاح.`

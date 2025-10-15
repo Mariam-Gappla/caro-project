@@ -21,7 +21,7 @@ const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
 const Wallet = require("../models/wallet");
-const {saveImage} = require("../configration/saveImage");
+const { saveImage } = require("../configration/saveImage");
 const mongoose = require("mongoose");
 const register = async (req, res, next) => {
   try {
@@ -341,7 +341,13 @@ const login = async (req, res, next) => {
       const following = await CenterFollower.find({ userId: existUser._id });
       const followers = await CenterFollower.find({ centerId: existUser._id });
       const favorite = await Favorite.find({ userId: existUser._id, entityType: "User" });
-      const ratings = await RatingCenter.find({ userId: existUser._id });
+      let ratings;
+      if (existUser.isProvider) {
+        ratings = await RatingCenter.find({ centerId: existUser._id });
+      }
+      else {
+        ratings = await RatingCenter.find({ userId: existUser._id });
+      }
       const allRatings = ratings.map(r => r.rating);
       const avgRating =
         allRatings.length > 0

@@ -56,7 +56,24 @@ const messages = {
     modelId: {
       required: "Model ID is required",
       string: "Model ID must be a string"
-    }
+    },
+    ownershipPeriod: {
+      required: "Ownership period is required",
+      base: "Ownership period must be a string",
+    },
+    carPrice: {
+      number: "Car price must be a number",
+      required: "Car price is required",
+    },
+    monthlyPayment: {
+      number: "Monthly payment must be a number",
+      required: "Monthly payment is required",
+    },
+    finalPayment: {
+      number: "Final payment must be a number",
+      required: "Final payment is required",
+    },
+
   },
 
   ar: {
@@ -116,7 +133,24 @@ const messages = {
     modelId: {
       required: "معرّف الموديل مطلوب",
       string: "معرّف الموديل يجب أن يكون نصًا"
-    }
+    },
+    ownershipPeriod: {
+      required: "فترة التملك مطلوبة",
+      base: "فترة التملك يجب أن تكون نصًا",
+    },
+    carPrice: {
+      number: "سعر السيارة يجب أن يكون رقمًا",
+      required: "سعر السيارة مطلوب",
+    },
+    monthlyPayment: {
+      number: "القسط الشهري يجب أن يكون رقمًا",
+      required: "القسط الشهري مطلوب",
+    },
+    finalPayment: {
+      number: "الدفعة النهائية يجب أن تكون رقمًا",
+      required: "الدفعة النهائية مطلوبة",
+    },
+
   }
 };
 const getMessages = (lang = 'en') => {
