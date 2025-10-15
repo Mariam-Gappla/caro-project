@@ -305,6 +305,111 @@ const getCenterCommentswithReplies = async (req, res, next) => {
     next(error);
   }
 }
+const getEntityByTypeAndId = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const { id, type } = req.query;
+
+    if (!id || !type) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "id and type are required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid ID format",
+      });
+    }
+
+    let Model;
+    let populateOptions = [];
+
+    switch (type) {
+      case "Post":
+        Model = Post;
+        populateOptions = [
+          {
+            path: "userId",
+            select: "username image status phone categoryCenterId",
+            populate: {
+              path: "categoryCenterId",
+              select: `name.${lang}`,
+            },
+          },
+          { path: "cityId", select: `name.${lang}` },
+        ];
+        break;
+
+      case "ShowRoomPost":
+        Model = ShowRoomPost;
+        populateOptions = [
+          { path: "showroomId", select: "username image phone" },
+          { path: "cityId", select: `name.${lang}` },
+        ];
+        break;
+
+      case "Search":
+        Model = Search;
+        populateOptions = [{ path: "userId", select: "username image" }];
+        break;
+
+      case "Tweet":
+        Model = Tweet;
+        populateOptions = [{ path: "userId", select: "username image" }];
+        break;
+
+      case "Service":
+        Model = Service;
+        populateOptions = [
+          {
+            path: "centerId",
+            select: "username image status phone categoryCenterId",
+            populate: {
+              path: "categoryCenterId",
+              select: `name.${lang}`,
+            },
+          },
+          { path: "cityId", select: `name.${lang}` },
+        ];
+        break;
+
+      default:
+        return res.status(400).json({
+          status: false,
+          code: 400,
+          message: "Invalid type",
+        });
+    }
+
+    let entity = await Model.findById(id).populate(populateOptions);
+
+    if (!entity) {
+      return res.status(404).json({
+        status: false,
+        code: 404,
+        message: "Entity not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      message:
+        lang === "en"
+          ? `${type} retrieved successfully`
+          : `${type} تم استرجاعه بنجاح`,
+      data: entity,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addComment,
   getCommentsByPostId,
@@ -312,5 +417,6 @@ module.exports = {
   getPostCommentsWithReplies,
   getShowRoomPostCommentsWithReplies,
   getCommentsByCenterId,
-  getCenterCommentswithReplies
+  getCenterCommentswithReplies,
+  getEntityByTypeAndId
 }

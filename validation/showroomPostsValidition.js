@@ -47,7 +47,11 @@ const showroomPostSchema = (lang = "en") => {
     discount: Joi.boolean().required().messages(messages.discount),
 
     financing: Joi.boolean().required().messages(messages.financing),
-
+    fuelCapacity: Joi.number()
+    .min(1)
+    .max(200)
+    .required()
+    .messages(messages.fuelCapacity),
     price: Joi.number().required().messages(messages.price),
     discountedPrice: Joi.number().when("discount", {
       is: true,

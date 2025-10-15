@@ -489,6 +489,7 @@ const getProfilePosts = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const userId = req.user.id;
+    console.log(userId);
 
     // 🟢 pagination
     const page = parseInt(req.query.page) || 1;
@@ -496,7 +497,6 @@ const getProfilePosts = async (req, res, next) => {
     const skip = (page - 1) * limit;
     const haveService = await Service.findOne({ centerId: userId });
     const user = await User.findOne({ _id: userId }).populate("cityId").populate("subCategoryCenterId").lean();
-    console.log(user);
     // 🟢 جلب البيانات من كل الجداول
     const [posts, showroomPosts, searchPosts, tweets] = await Promise.all([
       Post.find({ userId })
@@ -685,7 +685,7 @@ const getProfilePosts = async (req, res, next) => {
 
       serviceData = {
         username: user.username,
-        createdAt:user.createdAt,
+        createdAt: user.createdAt,
         details: user.details || "",
         subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
         city: user.cityId?.name?.[lang] || "",
@@ -1056,6 +1056,171 @@ const updateCreatedAt = async (req, res, next) => {
     next(err);
   }
 };
+const getEntityByTypeAndId = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const { id, type } = req.body;
+
+    if (!id || !type) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "id and type are required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid ID format",
+      });
+    }
+
+    let Model;
+    let populateOptions = [];
+    let unSelectFields = ""; // ⬅️ هنا هنحدد الفيلدز
+
+    switch (type) {
+      case "Post":
+        Model = Post;
+        unSelectFields = "-createdAt -updatedAt -__v -userId";
+        populateOptions = [
+          { path: "areaId", select: `name.${lang}` },
+          { path: "cityId", select: `name.${lang}` },
+        ];
+        break;
+
+      case "ShowRoomPost":
+        Model = ShowRoomPost;
+        unSelectFields = "-postNumber -createdAt -updatedAt -__v -showroomId";
+        populateOptions = [
+          { path: "cityId", select: `name.${lang}` },
+          { path: "carNameId", select: `carName.${lang}` },
+          { path: "carModelId", select: `model.${lang}` },
+          { path: "carTypeId", select: `type.${lang}` },
+          { path: "carBodyId", select: `name.${lang}` },
+          { path: "cylindersId", select: "name" },
+          { path: "carConditionId", select: `name.${lang}` },
+          { path: "advantages", select: `name.${lang}` },
+          { path: "deliveryOptionId", select: `name.${lang}` },
+          { path: "transmissionTypeId", select: `name.${lang}` },
+          { path: "fuelTypeId", select: `name.${lang}` },
+        ];
+        break;
+
+      case "Search":
+        Model = Search;
+        unSelectFields = "-status -createdAt -updatedAt -__v -userId";
+        populateOptions = [{ path: "cityId", select: `name.${lang}` }];
+        break;
+
+      case "Tweet":
+        Model = Tweet;
+        unSelectFields = "-createdAt -__v -likedBy -userId";
+        break;
+
+      case "Service":
+        Model = Service;
+        unSelectFields = "-status -createdAt -updatedAt -__v -centerId";
+        populateOptions = [{ path: "services", select: `name.${lang}` }];
+        break;
+
+      default:
+        return res.status(400).json({
+          status: false,
+          code: 400,
+          message: messages.invalidType[lang],
+        });
+    }
+
+    // ✅ Fetch entity
+    const entity = await Model.findById(id)
+      .select(unSelectFields)
+      .populate(populateOptions)
+      .lean();
+
+    if (!entity) {
+      return res.status(404).json({
+        status: false,
+        code: 404,
+        message: messages.notFound[lang],
+      });
+    }
+
+    // ✅ Helper to rename and extract localized fields
+    // 🧩 دالة عامة لإعادة تسمية الفيلد واستخراج الاسم المناسب منه
+    const renameAndExtract = (entity, field, newKey, lang) => {
+      const obj = entity[field];
+      if (!obj) return;
+
+      // 🔹 لو الفيلد فيه name.en أو name.ar
+      if (obj?.name?.[lang]) {
+        entity[newKey] = obj.name[lang];
+      }
+      // 🔹 لو الفيلد فيه carName.en
+      else if (obj?.carName?.[lang]) {
+        entity[newKey] = obj.carName[lang];
+      }
+      // 🔹 لو الفيلد فيه model.en
+      else if (obj?.model?.[lang]) {
+        entity[newKey] = obj.model[lang];
+      }
+      // 🔹 لو الفيلد فيه type.en
+      else if (obj?.type?.[lang]) {
+        entity[newKey] = obj.type[lang];
+      }
+      // 🔹 لو الفيلد فيه قيمة name عادية (رقم أو نص)
+      else if (obj?.name) {
+        entity[newKey] = obj.name;
+      }
+
+      // 🧹 نحذف الفيلد القديم بعد الاستخراج
+      delete entity[field];
+    };
+
+
+    // ✅ Rename populated fields to friendly names
+    renameAndExtract(entity, "areaId", "area", lang);
+    renameAndExtract(entity, "cityId", "city", lang);
+    renameAndExtract(entity, "carBodyId", "carBody", lang);
+    renameAndExtract(entity, "cylindersId", "cylinders", lang);
+    renameAndExtract(entity, "carConditionId", "carCondition", lang);
+    renameAndExtract(entity, "carNameId", "carName", lang);
+    renameAndExtract(entity, "carModelId", "carModel", lang);
+    renameAndExtract(entity, "carTypeId", "carType", lang);
+    renameAndExtract(entity, "deliveryOptionId", "deliveryOption", lang);
+    renameAndExtract(entity, "transmissionTypeId", "transmissionType", lang);
+    renameAndExtract(entity, "fuelTypeId", "fuelType", lang);
+
+
+
+    // ✅ Handle array fields (e.g. advantages)
+    if (Array.isArray(entity.advantages)) {
+      entity.advantages = entity.advantages.map(
+        (a) => a.name?.[lang] || a.name || ""
+      );
+    }
+    if (Array.isArray(entity.services)) {
+      entity.services = entity.services.map(
+        (a) => a.name?.[lang] || a.name || ""
+      );
+    }
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      message:
+        lang === "en"
+          ? `${type} retrieved successfully`
+          : `${type} تم استرجاعه بنجاح`,
+      data: entity,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
 
 
@@ -1074,5 +1239,6 @@ module.exports = {
   getProfilePosts,
   deleteProfilePost,
   updateEntityByType,
-  updateCreatedAt
+  updateCreatedAt,
+  getEntityByTypeAndId
 }

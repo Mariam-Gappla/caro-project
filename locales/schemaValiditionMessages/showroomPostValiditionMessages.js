@@ -30,6 +30,12 @@ const messages = {
     discountedPriceNotAllowed: {
       "any.unknown": "Discounted price is not allowed when discount is false"
     },
+    fuelCapacity: {
+      "any.required": "Fuel capacity is required.",
+      "number.base": "Fuel capacity must be a number.",
+      "number.min": "Fuel capacity must be at least 1 liter.",
+      "number.max": "Fuel capacity cannot exceed 200 liters.",
+    },
   },
 
   ar: {
@@ -62,6 +68,12 @@ const messages = {
     },
     discountedPriceNotAllowed: {
       "any.unknown": "لا يمكن إدخال سعر بعد الخصم إذا لم يكن هناك تخفيض"
+    },
+    fuelCapacity: {
+      "any.required": "سعة البنزين مطلوبة",
+      "number.base": "سعة البنزين يجب أن تكون رقمًا",
+      "number.min": "سعة البنزين يجب ألا تقل عن 1 لتر",
+      "number.max": "سعة البنزين لا يمكن أن تتجاوز 200 لتر",
     },
   },
 };

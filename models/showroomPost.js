@@ -26,7 +26,8 @@ discount:{type:Boolean,required:true},
 financing:{type:Boolean,required:true},
 price:{type:Number,required:true},
 discountedPrice:{type:Number},
-postNumber:{type:Number,required:true}
+postNumber:{type:Number,required:true},
+fuelCapacity:{type:Number,required:true}
 },{timestamps:true});
 const showroomPosts = mongoose.model("ShowRoomPosts", showroomPostsSchema);
 module.exports = showroomPosts;
