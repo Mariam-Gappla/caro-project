@@ -12,11 +12,14 @@ const addComment = async (req, res, next) => {
         message: lang === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required'
       });
     }
-    await CenterComment.create({ entityType, content, entityId, userId });
+    const comment = await CenterComment.create({ entityType, content, entityId, userId });
     res.status(200).send({
       status: true,
       code: 200,
-      message: lang == "en" ? 'Comment added successfully' : 'تم إضافة التعليق بنجاح'
+      message: lang == "en" ? 'Comment added successfully' : 'تم إضافة التعليق بنجاح',
+      data: {
+        id: comment._id
+      }
     });
   } catch (error) {
     next(error);

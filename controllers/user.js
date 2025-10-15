@@ -342,12 +342,7 @@ const login = async (req, res, next) => {
       const followers = await CenterFollower.find({ centerId: existUser._id });
       const favorite = await Favorite.find({ userId: existUser._id, entityType: "User" });
       let ratings;
-      if (existUser.isProvider) {
-        ratings = await RatingCenter.find({ centerId: existUser._id });
-      }
-      else {
-        ratings = await RatingCenter.find({ userId: existUser._id });
-      }
+      ratings = await RatingCenter.find({ centerId: existUser._id });
       const allRatings = ratings.map(r => r.rating);
       const avgRating =
         allRatings.length > 0

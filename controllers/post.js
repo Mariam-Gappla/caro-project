@@ -675,14 +675,7 @@ const getProfilePosts = async (req, res, next) => {
     let serviceData = null;
     if (haveService) {
       let ratings;
-      console.log(user.isProvider);
-      if (user.isProvider) {
-        ratings = await RatingCenter.find({ centerId: user._id });
-      }
-      else
-      {
-        ratings = await RatingCenter.find({ userId: user._id });
-      }
+      ratings = await RatingCenter.find({ centerId: user._id });
       const allRatings = ratings.map(r => r.rating);
       const avgRating =
         allRatings.length > 0
@@ -692,6 +685,7 @@ const getProfilePosts = async (req, res, next) => {
 
       serviceData = {
         username: user.username,
+        createdAt:user.createdAt,
         details: user.details || "",
         subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
         city: user.cityId?.name?.[lang] || "",
@@ -833,9 +827,10 @@ const deleteProfilePost = async (req, res, next) => {
 };
 const updateEntityByType = async (req, res, next) => {
   try {
-    const { type, id } = req.body;
+    const { type, id } = req.query;
     const lang = req.headers["accept-language"] || "en";
     const userId = req.user.id;
+    const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
     let Model;
     switch (type) {
@@ -855,7 +850,7 @@ const updateEntityByType = async (req, res, next) => {
         Model = Search;
         break;
       default:
-        return res.status(400).json({
+        return res.status(400).send({
           success: false,
           message:
             lang === "ar"
@@ -873,12 +868,17 @@ const updateEntityByType = async (req, res, next) => {
       });
     }
 
-    // تحقق من ملكية المستخدم
-    const ownerId =
-      type === "Service"
-        ? existingDoc.centerId?.toString()
-        : existingDoc.userId?.toString();
+    // ✅ تحديد المالك حسب نوع الـ entity
+    let ownerId;
+    if (type === "Service") {
+      ownerId = existingDoc.centerId?.toString();
+    } else if (type === "ShowRoomPost") {
+      ownerId = existingDoc.showroomId?.toString();
+    } else {
+      ownerId = existingDoc.userId?.toString();
+    }
 
+    // تحقق من الملكية
     if (ownerId !== userId.toString()) {
       return res.status(403).json({
         success: false,
@@ -889,7 +889,7 @@ const updateEntityByType = async (req, res, next) => {
       });
     }
 
-    // معالجة الصور
+    // ✅ معالجة الصور
     let newImages = [];
 
     if (req.files && req.files.length > 0) {
@@ -912,18 +912,15 @@ const updateEntityByType = async (req, res, next) => {
       }
 
       // حفظ الصور الجديدة
-      newImages = req.files.map((file) => saveImage(file));
+      newImages = req.files.map((file) => BASE_URL + saveImage(file));
     }
 
-    // البيانات الجديدة من المستخدم
+    // ✅ تحديث البيانات
     const updatedData = { ...req.body };
 
-    // لو فيه صور جديدة نحدّثها
     if (req.files && req.files.length > 0) {
       if (type === "Service") {
-        updatedData.products = req.files.map((file) => ({
-          image: saveImage(file),
-        }));
+        updatedData.products = req.files.map((file) => BASE_URL + saveImage(file));
       } else if (type === "Tweet") {
         updatedData.images = newImages[0]; // لأنها مش Array
       } else {
@@ -936,9 +933,7 @@ const updateEntityByType = async (req, res, next) => {
       else updatedData.images = existingDoc.images;
     }
 
-    await Model.findByIdAndUpdate(id, updatedData, {
-      new: true,
-    });
+    await Model.findByIdAndUpdate(id, updatedData, { new: true });
 
     return res.status(200).send({
       status: true,
@@ -953,6 +948,117 @@ const updateEntityByType = async (req, res, next) => {
     next(err);
   }
 };
+const updateCreatedAt = async (req, res, next) => {
+  try {
+    console.log("updated");
+    const { id, type } = req.body;
+    const userId = req.user.id;
+
+    if (!id || !type) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: "id and type are required",
+      });
+    }
+
+    let Model;
+    let ownerField;
+
+    switch (type) {
+      case "Post":
+        Model = Post;
+        ownerField = "userId";
+        break;
+      case "ShowRoomPost":
+        Model = ShowRoomPost;
+        ownerField = "showroomId";
+        break;
+      case "Search":
+        Model = Search;
+        ownerField = "userId";
+        break;
+      case "Tweet":
+        Model = Tweet;
+        ownerField = "userId";
+        break;
+      case "Service":
+        Model = User;
+        break;
+      default:
+        return res.status(400).json({
+          status: false,
+          code: 400,
+          message: "Invalid type",
+        });
+    }
+
+    // ✅ Service update
+    if (type === "Service") {
+      if (id !== userId.toString()) {
+        return res.status(403).send({
+          status: false,
+          code: 403,
+          message: "You are not authorized to update this service",
+        });
+      }
+
+      await User.collection.updateOne(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $set: { createdAt: new Date() } }
+      );
+
+      return res.status(200).send({
+        status: true,
+        code: 200,
+        message: "Service updated successfully",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: false,
+        code: 400,
+        message: "Invalid ID format",
+      });
+    }
+
+    const entity = await Model.findById(id);
+    if (!entity) {
+      return res.status(404).json({
+        status: false,
+        code: 404,
+        message: "Entity not found",
+      });
+    }
+
+    if (entity[ownerField].toString() !== userId.toString()) {
+      return res.status(403).json({
+        status: false,
+        code: 403,
+        message: "You are not authorized to update this entity",
+      });
+    }
+
+    // ✅ تحديث التاريخ فعليًا (بـ MongoDB مباشرة)
+    await Model.collection.updateOne(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $set: { createdAt: new Date() } }
+    );
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: `${type} updated successfully`,
+    });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+};
+
+
+
 
 
 
@@ -967,5 +1073,6 @@ module.exports = {
   makeSearchByTitle,
   getProfilePosts,
   deleteProfilePost,
-  updateEntityByType
+  updateEntityByType,
+  updateCreatedAt
 }
