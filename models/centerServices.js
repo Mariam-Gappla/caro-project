@@ -21,17 +21,22 @@ const centerServiceSchema = mongoose.Schema({
     location: {
         lat: {
             type: Number,
-            required:true,
+            required: true,
         },
         long: {
             type: Number,
-            required:true
+            required: true
         }
     },
     video: {
         type: String,
-        required:true
-    }
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'refused'],
+        default: 'pending',
+    },
 })
 const centerService = mongoose.model('CenterService', centerServiceSchema);
 module.exports = centerService;

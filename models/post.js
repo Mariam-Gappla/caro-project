@@ -37,7 +37,12 @@ const postSchema = new mongoose.Schema({
     },
     video: {
         type: String,
-    }
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'refused'],
+      default: 'pending',
+    },
 }, { timestamps: true });
 postSchema.index({ location: "2dsphere" });
 module.exports = mongoose.model("Post", postSchema);

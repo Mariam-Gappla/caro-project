@@ -22,6 +22,10 @@ const tweetSchema = new mongoose.Schema({
   images: {
     type: String
   },
+  status:{
+    type: String,
+    default:"accepted"
+  },
   createdAt: {
     type: Date,
     default: Date.now

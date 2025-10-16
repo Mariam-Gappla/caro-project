@@ -59,6 +59,8 @@ const addPost = async (req, res, next) => {
       type: "Point",
       coordinates: [parseFloat(long), parseFloat(lat)] // [longitude, latitude]
     };
+    delete req.body.lat;
+    delete req.body.long;
 
 
     if (req.body.contactType) {
@@ -1219,6 +1221,46 @@ const getEntityByTypeAndId = async (req, res, next) => {
     next(err);
   }
 };
+const getNumberOfPostsWithStatus = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const lang = req.headers["accept-language"] || "en";
+    //refused
+    const refusedpostsCount = await Post.countDocuments({ userId, status: "refused" });
+    const refusedshowroomPostsCount = await ShowRoomPost.countDocuments({ showroomId: userId, status: "refused" });
+    const refusedsearchCount = await Search.countDocuments({ userId, status: "refused" });
+    const refusedserviceCount = await Service.countDocuments({ centerId: userId, status: "refused" });
+    const refusedPosts = refusedpostsCount + refusedshowroomPostsCount + refusedsearchCount + refusedserviceCount;
+    //accepted
+    const tweetCount = await Tweet.countDocuments({ userId, status: "accepted" });
+    const acceptedpostsCount = await Post.countDocuments({ userId, status: "accepted" });
+    const acceptedshowroomPostsCount = await ShowRoomPost.countDocuments({ showroomId: userId, status: "accepted" });
+    const acceptedsearchCount = await Search.countDocuments({ userId, status: "accepted" });
+    const acceptedserviceCount = await Service.countDocuments({ centerId: userId, status: "accepted" });
+    const acceptedPosts = acceptedpostsCount + acceptedshowroomPostsCount + acceptedsearchCount + acceptedserviceCount + tweetCount;
+    //pending
+    const pendingpostsCount = await Post.countDocuments({ userId, status: "pending" });
+    const pendingshowroomPostsCount = await ShowRoomPost.countDocuments({ showroomId: userId, status: "pending" });
+    const pendingsearchCount = await Search.countDocuments({ userId, status: "pending" });
+    const pendingserviceCount = await Service.countDocuments({ centerId: userId, status: "pending" });
+    const pendingPosts = pendingpostsCount + pendingshowroomPostsCount + pendingsearchCount + pendingserviceCount;
+
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en" ? "Counts retrieved successfully" : "تم استرجاع الأعداد بنجاح",
+      data: {
+        acceptedPosts: acceptedPosts,
+        refusedPosts: refusedPosts,
+        pendingPosts: pendingPosts,
+      }
+    })
+  }
+  catch (err) {
+    next(err);
+  }
+}
 
 
 
@@ -1240,5 +1282,6 @@ module.exports = {
   deleteProfilePost,
   updateEntityByType,
   updateCreatedAt,
-  getEntityByTypeAndId
+  getEntityByTypeAndId,
+  getNumberOfPostsWithStatus,
 }
