@@ -81,6 +81,9 @@ const userChatRoutes=require("./routes/userChats.js");
 const slavgePostRoutes=require("./routes/slavgePostroutes.js");
 const advantagesRoutes=require("./routes/advantagesroutes.js");
 const slavgeServiceRoutes=require("./routes/slavgeServiceroutes.js");
+const membershipRoutes=require("./routes/membershiproutes.js");
+const packageRoutes=require("./routes/packageroutes.js");
+const faqRoutes=require("./routes/faqroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -182,7 +185,10 @@ app.use("/reelreply",reelreplyroutes);
 app.use("/chat",userChatRoutes);
 app.use("/slavgePost",slavgePostRoutes);
 app.use("/advantages",advantagesRoutes);
-app.use("/slavgeService",slavgeServiceRoutes)
+app.use("/slavgeService",slavgeServiceRoutes);
+app.use("/membership",membershipRoutes);
+app.use("/packages",packageRoutes);
+app.use("/faq",faqRoutes);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

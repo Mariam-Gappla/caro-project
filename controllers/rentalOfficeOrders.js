@@ -949,6 +949,18 @@ const endOrder = async (req, res, next) => {
         next(error)
     }
 }
+const getOrdersForProfile= async (req,res,next)=>{
+    try
+    {
+        const lang = req.headers['accept-language'] || 'en';
+        const userId=req.user.id;
+
+    }
+    catch(err)
+    {
+        next(err)
+    }
+}
 
 
 module.exports = {
@@ -962,7 +974,8 @@ module.exports = {
     getBookedDays,
     getOrdersByRentalOffice,
     endOrder,
-    getReportData
+    getReportData,
+    getOrdersForProfile
 }
 
 

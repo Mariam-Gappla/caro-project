@@ -69,7 +69,11 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
     modelId: Joi.string().required().messages({
       "any.required": messages.modelId.required,
       "string.base": messages.modelId.string,
-    })
+    }),
+    priceDay: {
+      "any.required": messages.priceDay.required,
+      "number.base": messages.modelId.number,
+    }
   });
 }
 const rentToOwnSchema = (lang = "en") => {
@@ -219,13 +223,14 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
         'string.uri': 'كل عنصر في imagesToDelete يجب أن يكون رابطًا صحيحًا.'
       }),
     nameId: Joi.string().required().messages({
-      "any.required": messages.nameId.required,
       "string.base": messages.nameId.string,
     }),
     modelId: Joi.string().required().messages({
-      "any.required": messages.modelId.required,
       "string.base": messages.modelId.string,
-    })
+    }),
+    priceDay: {
+      "number.base": messages.priceDay.number,
+    }
   });
 }
 const rentToOwnUpdateSchema = (lang = "en") => {

@@ -507,6 +507,7 @@ const getProfilePosts = async (req, res, next) => {
           select: "username image status phone categoryCenterId",
         })
         .populate("cityId", `name.${lang}`)
+        .populate("mainCategoryId", `name.${lang}`)
         .lean(),
 
       ShowRoomPost.find({ showroomId: userId })
@@ -623,8 +624,10 @@ const getProfilePosts = async (req, res, next) => {
         return {
           id: post._id,
           type,
+          category:post.mainCategoryId?.name?.[lang] || null,
           title: post.title,
           price: post.price,
+          status: post.status || null,
           images: post.images || [],
           createdAt: post.createdAt,
           city: post.cityId?.name?.[lang] || "",
@@ -688,6 +691,7 @@ const getProfilePosts = async (req, res, next) => {
       serviceData = {
         username: user.username,
         createdAt: user.createdAt,
+        status:haveService.status,
         details: user.details || "",
         subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
         city: user.cityId?.name?.[lang] || "",

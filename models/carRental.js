@@ -13,6 +13,7 @@ const carRentalSchema = new mongoose.Schema({
   ownershipPeriod:{type:String},
   pricePerFreeKilometer: { type: Number}, 
   pricePerExtraKilometer: { type: Number},
+  priceDay:{type:Number},
   city: { type: String, required: true },
   area: { type: String, required: true },
   deliveryOption: { type: Boolean, default: false },      

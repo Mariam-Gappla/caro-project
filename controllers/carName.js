@@ -1,4 +1,5 @@
-const CarName = require("../models/carName")
+const CarName = require("../models/carName");
+const {saveImage}=require("../configration/saveImage");
 const addName = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -11,9 +12,20 @@ const addName = async (req, res, next) => {
         message: lang == "ar" ? "Please provide car name in both languages" : "من فضلك دخل اسم العربيه باللغتيم العربيه والانجليزيه"
       });
     }
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "الصورة مطلوبة" : "Image is required"
+      });
+    }
+    let imageUrl = saveImage(file);
+    imageUrl = `${process.env.BASE_URL}${imageUrl}`;
 
     await CarName.create({
-      carName: { en: name_en, ar: name_ar }
+      carName: { en: name_en, ar: name_ar },
+      image:imageUrl
     });
     return res.send({
       status: true,
@@ -34,7 +46,8 @@ const getNames = async (req, res, next) => {
     // تغيير شكل النتائج
     const names = rawNames.map((n) => ({
       id: n._id,
-      text: lang === 'ar' ? n.carName.ar : n.carName.en
+      text: lang === 'ar' ? n.carName.ar : n.carName.en,
+      image:n.image
     }));
 
     return res.send({

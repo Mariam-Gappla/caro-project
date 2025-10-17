@@ -73,6 +73,10 @@ const messages = {
       number: "Final payment must be a number",
       required: "Final payment is required",
     },
+    priceDay: {
+      number: "Price day must be a number",
+      required: "Price day is required",
+    }
 
   },
 
@@ -150,6 +154,10 @@ const messages = {
       number: "الدفعة النهائية يجب أن تكون رقمًا",
       required: "الدفعة النهائية مطلوبة",
     },
+    priceDay: {
+      number: "السعر باليوم يجب أن تكون رقمًا",
+      required: "السعر باليوم النهائية مطلوبة",
+    }
 
   }
 };

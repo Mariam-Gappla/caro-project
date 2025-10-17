@@ -12,7 +12,6 @@ const getReels = async (req, res, next) => {
 
     // نجيب IDs بتاعة الريلز
     const reelIds = reels.map((r) => r._id);
-
     // نجيب التعليقات المرتبطة بالريلز
     const comments = await ReelComment.find({ reelId: { $in: reelIds } });
     const commentIds = comments.map((c) => c._id);
@@ -57,9 +56,11 @@ const getReels = async (req, res, next) => {
           description: rel.discription,
           video: rel.video,
           likes: rel.likedBy.length,
+          isLiked: rel.likedBy.includes(userId),
           totalCommentsAndReplies: counts.comments + counts.replies,
           shareCount:rel.shareCount,
           userData: {
+            id: rel.createdBy._id,
             username: rel.createdBy.username,
             image: rel.createdBy.image,
             status: rel.createdBy.status,
