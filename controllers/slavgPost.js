@@ -1,5 +1,5 @@
 const SlavagePost = require("../models/slavgePost");
-const {saveImage} = require("../configration/saveImage");
+const { saveImage } = require("../configration/saveImage");
 const salvagePostSchema = require("../validation/postSlavgeValidition");
 const addPost = async (req, res, next) => {
     try {
@@ -64,6 +64,22 @@ const addPost = async (req, res, next) => {
         next(err)
     }
 }
+const endPost = async (req, res, next) => {
+    try {
+        const lang = req.headers['accept-language'] || 'en';
+        const postId = req.params.id;
+       await SlavagePost.findOne({ _id: postId, ended: true });
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message: lang == "en" ? "order ended succesfully" : "تم انهاء الاوردر بنجاح"
+        })
+    }
+    catch (error) {
+        next(error)
+    }
+}
 module.exports = {
-    addPost
+    addPost,
+    endPost
 }

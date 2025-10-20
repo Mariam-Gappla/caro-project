@@ -1,10 +1,12 @@
 const db = require("../configration/firebase");
 const User = require("../models/user");
+const { sendNotification } = require("../configration/firebase.js");
 const addMessage = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const { senderId, receiverId, text } = req.body;
-
+        const receiver = await User.findById(req.body.receiverId);
+        const sender = await User.findById(req.body.senderId);
         if (!senderId || !receiverId || !text) {
             return res.status(400).send({
                 status: false,
@@ -40,6 +42,19 @@ const addMessage = async (req, res, next) => {
         };
 
         await db.ref().update(updates);
+        // 🔔 إرسال إشعار للمستقبل
+        await sendNotification({
+            target: receiver,
+            targetType: "User",
+            titleAr: `رسالة جديدة من ${sender.username}`,
+            titleEn: `New message from ${sender.username}`,
+            messageAr:
+                text.length > 50
+                    ? `${text.slice(0, 50)}...`
+                    : text,
+            lang: lang, // لو عندك حقل لغة للمستخدم
+            actionType: "message",
+        });
 
         res.status(200).send({
             code: 200,
@@ -164,54 +179,54 @@ const getMessagesBetweenTwoUsers = async (req, res, next) => {
     }
 }
 const markConversationAsRead = async (req, res, next) => {
-  try {
-    const { userId, otherUserId } = req.body; 
-    // userId = اللي بيفتح المحادثة
-    // otherUserId = الطرف التاني
+    try {
+        const { userId, otherUserId } = req.body;
+        // userId = اللي بيفتح المحادثة
+        // otherUserId = الطرف التاني
 
-    // نفس طريقة بناء conversationId
-    const conversationId =
-      userId < otherUserId
-        ? `${userId}_${otherUserId}`
-        : `${otherUserId}_${userId}`;
+        // نفس طريقة بناء conversationId
+        const conversationId =
+            userId < otherUserId
+                ? `${userId}_${otherUserId}`
+                : `${otherUserId}_${userId}`;
 
-    const messagesRef = db.ref(`messages/${conversationId}`);
+        const messagesRef = db.ref(`messages/${conversationId}`);
 
-    // نجيب كل الرسائل اللي مستقبلها userId
-    const snapshot = await messagesRef
-      .orderByChild("receiverId")
-      .equalTo(userId)
-      .once("value");
+        // نجيب كل الرسائل اللي مستقبلها userId
+        const snapshot = await messagesRef
+            .orderByChild("receiverId")
+            .equalTo(userId)
+            .once("value");
 
-    if (!snapshot.exists()) {
-      return res.send({ 
-        code:400,
-        status:false,
-        message: "No messages to mark as read" 
-    });
+        if (!snapshot.exists()) {
+            return res.send({
+                code: 400,
+                status: false,
+                message: "No messages to mark as read"
+            });
+        }
+
+        const updates = {};
+        snapshot.forEach((msgSnap) => {
+            const msg = msgSnap.val();
+            if (!msg.isRead) {
+                updates[`${msgSnap.key}/isRead`] = true;
+            }
+        });
+
+        // لو فيه رسائل لازم نحدثها
+        if (Object.keys(updates).length > 0) {
+            await messagesRef.update(updates);
+        }
+
+        res.send({
+            code: 200,
+            status: true,
+            message: "Messages marked as read"
+        });
+    } catch (err) {
+        next(err);
     }
-
-    const updates = {};
-    snapshot.forEach((msgSnap) => {
-      const msg = msgSnap.val();
-      if (!msg.isRead) {
-        updates[`${msgSnap.key}/isRead`] = true;
-      }
-    });
-
-    // لو فيه رسائل لازم نحدثها
-    if (Object.keys(updates).length > 0) {
-      await messagesRef.update(updates);
-    }
-
-    res.send({ 
-        code:200,
-        status:true,
-        message: "Messages marked as read" 
-    });
-  } catch (err) {
-    next(err);
-  }
 };
 
 module.exports = {

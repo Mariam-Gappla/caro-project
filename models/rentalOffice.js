@@ -43,6 +43,9 @@ const rentalOfficeSchema = new mongoose.Schema({
     details: {
         type: String,
     },
+    fcmToken: {
+        type: String
+    },
     createdAt: { type: Date, default: Date.now },
 });
 rentalOfficeSchema.index({ location: '2dsphere' });

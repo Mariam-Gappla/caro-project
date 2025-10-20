@@ -1,6 +1,8 @@
 const Wallet = require("../models/wallet.js");
 const Transaction = require("../models/transaction.js");
 const getNextOrderNumber = require("../controllers/counter.js");
+const {sendNotification}=require("../configration/firebase.js");
+const User = require("../models/user.js");
 /*
 const createOrder = async (req, res, next) => {
   try {
@@ -59,8 +61,8 @@ const deposit = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const userId = req.user.id;
-    const { amount, description,date,cvv,name,numberId } = req.body;
-
+    const { amount, description, date, cvv, name, numberId } = req.body;
+    const user = User.findById(userId);
     if (amount <= 0) {
       return res.status(400).send({
         code: 400,
@@ -89,17 +91,25 @@ const deposit = async (req, res, next) => {
       amount,
       description,
     });
-
+    await sendNotification({
+      target: user,
+      targetType: "User",
+      titleAr: "شحن المحفظة",
+      titleEn: "Wallet Deposit",
+      messageAr: `تم شحن محفظتك بمبلغ ${amount} بنجاح`,
+      messageEn: `Your wallet has been successfully deposited with amount ${amount}`,
+      actionType: "wallet",
+    });
     return res.status(200).send({
       status: true,
       code: 200,
       message: lang === "en"
         ? "Deposit successful"
         : "تم الشحن بنجاح",
-        data:{
-          referenceNumber: "TXN-20250925-12345",
-          balance:wallet.balance
-        }
+      data: {
+        referenceNumber: "TXN-20250925-12345",
+        balance: wallet.balance
+      }
     });
 
   } catch (error) {
@@ -133,7 +143,7 @@ const getBalance = async (req, res, next) => {
 const getTransactions = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
-    const userId= req.user.id;
+    const userId = req.user.id;
     const { page = 1, limit = 10 } = req.query;
 
     const wallet = await Wallet.findOne({ userId });
@@ -153,12 +163,12 @@ const getTransactions = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
-    const formatedTransactions=transactions.map((tran)=>{
+    const formatedTransactions = transactions.map((tran) => {
       return {
-        transactionNumber:tran.transactionId,
-        amount:tran.amount,
-        description:tran.description,
-        createdAt:tran.createdAt
+        transactionNumber: tran.transactionId,
+        amount: tran.amount,
+        description: tran.description,
+        createdAt: tran.createdAt
       }
     })
 
@@ -170,7 +180,7 @@ const getTransactions = async (req, res, next) => {
           ? "Transactions retrieved successfully"
           : "تم استرجاع المعاملات بنجاح",
       data: {
-        transactions:formatedTransactions,
+        transactions: formatedTransactions,
         pagination: {
           page: Number(page),
           totalPages,
@@ -185,7 +195,7 @@ const withdraw = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const { amount, description } = req.body;
-
+    const user = User.findById(userId);
     if (amount <= 0) {
       return res.status(400).json({ status: false, message: "Amount must be greater than 0" });
     }
@@ -207,7 +217,15 @@ const withdraw = async (req, res, next) => {
       amount,
       description,
     });
-
+    await sendNotification({
+      target: user,
+      targetType: "User",
+      titleAr: "خصم من المحفظة",
+      titleEn: "Wallet Withdrawal",
+      messageAr: `تم خصم مبلغ ${amount} من محفظتك بنجاح`,
+      messageEn: `An amount of ${amount} has been successfully deducted from your wallet`,
+      actionType: "wallet",
+    });
     return res.status(200).json({
       status: true,
       message: "Withdraw successful",

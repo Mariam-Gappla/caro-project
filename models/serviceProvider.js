@@ -15,13 +15,13 @@ const serviceProviderSchema = new mongoose.Schema({
         type: "string",
         required: true,
     },
-    status:{
-        type:String,
-        enum:["pending","accepted","refused"],
-        default:"pending"
+    status: {
+        type: String,
+        enum: ["pending", "accepted", "refused"],
+        default: "pending"
 
     },
-    location:{
+    location: {
         lat: {
             type: Number
         },
@@ -38,6 +38,9 @@ const serviceProviderSchema = new mongoose.Schema({
     image: {
         type: String,
         default: `${process.env.BASE_URL}images/rentalOffice.PNG`,
+    },
+    fcmToken: {
+        type: String
     },
     createdAt: { type: Date, default: Date.now },
 });

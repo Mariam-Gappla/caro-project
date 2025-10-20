@@ -8,11 +8,13 @@ const invoice = require("../models/invoice");
 const CarArchive = require("../models/carArchive");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
+const {sendNotification}=require("../configration/firebase.js");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
 const path = require("path");
 const mongoose = require('mongoose');
 const fs = require("fs");
+const User = require("../models/user");
 const addOrder = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -155,9 +157,23 @@ const addOrder = async (req, res, next) => {
         } else {
             orderData.startDate = req.body.startDate;
         }
-
         // ✅ إنشاء الطلب
-        await rentalOfficeOrders.create(orderData);
+        const order = await rentalOfficeOrders.create(orderData);
+        const Office = await rentalOfficeOrders.findById(rentalOfficeId);
+        const user = await User.findById(userId);
+        await sendNotification({
+            target: Office, // المقدم هو اللي جاله الطلب
+            targetType: "rentalOffice",
+            titleAr: "طلب جديد",
+            titleEn: "New Order",
+            messageAr: `لقد تلقيت طلبًا جديدًا من المستخدم ${user.username || 'عميل'}.`,
+            messageEn: `You have received a new order from ${user.username || 'a customer'}.`,
+            actionType: "Order",
+            orderId: order._id,
+            orderModel: "OrdersRentalOffice",
+            lang,
+        });
+
 
         return res.status(200).send({
             status: true,
@@ -168,7 +184,7 @@ const addOrder = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-};
+}
 const updateOrderStatuses = async (orders) => {
     const now = new Date();
 
@@ -195,7 +211,7 @@ const updateOrderStatuses = async (orders) => {
     });
 
     await Promise.all(updatePromises);
-};
+}
 const ordersForRentalOfficewithstatus = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
@@ -309,7 +325,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-};
+}
 const getOrdersStatisticsByWeekDay = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
@@ -601,7 +617,7 @@ const acceptorder = async (req, res, next) => {
                 });
             }
 
-           const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+            const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
 
             // نخلي المسار مطلق على السيرفر
             const saveDir = '/var/www/images';
@@ -636,6 +652,19 @@ const acceptorder = async (req, res, next) => {
                 { videoCar: fileUrl },
                 { new: true }
             );
+            const user = await User.findById(order.userId);
+            await sendNotification({
+                target: user, // المستخدم اللي قدم الطلب
+                targetType: "User",
+                titleAr: "تمت الموافقة على طلبك",
+                titleEn: "Your order has been approved",
+                messageAr: `تمت الموافقة على طلبك رقم ${order._id} من قبل ${user.username || 'مستخدم'}`,
+                messageEn: `Your order #${order._id} has been approved by ${user.username || 'the user'}`,
+                actionType: "order",
+                orderId: order._id,
+                orderModel: "OrdersRentalOffice", // أو OrdersRentalOffice حسب نوع الطلب
+                lang: lang, // لو المستخدم عنده لغة محفوظة
+            });
             return res.status(200).send({
                 status: true,
                 code: 200,
@@ -656,6 +685,19 @@ const acceptorder = async (req, res, next) => {
                     message: messages.order.notExist
                 });
             }
+            const user = await User.findById(order.userId);
+            await sendNotification({
+                target: user,
+                targetType: "User",
+                titleAr: "تم رفض طلبك",
+                titleEn: "Your order has been rejected",
+                messageAr: `تم رفض طلبك رقم ${order._id} من قبل ${provider.username || 'المستخدم'}`,
+                messageEn: `Your order #${order._id} has been rejected by ${provider.username || 'the user'}`,
+                actionType: "orderRejected",
+                orderId: order._id,
+                orderModel: "ServiceProviderOrder", // أو OrdersRentalOffice حسب نوع الطلب
+                lang: lang,
+            });
             return res.status(200).send({
                 status: true,
                 code: 200,
@@ -949,15 +991,13 @@ const endOrder = async (req, res, next) => {
         next(error)
     }
 }
-const getOrdersForProfile= async (req,res,next)=>{
-    try
-    {
+const getOrdersForProfile = async (req, res, next) => {
+    try {
         const lang = req.headers['accept-language'] || 'en';
-        const userId=req.user.id;
+        const userId = req.user.id;
 
     }
-    catch(err)
-    {
+    catch (err) {
         next(err)
     }
 }

@@ -401,6 +401,7 @@ const makeSearchByTitle = async (req, res, next) => {
           select: `name.${lang}`,
         },
       })
+      .populate("mainCategoryId", `name.${lang}`)
       .populate("cityId", `name.${lang}`)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -450,6 +451,7 @@ const makeSearchByTitle = async (req, res, next) => {
         images: post.images || [],
         title: post.title,
         price: post.price,
+        category: post.mainCategoryId?.name?.[lang] || "",
         city: post.cityId?.name?.[lang] || "",
         totalCommentsAndReplies: commentCount + replyCount,
         userData: post.userId
@@ -624,10 +626,10 @@ const getProfilePosts = async (req, res, next) => {
         return {
           id: post._id,
           type,
-          category:post.mainCategoryId?.name?.[lang] || null,
+          category: post.mainCategoryId?.name?.[lang] || null,
           title: post.title,
           price: post.price,
-          status: post.status || null,
+          status: post.status || "",
           images: post.images || [],
           createdAt: post.createdAt,
           city: post.cityId?.name?.[lang] || "",
@@ -691,7 +693,7 @@ const getProfilePosts = async (req, res, next) => {
       serviceData = {
         username: user.username,
         createdAt: user.createdAt,
-        status:haveService.status,
+        status: haveService.status,
         details: user.details || "",
         subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
         city: user.cityId?.name?.[lang] || "",
@@ -705,6 +707,10 @@ const getProfilePosts = async (req, res, next) => {
     res.status(200).send({
       status: true,
       code: 200,
+      message:
+        lang === "en"
+          ? "Posts retrieved successfully"
+          : "تم استرجاع المنشورات بنجاح",
       data: {
         service: serviceData || null,
         posts: paginated,

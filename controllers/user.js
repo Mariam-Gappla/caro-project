@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const Otp = require("../models/otp");
 const { registerSchema, loginSchema, registerProviderSchema } = require("../validation/registerAndLoginSchema");
 const userAsAutoSalvageSchema = require("../validation/userAsAutoSalvagesValidition");
+const Admin = require("../models/admin.js");
 const changePasswordSchema = require("../validation/changePasswordValidition");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
@@ -21,6 +22,7 @@ const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
 const Wallet = require("../models/wallet");
+const {sendNotification,sendNotificationToMany}=require("../configration/firebase.js");
 const { saveImage } = require("../configration/saveImage");
 const mongoose = require("mongoose");
 const register = async (req, res, next) => {
@@ -137,14 +139,13 @@ const login = async (req, res, next) => {
       });
     }
 
-    const { phone, password, role } = req.body;
+    const { phone, password, role,fcmToken } = req.body;
 
     // ----------------------
     // الحالة: Rental Office
     // ----------------------
     if (role === "rentalOffice") {
       let existRentalOffice = await rentalOffice.findOne({ phone });
-
       if (!existRentalOffice) {
         // المستخدم ماعندوش حساب rentalOffice لكن ممكن يكون عنده حساب user
         const existUser = await User.findOne({ phone });
@@ -172,6 +173,7 @@ const login = async (req, res, next) => {
           phone: existUser.phone,
           password: existUser.password // مفيش داعي لعمل hash لأنه متخزن فعلاً كـ hash
         });
+        await rentalOffice.findOneAndUpdate({phone:phone},{fcmToken:fcmToken})
       } else {
         // تحقق من الباسورد مباشرة
         const match = await bcrypt.compare(password, existRentalOffice.password);
@@ -183,7 +185,7 @@ const login = async (req, res, next) => {
           });
         }
       }
-
+      await rentalOffice.findOneAndUpdate({phone:phone},{fcmToken:fcmToken})
       const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
       return res.status(200).send({
         code: 200,
@@ -250,7 +252,7 @@ const login = async (req, res, next) => {
             { id: existServiceProvider._id, role: "serviceProvider" },
             process.env.JWT_SECRET
           );
-
+          await serviceProvider.findOneAndUpdate({phone:phone},{fcmToken:fcmToken})
           return res.status(200).send({
             code: 200,
             status: true,
@@ -289,7 +291,7 @@ const login = async (req, res, next) => {
           password: hashedPassword,
           phone
         });
-
+        await serviceProvider.findOneAndUpdate({phone:phone},{fcmToken:fcmToken});
         const otp = 1111;
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -298,7 +300,6 @@ const login = async (req, res, next) => {
           otp,
           expiresAt
         });
-
         return res.status(200).send({
           status: true,
           code: 200,
@@ -348,6 +349,7 @@ const login = async (req, res, next) => {
         allRatings.length > 0
           ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
           : 0;
+      await User.findOneAndUpdate({phone:phone},{fcmToken:fcmToken});
       return res.status(200).send({
         code: 200,
         status: true,
@@ -769,6 +771,20 @@ const userAsProvider = async (req, res, next) => {
       nationalId: req.body.nationalId,
       location: req.body.location // ✅ حفظ الموقع
     });
+    const admin = await Admin.find({}); // أو حسب نظامك لو عندك أكتر من أدمن
+
+    if (admin) {
+      await sendNotificationToMany({
+        target: admin,
+        targetType: "admin",
+        titleAr: "طلب تسجيل مقدم خدمة جديد",
+        titleEn: "New Service Provider Registration",
+        messageAr: `المستخدم ${existUser.username} قدّم طلب تسجيل كمقدم خدمة`,
+        messageEn: `User ${existUser.username} has submitted a request to become a service provider`,
+        lang: lang,
+        actionType: "provider",
+      });
+    }
 
     return res.status(200).send({
       status: true,
@@ -784,6 +800,8 @@ const acceptUserAsProvider = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const userId = req.params.userId;
+    const status = req.body.status; // accepted or refused
+
     const existUser = await User.findOne({ _id: userId });
     if (!existUser) {
       return res.status(400).send({
@@ -792,13 +810,42 @@ const acceptUserAsProvider = async (req, res, next) => {
         message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
       });
     }
-    await User.findByIdAndUpdate(userId, { isProvider: true });
-    return res.status(200).send({
-      status: true,
-      code: 200,
-      message: lang == "ar" ? "تم القبول بنجاح" : "accepted successfully"
-    });
+    if (status === "refused") {
+      await sendNotification({
+        target: existUser,
+        targetType: "User",
+        titleAr: "تم رفض طلبك",
+        titleEn: "Your account has been refused",
+        messageAr: "للأسف تم رفض طلبك كمقدم خدمة. يرجى مراجعة المعلومات المقدمة والمحاولة مرة أخرى",
+        messageEn: "Unfortunately, your request to become a service provider has been refused. Please review the provided information and try again.",
+        lang: lang,
+        actionType: "provider",
+      });
+      return res.status(200).send({
+        status: true,
+        code: 200,
+        message: lang == "ar" ? "تم رفض الطلب" : "request refused"
+      });
 
+    }
+    else if (status === "accepted") {
+      await User.findByIdAndUpdate(userId, { isProvider: true });
+      await sendNotification({
+        target: userId,
+        targetType: "User",
+        titleAr: "تمت الموافقة على حسابك ",
+        titleEn: "Your account has been approved",
+        messageAr: "تهانينا! تم قبولك كمقدم خدمة ويمكنك الآن استخدام التطبيق",
+        messageEn: "Congratulations! Your account has been approved and is now active.",
+        lang: lang,
+        actionType: "provider",
+      });
+      return res.status(200).send({
+        status: true,
+        code: 200,
+        message: lang == "ar" ? "تم القبول بنجاح" : "accepted successfully"
+      });
+    }
   }
   catch (err) {
     next(err)
@@ -1032,7 +1079,17 @@ const userAsAutoSalvage = async (req, res, next) => {
       service: req.body.service,
       cityId: req.body.cityId
     });
-
+    const admin = await Admin.find({});
+    await sendNotificationToMany({
+      target: admin,
+      targetType: "admin",
+      titleAr: "طلب تسجيل مقدم خدمة تشليح جديد",
+      titleEn: "New Scrap Service Provider Registration",
+      messageAr: `المستخدم ${existUser.username} قدّم طلب تسجيل كمقدم خدمة تشليح`,
+      messageEn: `User ${existUser.username} has submitted a request to become a scrap service provider`,
+      lang: lang,
+      actionType: "scrap_provider_request",
+    });
     return res.status(200).send({
       status: true,
       code: 200,
@@ -1110,5 +1167,5 @@ module.exports = {
   userAsProvider,
   getProfileDataForCenters,
   getUserData,
-  userAsAutoSalvage
+  userAsAutoSalvage,
 }

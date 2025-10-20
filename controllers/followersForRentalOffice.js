@@ -1,6 +1,7 @@
 const follower = require("../models/followersForRentalOffice");
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages");
+const { sendNotification } = require("../configration/firebase.js");
 const { followerSchemaValidation } = require("../validation/followersForRentalOfficeValidition")
 const addFollower = async (req, res, next) => {
     try {
@@ -36,6 +37,15 @@ const addFollower = async (req, res, next) => {
             });
         }
         const followers = await follower.create({ userId, rentalOfficeId });
+        await sendNotification({
+            target: existRentalOffice,
+            targetType: "rentalOffice",
+            titleAr: "متابع جديد",
+            titleEn: "New Follower",
+            messageAr: `${user.username} بدأ بمتابعتك`,
+            messageEn: `${user.username} started following you`,
+            actionType: "follow",
+        });
         res.status(200).send({
             status: true,
             code: 200,
@@ -46,7 +56,7 @@ const addFollower = async (req, res, next) => {
     }
     catch (err) {
         if (err.code === 11000) {
-             const lang = req.headers['accept-language'] || 'en';
+            const lang = req.headers['accept-language'] || 'en';
             return res.status(400).send({
                 status: false,
                 code: 400,

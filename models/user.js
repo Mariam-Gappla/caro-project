@@ -66,15 +66,15 @@ const userSchema = new mongoose.Schema({
       type: [Number], // [longitude, latitude]
     },
   },
-  service:{
-   type:mongoose.Schema.Types.ObjectId,
-   ref:"SlavgeService"
+  service: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SlavgeService"
   },
   brand: [{
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "CarName"
-}],
-  cityId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CarName"
+  }],
+  cityId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "City"
   },
@@ -84,7 +84,11 @@ const userSchema = new mongoose.Schema({
   isProvider: {
     type: Boolean,
     default: false
+  },
+  fcmToken: {
+    type: String
   }
+
 }, { timestamps: true });
 const User = mongoose.model("User", userSchema);
 userSchema.index({ location: "2dsphere" });

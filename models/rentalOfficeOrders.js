@@ -1,4 +1,3 @@
-const { required } = require('joi');
 const mongoose = require('mongoose');
 const rentalOfficeOrderSchema = new mongoose.Schema({
   userId: {

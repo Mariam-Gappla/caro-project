@@ -2,7 +2,8 @@ const { followerCenterSchema } = require("../validation/followerCenter");
 const User = require("../models/user");
 const follower = require("../models/followersForRentalOffice");
 const mongoose = require("mongoose");
-const CenterFollower = require("../models/followerCenter")
+const CenterFollower = require("../models/followerCenter");
+const {sendNotification}=require("../configration/firebase.js");
 const addFollowerCenter = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -60,7 +61,15 @@ const addFollowerCenter = async (req, res, next) => {
         userId: new mongoose.Types.ObjectId(userId),
         centerId: new mongoose.Types.ObjectId(centerId)
       });
-
+      await sendNotification({
+        target: center,
+        targetType: "User",
+        titleAr: "متابع جديد",
+        titleEn: "New Follower",
+        messageAr: `${user.username} بدأ بمتابعتك`,
+        messageEn: `${user.username} started following you`,
+        actionType: "follow",
+      });
       res.status(200).send({
         status: true,
         code: 200,

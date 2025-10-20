@@ -4,7 +4,8 @@ const User = require("../models/user");
 const providerRating = require("../models/providerRating");
 const orderRating = require("../models/ratingForOrder");
 const workSession = require("../models/workingSession");
-const serviceProvider = require("../models/serviceProvider");
+const ServiceProvider = require("../models/serviceProvider");
+const {sendNotification,sendNotificationToMany}=require("../configration/firebase.js");
 const winsh = require("../models/winsh");
 const getNextOrderNumber = require("../controllers/counter");
 const tire = require("../models/tire");
@@ -25,7 +26,7 @@ const saveImage = (file, folder = '/var/www/images') => {
 
   // الرابط اللي هيتخزن في الداتابيز
   return `/images/${fileName}`;
-};
+}
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371; // نصف قطر الأرض بالكيلومتر
@@ -39,7 +40,7 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
-};
+}
 const getOrdersbyServiceType = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -208,13 +209,14 @@ const getOrdersbyServiceType = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}
 const addWinchOrder = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const file = req.file;
+    const user = await User.findOne({ _id: userId });
     console.log("req.file", req.file);
     const image = file ? `${BASE_URL}/images/${file.filename}` : "";
     req.body.location = {
@@ -236,6 +238,7 @@ const addWinchOrder = async (req, res, next) => {
       image: image,
       userId: userId,
     };
+    const serviceProviders = await winsh.find({ serviceType: "winch", status: "accepted" });
 
     console.log("formatedData", formatedData);
 
@@ -252,7 +255,20 @@ const addWinchOrder = async (req, res, next) => {
     formatedData.image = BASE_URL + savedImagePath;
     formatedData.orderNumber = await getNextOrderNumber("order");
     console.log(formatedData)
-    await serviceProviderOrder.create(formatedData);
+    const order = await serviceProviderOrder.create(formatedData);
+    await sendNotificationToMany({
+      target: serviceProviders, // كائن مقدم الخدمة اللى جاله الأوردر
+      targetType: "serviceProvider",
+      titleAr: "طلب جديد",
+      titleEn: "New Order",
+      messageAr: `تم استلام طلب جديد من المستخدم ${user.username}.`,
+      messageEn: `You have received a new order from ${user.username}.`,
+      lang: lang,
+      actionType: "serviceProvider",
+      orderId: order._id,
+      orderModel: "ServiceProviderOrder", // حسب اسم الموديل عندك
+    });
+
     return res.status(200).send({
       status: true,
       code: 200,
@@ -261,10 +277,11 @@ const addWinchOrder = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}
 const addTireOrder = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const user = await User.findOne({ _id: userId });
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     const file = req.file;
@@ -294,7 +311,31 @@ const addTireOrder = async (req, res, next) => {
     formatedData.image = BASE_URL + savedImagePath;
     formatedData.orderNumber = await getNextOrderNumber("order");
     console.log(formatedData)
-    await serviceProviderOrder.create(formatedData);
+    const serviceProvidersIds = [];
+    let serviceProviders = [];
+    const order = await serviceProviderOrder.create(formatedData);
+    if (formatedData.serviceType === "battery Jumpstart") {
+      const batteryProviders = await tire.find({ serviceType: "battery Jumpstart", status: "accepted" });
+      serviceProviders.push(...batteryProviders);
+      serviceProvidersIds.push(...batteryProviders.map(sp => ({ _id: sp._id })));
+    }
+    else if (formatedData.serviceType === "tire Filling") {
+      const tireProviders = await tire.find({ serviceType: "tire Filling", status: "accepted" });
+      serviceProviders.push(...tireProviders);
+      serviceProvidersIds.push(...tireProviders.map(sp => ({ _id: sp._id })));
+    }
+    await sendNotificationToMany({
+      target: serviceProviders, // كائن مقدم الخدمة اللى جاله الأوردر
+      targetType: "serviceProvider",
+      titleAr: "طلب جديد",
+      titleEn: "New Order",
+      messageAr: `تم استلام طلب جديد من المستخدم ${user.username}.`,
+      messageEn: `You have received a new order from ${user.username}.`,
+      lang: lang,
+      actionType: "serviceProvider",
+      orderId: order._id,
+      orderModel: "ServiceProviderOrder", // حسب اسم الموديل عندك
+    });
     return res.status(200).json({
       status: true,
       code: 200,
@@ -329,10 +370,12 @@ const changeStatusForOrder = async (req, res, next) => {
     }
 
     const order = await serviceProviderOrder.findById(orderId);
+    const provider = await ServiceProvider.findOne({ _id: providerId });
+    const user = await User.findOne({ _id: order.userId });
     if (!order) {
-      return res.status(404).json({
+      return res.status(400).send({
         status: false,
-        code: 404,
+        code: 400,
         message: lang === 'ar' ? "الطلب غير موجود" : "Order not found"
       });
     }
@@ -346,7 +389,7 @@ const changeStatusForOrder = async (req, res, next) => {
       });
 
       if (activeOrder) {
-        return res.status(400).json({
+        return res.status(400).send({
           status: false,
           code: 400,
           message: lang === 'ar'
@@ -358,17 +401,39 @@ const changeStatusForOrder = async (req, res, next) => {
       order.status = "accepted";
       order.providerId = providerId;
       await order.save();
+      await sendNotification({
+        target: user, // المستخدم اللي قدم الطلب
+        targetType: "User",
+        titleAr: "تمت الموافقة على طلبك",
+        titleEn: "Your order has been approved",
+        messageAr: `تمت الموافقة على طلبك رقم ${order._id} من قبل ${provider.username || 'المقدم'}`,
+        messageEn: `Your order #${order._id} has been approved by ${provider.username || 'the provider'}`,
+        actionType: "order",
+        orderId: order._id,
+        orderModel: "ServiceProviderOrder", // أو OrdersRentalOffice حسب نوع الطلب
+        lang: lang, // لو المستخدم عنده لغة محفوظة
+      });
 
-      return res.status(200).json({
+      return res.status(200).send({
         status: true,
         code: 200,
         message: lang === 'ar' ? "تم قبول الطلب بنجاح" : "Order accepted successfully"
       });
     } else {
       if (status === "refused") {
-        order.status = "refused";
-        order.providerId = providerId;
-        await order.save();
+        await sendNotification({
+          target: user,
+          targetType: "User",
+          titleAr: "تم رفض طلبك",
+          titleEn: "Your order has been rejected",
+          messageAr: `تم رفض طلبك رقم ${order._id} من قبل ${provider.username || 'المقدم'}`,
+          messageEn: `Your order #${order._id} has been rejected by ${provider.username || 'the provider'}`,
+          actionType: "orderRejected",
+          orderId: order._id,
+          orderModel: "ServiceProviderOrder", // أو OrdersRentalOffice حسب نوع الطلب
+          lang: lang,
+        });
+
         return res.status(200).send({
           status: true,
           code: 200,
@@ -379,7 +444,7 @@ const changeStatusForOrder = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}
 const ordersAndProfit = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -416,7 +481,7 @@ const ordersAndProfit = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 const reportForProvider = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -504,7 +569,7 @@ const getOrdersByServiceProvider = async (req, res, next) => {
       status: "accepted",
       paymentStatus: paymentStatusFilter
     };
-   
+
     const totalOrders = await serviceProviderOrder.countDocuments(filter);
 
     const orders = await serviceProviderOrder
@@ -579,7 +644,7 @@ const getOrdersByServiceProvider = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 const getOrderById = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -655,7 +720,7 @@ const getOrderById = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 const endOrder = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
@@ -723,7 +788,7 @@ const endOrder = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}
 
 
 

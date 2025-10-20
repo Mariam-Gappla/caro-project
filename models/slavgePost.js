@@ -26,6 +26,10 @@ const salvagePostSchema = new mongoose.Schema(
                 required: true,
             },
         ],
+        ended:{
+          type:Boolean,
+          default:false,
+        },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
