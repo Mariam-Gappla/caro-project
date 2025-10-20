@@ -17,7 +17,6 @@ const addTweet = async (req, res, next) => {
       userId: id,
       ...req.body
     };
-
     // تحقق من البيانات النصية
     const { error } = tweetValidationSchema(lang).validate(data);
     if (error) {

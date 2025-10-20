@@ -67,8 +67,17 @@ const addPost = async (req, res, next) => {
 const endPost = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
+        const userId = req.user.id;
+        const post=await SlavagePost.findOne({ _id: req.params.id, userId: userId });
+        if (!post) {
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang == "en" ? "post not found" : "المنشور غير موجود"
+            })
+        }
         const postId = req.params.id;
-       await SlavagePost.findOne({ _id: postId, ended: true });
+       await SlavagePost.findOneAndUpdate({ _id: postId}, {ended: true });
         return res.status(200).send({
             status: true,
             code: 200,
