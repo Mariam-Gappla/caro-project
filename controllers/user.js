@@ -22,7 +22,7 @@ const Tire = require("../models/tire");
 const path = require("path");
 const fs = require("fs");
 const Wallet = require("../models/wallet");
-const {sendNotification,sendNotificationToMany}=require("../configration/firebase.js");
+const { sendNotification, sendNotificationToMany } = require("../configration/firebase.js");
 const { saveImage } = require("../configration/saveImage");
 const mongoose = require("mongoose");
 const register = async (req, res, next) => {
@@ -139,7 +139,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    const { phone, password, role,fcmToken } = req.body;
+    const { phone, password, role, fcmToken } = req.body;
 
     // ----------------------
     // الحالة: Rental Office
@@ -173,7 +173,7 @@ const login = async (req, res, next) => {
           phone: existUser.phone,
           password: existUser.password // مفيش داعي لعمل hash لأنه متخزن فعلاً كـ hash
         });
-        await rentalOffice.findOneAndUpdate({phone:phone},{fcmToken:fcmToken})
+        await rentalOffice.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken })
       } else {
         // تحقق من الباسورد مباشرة
         const match = await bcrypt.compare(password, existRentalOffice.password);
@@ -185,7 +185,7 @@ const login = async (req, res, next) => {
           });
         }
       }
-      await rentalOffice.findOneAndUpdate({phone:phone},{fcmToken:fcmToken})
+      await rentalOffice.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken })
       const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
       return res.status(200).send({
         code: 200,
@@ -252,7 +252,7 @@ const login = async (req, res, next) => {
             { id: existServiceProvider._id, role: "serviceProvider" },
             process.env.JWT_SECRET
           );
-          await serviceProvider.findOneAndUpdate({phone:phone},{fcmToken:fcmToken})
+          await serviceProvider.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken })
           return res.status(200).send({
             code: 200,
             status: true,
@@ -291,7 +291,7 @@ const login = async (req, res, next) => {
           password: hashedPassword,
           phone
         });
-        await serviceProvider.findOneAndUpdate({phone:phone},{fcmToken:fcmToken});
+        await serviceProvider.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken });
         const otp = 1111;
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -349,7 +349,7 @@ const login = async (req, res, next) => {
         allRatings.length > 0
           ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
           : 0;
-      await User.findOneAndUpdate({phone:phone},{fcmToken:fcmToken});
+      await User.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken });
       return res.status(200).send({
         code: 200,
         status: true,
@@ -654,6 +654,19 @@ const editProfile = async (req, res, next) => {
     if (req.file) {
       const file = req.file;
       const exist = await Model.findById(id);
+      if (exist && exist.image) {
+        try {
+          // شيل الـ BASE_URL + /images/ من بداية المسار
+          const imageName = exist.image.replace(`${BASE_URL}/images/`, "");
+          const oldPath = path.join("/var/www/images", imageName);
+
+          if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+          }
+        } catch (err) {
+          console.error("⚠️ Failed to delete old image:", err.message);
+        }
+      }
       const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
       fs.unlinkSync(path.join("/var/www/images", exist.image || '')); // حذف الصورة القديمة لو موجودة
       const url = saveImage(file);
