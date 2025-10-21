@@ -64,6 +64,16 @@ const rentalOfficeSchema = (lang = 'en') => {
                 'string.empty': msg.city.empty,
                 'any.required': msg.city.required
             }),
+        administrationNumber: Joi.string().required().messages({
+            'string.base': msg.administrationNumber.base,
+            'string.empty': msg.administrationNumber.empty,
+            'any.required': msg.administrationNumber.required
+        }),
+        employeeNumber: Joi.string().required().messages({
+            'string.base': msg.employeeNumber.base,
+            'string.empty': msg.employeeNumber.empty,
+            'any.required': msg.employeeNumber.required
+        }),
 
         details: Joi.string()
             .trim()

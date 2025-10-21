@@ -39,6 +39,16 @@ const messages = {
             min: 'التفاصيل يجب ألا تقل عن 10 أحرف',
             max: 'التفاصيل يجب ألا تتجاوز 1000 حرف',
             required: 'التفاصيل مطلوبة'
+        },
+        administrationNumber: {
+            base: 'رقم الإدارة يجب أن يكون نصًا',
+            empty: 'رقم الإدارة مطلوب',
+            required: 'رقم الإدارة مطلوب'
+        },
+        employeeNumber: {
+            base: 'رقم الموظف يجب أن يكون نصًا',
+            empty: 'رقم الموظف مطلوب',
+            required: 'رقم الموظف مطلوب'
         }
     },
 
@@ -82,6 +92,16 @@ const messages = {
             min: 'Details must be at least 10 characters long',
             max: 'Details must not exceed 1000 characters',
             required: 'Details are required'
+        },
+        administrationNumber: {
+            base: 'Administration number must be a string',
+            empty: 'Administration number is required',
+            required: 'Administration number is required'
+        },
+        employeeNumber: {
+            base: 'Employee number must be a string',
+            empty: 'Employee number is required',
+            required: 'Employee number is required'
         }
     }
 };
