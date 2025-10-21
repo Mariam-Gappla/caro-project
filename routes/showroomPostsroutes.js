@@ -6,7 +6,7 @@ router.post("/",upload.fields([
     { name:"images"},
     { name:"video"}
 ]), addShowroomPost);
-router.get("/posts:showroomId",getShowroomPosts)
+router.get("/posts/:showroomId",getShowroomPosts)
 router.get("/:id",getPostById)
 
 
