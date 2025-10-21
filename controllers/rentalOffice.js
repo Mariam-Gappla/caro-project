@@ -392,6 +392,8 @@ const rentalOfficeVerified = async (req, res, next) => {
       username: req.body.name,
       cityId: req.body.cityId,
       details: req.body.details,
+      administrationNumber: req.body.administrationNumber,
+      employeeNumber: req.body.employeeNumber,
       tradeRegisterNumber: req.body.tradeRegisterNumber,
       location: req.body.location // ✅ حفظ الموقع
     });
