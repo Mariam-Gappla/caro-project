@@ -43,6 +43,12 @@ const rentalOfficeSchema = new mongoose.Schema({
     details: {
         type: String,
     },
+    administrationNumber: {
+        type: String,
+    },
+    employeeNumber:{
+        type: String,
+    },
     fcmToken: {
         type: String
     },

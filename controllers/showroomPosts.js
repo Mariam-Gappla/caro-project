@@ -76,12 +76,13 @@ const getShowroomPosts = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const page = parseInt(req.query.page) || 1;
+    const showroomId = req.params.showroomId;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     // 🟢 فلترة ديناميكية
-    const filteration = {};
-
+    const filteration = {showroomId: showroomId};
+    
     if (req.query.cityId) {
       filteration.cityId = req.query.cityId; // ObjectId
     }
