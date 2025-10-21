@@ -608,6 +608,7 @@ const editProfile = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const id = req.user.id;
     const role = req.user.role;
+    const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
     let Model;
 
     switch (role) {
