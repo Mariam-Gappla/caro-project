@@ -667,8 +667,6 @@ const editProfile = async (req, res, next) => {
           console.error("⚠️ Failed to delete old image:", err.message);
         }
       }
-      const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-      fs.unlinkSync(path.join("/var/www/images", exist.image || '')); // حذف الصورة القديمة لو موجودة
       const url = saveImage(file);
       updateData.image = `${BASE_URL}${url}`;
     }
