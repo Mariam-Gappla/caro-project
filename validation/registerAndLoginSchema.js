@@ -52,6 +52,10 @@ const loginSchema = (lang = "en") => {
       'string.empty': messages.login.password.required,
       'any.required': messages.login.password.required
     }),
+    fcmToken: joi.string().required().messages({
+      'string.empty': messages.login.fcmToken.required,
+      'any.required': messages.login.fcmToken.required
+    }),
     role: joi.string()
       .valid("rentalOffice", "serviceProvider", "user")
       .required()

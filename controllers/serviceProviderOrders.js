@@ -579,7 +579,7 @@ const getOrdersByServiceProvider = async (req, res, next) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    const provider = await serviceProvider.findOne({ _id: providerId });
+    const provider = await ServiceProvider.findOne({ _id: providerId });
 
     if (!provider?.location?.lat || !provider?.location?.long) {
       return res.status(400).send({

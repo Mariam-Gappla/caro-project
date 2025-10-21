@@ -35,6 +35,9 @@ const messages = {
             role: {
                 required: "Role is required",
                 valid: "Role must be one of: rentalOffice, serviceProvider, or user"
+            },
+            fcmToken: {
+                required: "FCM Token is required",
             }
         }
     },
@@ -75,6 +78,9 @@ const messages = {
             role: {
                 required: "الدور مطلوب",
                 valid: "يجب أن يكون الدور أحد: rentalOffice أو serviceProvider أو user"
+            },
+            fcmToken: {
+                required: "رمز FCM مطلوب",
             }
         }
     }

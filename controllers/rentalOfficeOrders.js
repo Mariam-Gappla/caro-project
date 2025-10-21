@@ -8,7 +8,7 @@ const invoice = require("../models/invoice");
 const CarArchive = require("../models/carArchive");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
-const {sendNotification}=require("../configration/firebase.js");
+const { sendNotification } = require("../configration/firebase.js");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
 const path = require("path");
@@ -1001,6 +1001,127 @@ const getOrdersForProfile = async (req, res, next) => {
         next(err)
     }
 }
+const getAllUserOrders = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const lang = req.headers['accept-language'] || 'en';
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const messages = getMessages(lang);
+
+    const paymentStatusTranslations = {
+      en: { ended: "Ended", inProgress: "inProgress", paid: "Paid" },
+      ar: { ended: "منتهيه", inProgress: "بأنتظار الدفع", paid: "تم الدفع" }
+    };
+
+    // 🟢 1. طلبات المستخدم من مكتب التأجير
+    const rentalOrders = await rentalOfficeOrder.find({ userId }).lean();
+    updateOrderStatuses(rentalOrders);
+
+    const rentalFormatted = await Promise.all(
+      rentalOrders.map(async (order) => {
+        let carData = await CarRental.findById(order.carId).lean();
+        if (!carData) {
+          const archivedCar = await CarArchive.findOne({ originalCarId: order.carId }).lean();
+          if (archivedCar) carData = archivedCar;
+        }
+        if (!carData) return null;
+
+        const paymentStatus = order.ended ? "ended" : order.paymentStatus;
+        const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
+
+        // ✅ تفريق بين التأجير اليومي/الأسبوعي والتمليك
+        if (carData.rentalType === "weekly/daily") {
+          return {
+            id: order._id,
+            type: "rentalOffice",
+            rentalSubType: "dailyOrWeekly",
+            title: carData.title,
+            rentalType: carData.rentalType,
+            startDate: order.startDate,
+            endDate: order.endDate,
+            city: carData.city,
+            totalCost: order.totalCost,
+            paymentStatus,
+            paymentStatusText,
+            createdAt: order.createdAt
+          };
+        } else {
+          return {
+            id: order._id,
+            type: "rentalOffice",
+            rentalSubType: "ownership",
+            title: carData.title,
+            ownershipPeriod: carData.ownershipPeriod,
+            rentalType: carData.rentalType,
+            city: carData.city,
+            totalCost: order.totalCost,
+            paymentStatus,
+            paymentStatusText,
+            createdAt: order.createdAt
+          };
+        }
+      })
+    );
+
+    // 🟣 2. طلبات المستخدم من مزود الخدمة
+    const providerOrders = await serviceProviderOrder
+      .find({ userId })
+      .populate('providerId', 'username image')
+      .lean();
+
+    const providerFormatted = await Promise.all(
+      providerOrders.map(async (order) => {
+        const paymentStatusText =
+          paymentStatusTranslations[lang][order.paymentStatus] || "";
+
+        return {
+          id: order._id,
+          type: "serviceProvider",
+          serviceType: order.serviceType,
+          price: order.price,
+          paymentStatus: order.paymentStatus,
+          paymentStatusText,
+          createdAt: order.createdAt,
+          providerName: order.providerId?.username || "",
+          providerImage: order.providerId?.image || ""
+        };
+      })
+    );
+
+    // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
+    const allOrders = [...rentalFormatted, ...providerFormatted]
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // 🧮 pagination يدوي بعد الدمج
+    const paginated = allOrders.slice(skip, skip + limit);
+    const totalPages = Math.ceil(allOrders.length / limit);
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message:
+        lang === "ar"
+          ? "تم استرجاع جميع الطلبات بنجاح"
+          : "All orders retrieved successfully",
+      data: {
+        orders: paginated,
+        pagination: {
+          page,
+          totalPages
+        }
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 
 module.exports = {
@@ -1015,7 +1136,8 @@ module.exports = {
     getOrdersByRentalOffice,
     endOrder,
     getReportData,
-    getOrdersForProfile
+    getOrdersForProfile,
+    getAllUserOrders
 }
 
 

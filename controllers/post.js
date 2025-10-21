@@ -502,14 +502,14 @@ const getProfilePosts = async (req, res, next) => {
     const haveService = await Service.findOne({ centerId: userId });
     const user = await User.findOne({ _id: userId }).populate("cityId").populate("subCategoryCenterId").lean();
     // 🟢 جلب البيانات من كل الجداول
-    const [posts, showroomPosts, searchPosts, tweets] = await Promise.all([
+    const [posts, showroomPosts, searchPosts] = await Promise.all([
       Post.find({ userId })
         .populate({
           path: "userId",
           select: "username image status phone categoryCenterId",
         })
         .populate("cityId", `name.${lang}`)
-        .populate("mainCategoryId", `name.${lang}`)
+        .populate("mainCategoryId", `name`)
         .lean(),
 
       ShowRoomPost.find({ showroomId: userId })
@@ -526,24 +526,16 @@ const getProfilePosts = async (req, res, next) => {
           select: "username image status phone categoryCenterId",
         })
         .populate("cityId", `name.${lang}`)
-        .lean(),
-
-      Tweet.find({ userId })
-        .populate({
-          path: "userId",
-          select: "username image status phone categoryCenterId",
-        })
-        .lean(),
+        .lean()
     ]);
 
     // 🟢 IDs
     const postIds = posts.map((p) => p._id);
     const showroomIds = showroomPosts.map((p) => p._id);
     const searchIds = searchPosts.map((p) => p._id);
-    const tweetIds = tweets.map((t) => t._id);
 
     // 🟢 comments + replies
-    const [comments, replies, tweetComments, tweetReplies] = await Promise.all([
+    const [comments, replies] = await Promise.all([
       Comment.aggregate([
         { $match: { entityId: { $in: [...postIds, ...showroomIds, ...searchIds] } } },
         { $group: { _id: { entityId: "$entityId", entityType: "$entityType" }, count: { $sum: 1 } } },
@@ -569,23 +561,6 @@ const getProfilePosts = async (req, res, next) => {
           },
         },
       ]),
-      Comments.aggregate([
-        { $match: { tweetId: { $in: tweetIds } } },
-        { $group: { _id: "$tweetId", count: { $sum: 1 } } },
-      ]),
-      ReplyOnComments.aggregate([
-        {
-          $lookup: {
-            from: "comments",
-            localField: "commentId",
-            foreignField: "_id",
-            as: "commentData",
-          },
-        },
-        { $unwind: "$commentData" },
-        { $match: { "commentData.tweetId": { $in: tweetIds } } },
-        { $group: { _id: "$commentData.tweetId", count: { $sum: 1 } } },
-      ]),
     ]);
 
     // 🟢 maps
@@ -599,15 +574,7 @@ const getProfilePosts = async (req, res, next) => {
       replyMap[`${r._id.entityType}_${r._id.entityId}`] = r.count;
     });
 
-    const tweetCommentMap = {};
-    tweetComments.forEach((c) => {
-      tweetCommentMap[c._id.toString()] = c.count;
-    });
 
-    const tweetReplyMap = {};
-    tweetReplies.forEach((r) => {
-      tweetReplyMap[r._id.toString()] = r.count;
-    });
 
     // 🟢 formatter
     const formatData = (items, type) =>
@@ -626,7 +593,8 @@ const getProfilePosts = async (req, res, next) => {
         return {
           id: post._id,
           type,
-          category: post.mainCategoryId?.name?.[lang] || null,
+          category: post.mainCategoryId?.name?.[lang] || "",
+          cat:post.mainCategoryId?.name?.en || "",
           title: post.title,
           price: post.price,
           status: post.status || "",
@@ -645,38 +613,12 @@ const getProfilePosts = async (req, res, next) => {
         };
       });
 
-    // 🟢 tweets
-    const formattedTweets = tweets.map((tweet) => {
-      const commentCount = tweetCommentMap[tweet._id.toString()] || 0;
-      const replyCount = tweetReplyMap[tweet._id.toString()] || 0;
-
-      const user = tweet.userId;
-
-      return {
-        id: tweet._id,
-        type: "Tweet",
-        title: tweet.title,
-        content: tweet.content || "",
-        images: tweet.images ? [tweet.images] : [],
-        createdAt: tweet.createdAt,
-        totalCommentsAndReplies: commentCount + replyCount,
-        userData: user
-          ? {
-            id: user._id,
-            username: user.username,
-            image: user.image,
-            status: user.status,
-          }
-          : null,
-      };
-    });
 
     // 🟢 combine & paginate
     const allPosts = [
       ...formatData(posts, "Post"),
       ...formatData(showroomPosts, "ShowRoomPost"),
       ...formatData(searchPosts, "Search"),
-      ...formattedTweets,
     ];
     // 🟢 لو عنده خدمة، نجيب المتوسط من RatingCenter
     let serviceData = null;
