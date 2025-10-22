@@ -140,6 +140,7 @@ const getCenterServiceByCenterId = async (req, res, next) => {
         const { services, ...rest } = centerService;
         const formatedServices = services.map((ser) => {
             return {
+                id: ser._id,
                 name: ser.name[lang],
                 image: ser.image
             }

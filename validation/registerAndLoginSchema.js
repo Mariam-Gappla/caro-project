@@ -9,15 +9,13 @@ const registerSchema = (lang = "en") => {
       "string.min": messages.register.username.min,
       "string.max": messages.register.username.max
     }),
-
     email: joi.string().email().messages({
-      'string.empty': messages.register.email.required,
       'string.email': messages.register.email.invalid
     }),
     phone:joi.string().min(3).required().messages({
-      'string.empty': messages.register.password.required,
-      'string.min': messages.register.password.min,
-      'any.required': messages.register.password.required,
+      'string.empty': messages.register.phone.required,
+      'string.min': messages.register.phone.min,
+      'any.required': messages.register.phone.required,
     }),
     password: joi.string().min(3).required().messages({
       'string.empty': messages.register.password.required,

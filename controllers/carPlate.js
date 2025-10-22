@@ -138,6 +138,7 @@ const getCarPlatesPostById = async (req, res, next) => {
             formatedCarPlate = {
                 phone: carPlate.phoneNumber,
                 price: carPlate.price,
+                isMoveOwn: carPlate.ownershipFeesIncluded,
                 plateLetters: carPlate.plateLetters,
                 plateNumber: carPlate.plateNumber,
                 priceAfterAuction: undefined,
@@ -158,6 +159,7 @@ const getCarPlatesPostById = async (req, res, next) => {
             formatedCarPlate = {
                 phone: carPlate.phoneNumber,
                 price: carPlate.price,
+                isMoveOwn: carPlate.ownershipFeesIncluded,
                 plateLetters: carPlate.plateLetters,
                 plateNumber: carPlate.plateNumber,
                 isFixedPrice: carPlate.isFixedPrice,

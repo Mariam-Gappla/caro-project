@@ -3,18 +3,17 @@ const getMessages = require('../locales/schemaValiditionMessages/rentalOfficeVer
 
 const rentalOfficeSchema = (lang = 'en') => {
     const msg = getMessages(lang);
-
     return Joi.object({
-        name: Joi.string()
+        username: Joi.string()
             .trim()
             .min(2)
             .max(100)
             .required()
             .messages({
-                'string.base': msg.name.base,
-                'string.empty': msg.name.empty,
-                'string.min': msg.name.min,
-                'any.required': msg.name.required
+                'string.base': msg.username.base,
+                'string.empty': msg.username.empty,
+                'string.min': msg.username.min,
+                'any.required': msg.username.required
             }),
 
         tradeRegisterNumber: Joi.string()
@@ -74,7 +73,18 @@ const rentalOfficeSchema = (lang = 'en') => {
             'string.empty': msg.employeeNumber.empty,
             'any.required': msg.employeeNumber.required
         }),
-
+        phone: Joi.string().required().messages({
+            'string.empty': msg.phone.required,
+            'any.required': msg.phone.required,
+        }),
+        password: Joi.string().min(3).required().messages({
+            'string.empty': msg.password.required,
+            'string.min': msg.password.min,
+            'any.required': msg.password.required,
+        }),
+        email: Joi.string().email().messages({
+            'string.email':msg.email.invalid
+        }),
         details: Joi.string()
             .trim()
             .min(10)

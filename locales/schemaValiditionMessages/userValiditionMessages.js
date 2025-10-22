@@ -8,12 +8,15 @@ const messages = {
                 max: "Username must be at most 30 characters"
             },
             email: {
-                required: "Email is required",
                 invalid: "Invalid email format"
             },
             password: {
                 required: "Password is required",
                 min: "Password must be at least 6 characters"
+            },
+            phone: {
+                required: "phone is required",
+                invalid: "Invalid  phone format"
             },
             confirmPassword: {
                 required: "Confirm password is required",
@@ -44,6 +47,10 @@ const messages = {
 
     ar: {
         register: {
+             phone: {
+                required: "رقم الهاتف مطلوب",
+                invalid: "صيغة رقم الهاتف غير صحيحة"
+            },
             username: {
                 required: "اسم المستخدم مطلوب",
                 string: "يجب أن يكون اسم المستخدم نصًا",
@@ -51,7 +58,6 @@ const messages = {
                 max: "يجب ألا يزيد اسم المستخدم عن 50 حرفًا"
             },
             email: {
-                required: "البريد الإلكتروني مطلوب",
                 invalid: "صيغة البريد الإلكتروني غير صحيحة"
             },
             password: {

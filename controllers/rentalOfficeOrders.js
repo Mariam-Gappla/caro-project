@@ -1037,7 +1037,6 @@ const getAllUserOrders = async (req, res, next) => {
           return {
             id: order._id,
             type: "rentalOffice",
-            rentalSubType: "dailyOrWeekly",
             title: carData.title,
             rentalType: carData.rentalType,
             startDate: order.startDate,
@@ -1052,7 +1051,6 @@ const getAllUserOrders = async (req, res, next) => {
           return {
             id: order._id,
             type: "rentalOffice",
-            rentalSubType: "ownership",
             title: carData.title,
             ownershipPeriod: carData.ownershipPeriod,
             rentalType: carData.rentalType,

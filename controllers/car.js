@@ -158,6 +158,7 @@ const getCarPostById = async (req, res, next) => {
                 images: car.images,
                 odometer: car.odeoMeter,
                 isFixedPrice: car.isFixedPrice,
+                isMoveOwn: car.ownershipFeesIncluded,
                 price: car.carPrice,
                 city: car.cityId.name[lang],
                 carCondition: car.carConditionId.name[lang],

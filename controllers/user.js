@@ -145,45 +145,40 @@ const login = async (req, res, next) => {
     // الحالة: Rental Office
     // ----------------------
     if (role === "rentalOffice") {
-      let existRentalOffice = await rentalOffice.findOne({ phone });
+      console.log(phone)
+      let existRentalOffice = await rentalOffice.findOne({phone:phone});
+      console.log(existRentalOffice)
       if (!existRentalOffice) {
-        // المستخدم ماعندوش حساب rentalOffice لكن ممكن يكون عنده حساب user
-        const existUser = await User.findOne({ phone });
-        if (!existUser) {
-          return res.status(400).send({
-            code: 400,
-            status: false,
-            message: messages.login.emailExists.rentalOffice || "رقم الهاتف غير مسجل"
-          });
-        }
+        return res.status(400).send({
+          code: 400,
+          status: false,
+          message: lang === "en" ? "This rental office does not exist" : "هذا المكتب غير موجود"
 
-        // تحقق من الباسورد
-        const match = await bcrypt.compare(password, existUser.password);
-        if (!match) {
-          return res.status(400).send({
-            code: 400,
-            status: false,
-            message: messages.login.incorrectData
-          });
-        }
-
-        // إنشاء حساب rentalOffice من user
-        existRentalOffice = await rentalOffice.create({
-          username: existUser.username,
-          phone: existUser.phone,
-          password: existUser.password // مفيش داعي لعمل hash لأنه متخزن فعلاً كـ hash
+        })
+      }
+      if(existRentalOffice.status === "refused"){
+        return res.status(200).send({
+          status: true,
+          code: 200,
+          message: lang === "en" ? "Your request has been rejected" : "تم رفض الطلب"
         });
-        await rentalOffice.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken })
-      } else {
-        // تحقق من الباسورد مباشرة
-        const match = await bcrypt.compare(password, existRentalOffice.password);
-        if (!match) {
-          return res.status(400).send({
-            code: 400,
-            status: false,
-            message: messages.login.incorrectData
-          });
-        }
+      }
+      if(existRentalOffice.status === "pending"){
+        return res.status(400).send({
+          status: false,
+          code: 400,
+          message: lang === "en" ? "Your request is under review" : "جارى مراجعه الطلب"
+        });
+      }
+
+      // تحقق من الباسورد
+      const match = await bcrypt.compare(password, existRentalOffice.password);
+      if (!match) {
+        return res.status(400).send({
+          code: 400,
+          status: false,
+          message: messages.login.incorrectData
+        });
       }
       await rentalOffice.findOneAndUpdate({ phone: phone }, { fcmToken: fcmToken })
       const token = jwt.sign({ id: existRentalOffice._id, role: "rentalOffice" }, process.env.JWT_SECRET);
@@ -207,8 +202,8 @@ const login = async (req, res, next) => {
           token
         }
       });
-    }
 
+    }
     // ----------------------
     // الحالة: Service Provider
     // ----------------------
@@ -306,8 +301,8 @@ const login = async (req, res, next) => {
           message: messages.sendCode.success
         });
       }
-    }
 
+    }
 
 
 
@@ -1091,6 +1086,7 @@ const userAsAutoSalvage = async (req, res, next) => {
       service: req.body.service,
       cityId: req.body.cityId
     });
+    /*
     const admin = await Admin.find({});
     await sendNotificationToMany({
       target: admin,
@@ -1102,6 +1098,7 @@ const userAsAutoSalvage = async (req, res, next) => {
       lang: lang,
       actionType: "scrap_provider_request",
     });
+    */
     return res.status(200).send({
       status: true,
       code: 200,

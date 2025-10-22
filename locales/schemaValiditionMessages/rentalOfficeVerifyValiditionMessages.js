@@ -1,6 +1,6 @@
 const messages = {
     ar: {
-        name: {
+        username: {
             base: 'الاسم يجب أن يكون نصًا',
             empty: 'الاسم مطلوب',
             min: 'الاسم يجب أن يحتوي على حرفين على الأقل',
@@ -49,15 +49,30 @@ const messages = {
             base: 'رقم الموظف يجب أن يكون نصًا',
             empty: 'رقم الموظف مطلوب',
             required: 'رقم الموظف مطلوب'
-        }
+        },
+        password: {
+            required: "كلمة المرور مطلوبة",
+            min: "يجب أن تكون كلمة المرور على الأقل 6 أحرف"
+        },
+        phone: {
+            required: "رقم الهاتف مطلوب",
+            invalid: "صيغة رقم الهاتف غير صحيحة"
+        },
+        email: {
+            invalid: "صيغة البريد الإلكتروني غير صحيحة"
+        },
+
     },
 
     en: {
-        name: {
+        username: {
             base: 'Name must be a string',
             empty: 'Name is required',
             min: 'Name must contain at least 2 characters',
             required: 'Name is required'
+        },
+        email: {
+            invalid: "Invalid email format"
         },
         tradeRegisterNumber: {
             base: 'Trade register number must be a string',
@@ -102,7 +117,15 @@ const messages = {
             base: 'Employee number must be a string',
             empty: 'Employee number is required',
             required: 'Employee number is required'
-        }
+        },
+        password: {
+            required: "Password is required",
+            min: "Password must be at least 6 characters"
+        },
+        phone: {
+            required: "phone is required",
+            invalid: "Invalid  phone format"
+        },
     }
 };
 

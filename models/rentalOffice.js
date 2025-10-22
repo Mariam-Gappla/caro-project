@@ -49,6 +49,11 @@ const rentalOfficeSchema = new mongoose.Schema({
     employeeNumber:{
         type: String,
     },
+    status:{
+        type: String,
+        enum: ['pending', 'accepted', 'refuded'],
+        default: 'pending'
+    },
     fcmToken: {
         type: String
     },
