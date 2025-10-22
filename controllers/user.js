@@ -633,16 +633,6 @@ const editProfile = async (req, res, next) => {
 
     // ✅ لو فيه إيميل جديد
     if (req.body.email) {
-      const emailExists = await Model.findOne({ email: req.body.email, _id: { $ne: id } });
-      if (emailExists) {
-        return res.status(400).send({
-          status: false,
-          code: 400,
-          message: lang === "en"
-            ? "This email is already in use"
-            : "هذا البريد الإلكتروني مستخدم بالفعل"
-        });
-      }
       updateData.email = req.body.email;
     }
 
