@@ -14,7 +14,6 @@ const registerSchema = (lang = "en") => {
     }),
     phone:joi.string().min(3).required().messages({
       'string.empty': messages.register.phone.required,
-      'string.min': messages.register.phone.min,
       'any.required': messages.register.phone.required,
     }),
     password: joi.string().min(3).required().messages({
