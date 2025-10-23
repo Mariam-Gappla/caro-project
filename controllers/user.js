@@ -770,6 +770,7 @@ const userAsProvider = async (req, res, next) => {
       nationalId: req.body.nationalId,
       location: req.body.location // ✅ حفظ الموقع
     });
+    /*
     const admin = await Admin.find({}); // أو حسب نظامك لو عندك أكتر من أدمن
 
     if (admin) {
@@ -784,7 +785,7 @@ const userAsProvider = async (req, res, next) => {
         actionType: "provider",
       });
     }
-
+*/
     return res.status(200).send({
       status: true,
       code: 200,
@@ -809,6 +810,7 @@ const acceptUserAsProvider = async (req, res, next) => {
         message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
       });
     }
+    
     if (status === "refused") {
       await sendNotification({
         target: existUser,
@@ -827,6 +829,8 @@ const acceptUserAsProvider = async (req, res, next) => {
       });
 
     }
+    
+     
     else if (status === "accepted") {
       await User.findByIdAndUpdate(userId, { isProvider: true });
       await sendNotification({
@@ -839,6 +843,7 @@ const acceptUserAsProvider = async (req, res, next) => {
         lang: lang,
         actionType: "provider",
       });
+      
       return res.status(200).send({
         status: true,
         code: 200,
