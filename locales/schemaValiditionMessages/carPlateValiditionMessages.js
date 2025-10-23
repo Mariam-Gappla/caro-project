@@ -14,6 +14,7 @@ const messages = {
     auctionEndGreater: "Auction end date must be greater than auction start date",
     auctionStartEqualCreatedAt: "Auction start date must be equal to createdAt date",
     phoneNumberRequired: "Phone number is required",
+    priceLimitRequired: "Price limit is required"
   },
 
   ar: {
@@ -30,7 +31,8 @@ const messages = {
     auctionStartEqualCreatedAt: "تاريخ بداية المزاد يجب أن يساوي وقت الإنشاء",
     digitesRequired: "عدد الخانات مطلوب",
     digitesInvalid: "عدد الخانات يجب أن يكون أحد القيم [1, 2, 3, 4]",
-    phoneNumberRequired: "رقم الهاتف مطلوب"
+    phoneNumberRequired: "رقم الهاتف مطلوب",
+    priceLimitRequired: "حد السعر مطلوب"
   }
 };
 const getMessages = (lang = 'en') => {

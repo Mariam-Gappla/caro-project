@@ -5,6 +5,7 @@ const Otp = require("../models/otp");
 const { registerSchema, loginSchema, registerProviderSchema } = require("../validation/registerAndLoginSchema");
 const userAsAutoSalvageSchema = require("../validation/userAsAutoSalvagesValidition");
 const Admin = require("../models/admin.js");
+const CenterCategory= require("../models/mainCategoryCenter.js");
 const changePasswordSchema = require("../validation/changePasswordValidition");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
@@ -313,7 +314,7 @@ const login = async (req, res, next) => {
     // الحالة: User
     // ----------------------
     if (role === "user") {
-      const existUser = await User.findOne({ phone });
+      const existUser = await User.findOne({ phone }).populate("categoryCenterId");
       if (!existUser) {
         return res.status(400).send({
           status: false,
@@ -364,7 +365,8 @@ const login = async (req, res, next) => {
             following: following.length,
             createdAt: existUser.createdAt,
             subscribeAsRntalOffice: userAsRentalOffice ? true : false,
-            categoryId: existUser.categoryCenterId || "user",
+            categoryId: existUser.categoryCenterId._id || "user",
+            category: existUser.categoryCenterId.name.en || "user",
             haveService: haveService ? true : false,
             role: existUser.isProvider ? "provider" : "user",
             createdAt: existUser.createdAt,

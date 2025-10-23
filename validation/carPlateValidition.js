@@ -49,7 +49,13 @@ const carPlatePostSchema = (lang = "en") => {
       }),
       otherwise: Joi.optional()
     }),
-
+     priceLimit:Joi.number().when("isFixedPrice", {
+      is: false,
+      then: Joi.required().messages({
+        "any.required": t.priceLimitRequired
+      }),
+      otherwise: Joi.optional()
+    }),
     auctionEnd: Joi.date().when("isFixedPrice", {
       is: false,
       then: Joi.required().messages({

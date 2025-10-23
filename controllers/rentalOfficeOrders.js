@@ -1,14 +1,16 @@
 const rentalOfficeOrders = require("../models/rentalOfficeOrders");
 const CarRental = require("../models/carRental");
 const CarType = require("../models/carType");
-const rentalOfficeOrder = require("../models/rentalOfficeOrders");
+const rentalOffice = require("../models/rentalOffice");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
 const counter = require("../models/counter");
 const invoice = require("../models/invoice");
 const CarArchive = require("../models/carArchive");
+const SlavgePost = require("../models/slavgePost.js");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const { sendNotification } = require("../configration/firebase.js");
+const serviceProviderOrder = require("../models/serviceProviderOrders");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
 const path = require("path");
@@ -159,8 +161,10 @@ const addOrder = async (req, res, next) => {
         }
         // ✅ إنشاء الطلب
         const order = await rentalOfficeOrders.create(orderData);
-        const Office = await rentalOfficeOrders.findById(rentalOfficeId);
+        console.log(rentalOfficeId);
+        const Office = await rentalOffice.findById(rentalOfficeId);
         const user = await User.findById(userId);
+        
         await sendNotification({
             target: Office, // المقدم هو اللي جاله الطلب
             targetType: "rentalOffice",
@@ -168,12 +172,12 @@ const addOrder = async (req, res, next) => {
             titleEn: "New Order",
             messageAr: `لقد تلقيت طلبًا جديدًا من المستخدم ${user.username || 'عميل'}.`,
             messageEn: `You have received a new order from ${user.username || 'a customer'}.`,
-            actionType: "Order",
+            actionType: "order",
             orderId: order._id,
             orderModel: "OrdersRentalOffice",
             lang,
         });
-
+       
 
         return res.status(200).send({
             status: true,
@@ -342,7 +346,7 @@ const getOrdersStatisticsByWeekDay = async (req, res, next) => {
         const startDate = new Date(year, month - 1, 1);
         const endDate = new Date(year, month, 1);
 
-        const result = await rentalOfficeOrder.aggregate([
+        const result = await rentalOfficeOrders.aggregate([
             {
                 $match: {
                     rentalOfficeId: new mongoose.Types.ObjectId(String(rentalOfficeId)),
@@ -407,7 +411,7 @@ const getReportData = async (req, res, next) => {
     try {
         const rentalOfficeId = req.user.id;
         const lang = req.headers['accept-language'] || 'en';
-        const fullOrders = await rentalOfficeOrder.find({ rentalOfficeId });
+        const fullOrders = await rentalOfficeOrders.find({ rentalOfficeId });
         const cars = await CarRental.find({ rentalOfficeId });
         const rating = await Rating.find({ rentalOfficeId });
         // الإيرادات
@@ -472,7 +476,7 @@ const getOrderById = async (req, res, next) => {
         }
 
         // جلب الطلب بدون populate عشان نحتفظ بـ carId كـ ObjectId
-        const rawOrder = await rentalOfficeOrder.findById(orderId).lean();
+        const rawOrder = await rentalOfficeOrders.findById(orderId).lean();
 
         if (!rawOrder) {
             return res.status(404).send({
@@ -633,7 +637,7 @@ const acceptorder = async (req, res, next) => {
 
             // نرجع لينك مباشر يوصل من المتصفح
             const fileUrl = `${BASE_URL}images/${fileName}`;
-            const order = await rentalOfficeOrder.findByIdAndUpdate(
+            const order = await rentalOfficeOrders.findByIdAndUpdate(
                 { _id: orderId },
                 { status: status },
                 { new: true }
@@ -672,7 +676,7 @@ const acceptorder = async (req, res, next) => {
             });
         }
         else {
-            const order = await rentalOfficeOrder.findByIdAndUpdate(
+            const order = await rentalOfficeOrders.findByIdAndUpdate(
                 { _id: orderId },
                 { status: status },
                 { new: true }
@@ -722,9 +726,9 @@ const getOrders = async (req, res, next) => {
 
         // نجيب كل الإحصائيات في وقت واحد
         const [deliveredCount, pendingCount, expiredCount] = await Promise.all([
-            rentalOfficeOrder.countDocuments({ isDelivered: true, rentalOfficeId }),
-            rentalOfficeOrder.countDocuments({ status: "pending", rentalOfficeId }),
-            rentalOfficeOrder.countDocuments({ endDate: { $lt: today }, rentalOfficeId })
+            rentalOfficeOrders.countDocuments({ isDelivered: true, rentalOfficeId }),
+            rentalOfficeOrders.countDocuments({ status: "pending", rentalOfficeId }),
+            rentalOfficeOrders.countDocuments({ endDate: { $lt: today }, rentalOfficeId })
         ]);
 
         return res.status(200).send({
@@ -814,9 +818,9 @@ const getOrdersByRentalOffice = async (req, res, next) => {
 
         const messages = getMessages(lang);
 
-        const totalOrders = await rentalOfficeOrder.countDocuments({ rentalOfficeId, status: "pending" });
+        const totalOrders = await rentalOfficeOrders.countDocuments({ rentalOfficeId, status: "pending" });
 
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId, status: "pending" })
+        const orders = await rentalOfficeOrders.find({ rentalOfficeId, status: "pending" })
             .select("carId startDate endDate priceType deliveryType paymentMethod") // ✅ هنجيب بس اللي محتاجينه
             .skip(skip)
             .limit(limit)
@@ -922,7 +926,7 @@ const endOrder = async (req, res, next) => {
         const lang = req.headers['accept-language'] || 'en';
         const orderId = req.params.id;
         const rentalOfficeId = req.user.id;
-        const order = await rentalOfficeOrder.findOne({ _id: orderId });
+        const order = await rentalOfficeOrders.findOne({ _id: orderId });
         if (order.paymentMethod == "cash") {
             order.ended = true
             await order.save();
@@ -991,16 +995,6 @@ const endOrder = async (req, res, next) => {
         next(error)
     }
 }
-const getOrdersForProfile = async (req, res, next) => {
-    try {
-        const lang = req.headers['accept-language'] || 'en';
-        const userId = req.user.id;
-
-    }
-    catch (err) {
-        next(err)
-    }
-}
 const getAllUserOrders = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -1067,7 +1061,6 @@ const getAllUserOrders = async (req, res, next) => {
     // 🟣 2. طلبات المستخدم من مزود الخدمة
     const providerOrders = await serviceProviderOrder
       .find({ userId })
-      .populate('providerId', 'username image')
       .lean();
 
     const providerFormatted = await Promise.all(
@@ -1083,14 +1076,25 @@ const getAllUserOrders = async (req, res, next) => {
           paymentStatus: order.paymentStatus,
           paymentStatusText,
           createdAt: order.createdAt,
-          providerName: order.providerId?.username || "",
-          providerImage: order.providerId?.image || ""
         };
       })
     );
+    const slavePosts = await SlavgePost.find({ userId }).lean();
+
+    const slavePostsFormatted = await Promise.all(
+        slavePosts.map(async (post) => {
+            return {
+                id: post._id,
+                type: "slavePost",
+                title: post.title,
+                details: post.details,
+                createdAt: post.createdAt,
+            };
+        })
+    );
 
     // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
-    const allOrders = [...rentalFormatted, ...providerFormatted]
+    const allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
       .filter(Boolean)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -1134,7 +1138,6 @@ module.exports = {
     getOrdersByRentalOffice,
     endOrder,
     getReportData,
-    getOrdersForProfile,
     getAllUserOrders
 }
 

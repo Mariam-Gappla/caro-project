@@ -38,7 +38,13 @@ const carPostSchema = (lang = "en") => {
 
     isFixedPrice: Joi.boolean().default(false),
     ownershipFeesIncluded: Joi.boolean().default(false),
-
+    priceLimit: Joi.number().when("isFixedPrice", {
+      is: false,
+      then: Joi.required().messages({
+        "any.required": t.priceLimitRequired
+      }),
+      otherwise: Joi.optional()
+    }),
     odeoMeter: Joi.string().required().messages({
       "any.required": t.odeoMeterRequired,
     }),

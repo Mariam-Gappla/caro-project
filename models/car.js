@@ -9,6 +9,7 @@ const carSchema = new mongoose.Schema({
     carPrice: { type: Number },
     videoCar: { type: String },
     notes: { type: String },
+    priceLimit:{type:Number},
     isFixedPrice: { type: Boolean, default: false },
     ownershipFeesIncluded: { type: Boolean, default: false },
     odeoMeter:{type:String,required:true},

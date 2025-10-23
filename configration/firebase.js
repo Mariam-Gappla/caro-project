@@ -1,6 +1,6 @@
 const admin = require("firebase-admin");
 const serviceAccount = require("../firebase-key.json");
-
+const Notification = require("../models/notification");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://carno-ba33e-default-rtdb.firebaseio.com"
@@ -17,7 +17,6 @@ const sendNotification = async ({
   senderId = null,
   orderId = null,
   orderModel = null,
-  data:{}
 }) => {
   try {
     const finalTitle = lang === "ar" && titleAr ? titleAr : titleEn;
@@ -43,7 +42,6 @@ const sendNotification = async ({
         },
         token: target.fcmToken,
       };
-
       await admin.messaging().send(payload);
       console.log("✅ Notification sent successfully!");
     } else {
