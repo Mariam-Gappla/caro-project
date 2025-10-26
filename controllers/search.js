@@ -192,50 +192,17 @@ const getPostById = async (req, res, next) => {
       });
     }
     const isFollow=await FollowerCenter.findOne({userId:userId,centerId:post.userId.id});
-    const mapContactType = {
-      call: 1,
-      whatsapp: 2,
-      inAppChat: 3,
-    };
-
-    let contactTypes = [];
-    if (post.contactMethods) {
-      const types = Array.isArray(post.contactMethods)
-        ? post.contactMethods
-        : post.contactMethods.split(",");
-
-      contactTypes = types
-        .map((t) => mapContactType[t.trim()])
-        .filter((v) => v !== undefined);
-    }
-
-    let contactValue = null;
-    if (
-      contactTypes.includes(mapContactType.call) &&
-      contactTypes.includes(mapContactType.whatsapp)
-    ) {
-      // ✅ لو Call + WhatsApp مع بعض
-      contactValue = post.phoneNumber;
-    } else if (contactTypes.includes(mapContactType.call)) {
-      // ✅ لو Call فقط
-      contactValue = post.phoneNumber;
-    } else if (contactTypes.includes(mapContactType.whatsApp)) {
-      // ✅ لو WhatsApp فقط
-      contactValue = post.phoneNumber;
-    } else if (contactTypes.includes(mapContactType.Chat)) {
-      // ✅ لو Chat فقط
-      contactValue = null;
-    }
+    
 
     const formatedPost = {
       id:post._id,
       title: post.title,
       details: post.details,
       images: post.images,
-      price: post.price || "",
-      contactTypes: contactTypes || "",
-      contactValue: contactValue || "",
-      city:{id:post.cityId._id,name:post.cityId.name[lang]},
+      price: post.price || 0,
+      contactTypes: post.contactTypes || "",
+      contactValue: post.contactValue || "",
+      city:{id:post.cityId._id,text:post.cityId.name[lang]},
       postNumber:post.postNumber,
       isFavorite:!!isFavorite,
       isFollow:!!isFollow,

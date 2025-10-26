@@ -286,22 +286,7 @@ const getPostById = async (req, res, next) => {
     const isFollower = await centerFollower.findOne({ userId: userId, centerId: post.userId._id });
     const isFavorite = await Favorite.findOne({ entityType: "Post", entityId: postId, userId: userId });
     // 🟢 contactType mapping
-    const mapContactType = {
-      call: 1,
-      whatsapp: 2,
-      inAppChat: 3,
-    };
-
-    let contactTypes = [];
-    if (post.contactType) {
-      const types = Array.isArray(post.contactType)
-        ? post.contactType
-        : post.contactType.split(",");
-
-      contactTypes = types
-        .map((t) => mapContactType[t.trim()])
-        .filter((v) => v !== undefined);
-    }
+    
 
     // 🟢 priceType mapping
     const mapPriceType = {
@@ -326,8 +311,8 @@ const getPostById = async (req, res, next) => {
       description: post.description,
       isFavorite: isFavorite ? true : false,
       isFollower: isFollower ? true : false,
-      contactTypes: contactTypes,
-      contactValue: post.contactValue,
+      contactTypes: post.contactType || "",
+      contactValue: post.contactValue || "",
       priceType: priceTypeCode, // 🟢 هنا الرقم بدل النص
       price: price,             // 🟢 يرجع السعر لو best أو fixed فقط
       userData: {
@@ -633,11 +618,12 @@ const getProfilePosts = async (req, res, next) => {
           ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
           : 0;
       serviceData = {
+        id: haveService._id,
         username: user.username,
         createdAt: user.createdAt,
         status: haveService.status,
         details: user.details || "",
-        categoryCenter: user.categoryCenterId?.name?.[lang] || "",
+        categoryCenter: user.categoryCenterId?.name?.en || "",
         subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
         city: user.cityId?.name?.[lang] || "",
         averageRate: avgRating.toFixed(1),
