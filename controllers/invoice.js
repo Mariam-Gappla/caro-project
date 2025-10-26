@@ -1,6 +1,7 @@
 const counter = require("../models/counter");
 const invoice = require("../models/invoice");
 const Name = require("../models/carName");
+const User = require("../models/user");
 const carArchive=require("../models/carArchive")
 const carRental = require("../models/carRental")
 const Model = require("../models/carModel");
@@ -105,9 +106,9 @@ const getRevenue = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const totalCount = await invoice.countDocuments({ rentalOfficeId });
+        const totalCount = await invoice.countDocuments({ targetId: rentalOfficeId, targetType: 'rentalOffice' });
 
-        const invoices = await invoice.find({ rentalOfficeId })
+        const invoices = await invoice.find({ targetId: rentalOfficeId, targetType: 'rentalOffice' })
             .skip(skip)
             .limit(limit)
             .sort({ issuedAt: -1 }); // اختياري حسب الترتيب
@@ -305,7 +306,7 @@ const getRevenueForUser = async (req, res, next) => {
             data: {
                 revenue: formattedInvoices,
                 pagination: {
-                    page,
+                    page:Math.ceil(totalCount / limit)===0?0:page,
                     totalPages: Math.ceil(totalCount / limit),
                 }
             }

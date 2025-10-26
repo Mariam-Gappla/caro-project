@@ -871,24 +871,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     const diffInDays = Math.ceil(
                         (new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24)
                     );
-                    const count = await counter.findOneAndUpdate(
-                        { name: "invoice" },
-                        { $inc: { seq: 1 } },
-                        { returnDocument: "after", upsert: true }
-                    );
-
-                    if (!count) {
-                        return res.status(500).json({ message: "Counter not found" });
-                    }
-
-                    await invoice.create({
-                        invoiceNumber: count.seq,
-                        userId,
-                        rentalOfficeId,
-                        orderId,
-                        amount: order.totalCost,
-                    });
-
+                
                     return {
                         id: order._id,
                         images: car.images,
@@ -1031,7 +1014,20 @@ const getAllUserOrders = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-
+        const status= req.query.status; 
+        let filter = {userId};
+        let filterSlavge={userId};
+        if(status=="paid"){
+            filter.paymentStatus="paid"
+        }
+        if(status=="inProgress"){
+            filter.paymentStatus="inProgress"
+            filterSlavge.ended=false
+        }
+        if(status=="ended"){
+            filter.ended=true
+            filterSlavge.ended=true
+        }
         const messages = getMessages(lang);
 
         const paymentStatusTranslations = {
@@ -1040,7 +1036,7 @@ const getAllUserOrders = async (req, res, next) => {
         };
 
         // 🟢 1. طلبات المستخدم من مكتب التأجير
-        const rentalOrders = await rentalOfficeOrder.find({ userId }).lean();
+        const rentalOrders = await rentalOfficeOrders.find(filter).lean();
         updateOrderStatuses(rentalOrders);
 
         const rentalFormatted = await Promise.all(
@@ -1089,7 +1085,7 @@ const getAllUserOrders = async (req, res, next) => {
 
         // 🟣 2. طلبات المستخدم من مزود الخدمة
         const providerOrders = await serviceProviderOrder
-            .find({ userId })
+            .find(filter)
             .lean();
 
         const providerFormatted = await Promise.all(
@@ -1108,7 +1104,7 @@ const getAllUserOrders = async (req, res, next) => {
                 };
             })
         );
-        const slavePosts = await SlavgePost.find({ userId }).lean();
+        const slavePosts = await SlavgePost.find(filterSlavge).lean();
 
         const slavePostsFormatted = await Promise.all(
             slavePosts.map(async (post) => {

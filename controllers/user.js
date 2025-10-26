@@ -5,7 +5,7 @@ const Otp = require("../models/otp");
 const { registerSchema, loginSchema, registerProviderSchema } = require("../validation/registerAndLoginSchema");
 const userAsAutoSalvageSchema = require("../validation/userAsAutoSalvagesValidition");
 const Admin = require("../models/admin.js");
-const CenterCategory= require("../models/mainCategoryCenter.js");
+const CenterCategory = require("../models/mainCategoryCenter.js");
 const changePasswordSchema = require("../validation/changePasswordValidition");
 const workSession = require("../models/workingSession");
 const rentalOffice = require("../models/rentalOffice");
@@ -147,7 +147,7 @@ const login = async (req, res, next) => {
     // ----------------------
     if (role === "rentalOffice") {
       console.log(phone)
-      let existRentalOffice = await rentalOffice.findOne({phone:phone});
+      let existRentalOffice = await rentalOffice.findOne({ phone: phone });
       console.log(existRentalOffice)
       if (!existRentalOffice) {
         return res.status(400).send({
@@ -157,14 +157,14 @@ const login = async (req, res, next) => {
 
         })
       }
-      if(existRentalOffice.status === "refused"){
+      if (existRentalOffice.status === "refused") {
         return res.status(200).send({
           status: true,
           code: 200,
           message: lang === "en" ? "Your request has been rejected" : "تم رفض الطلب"
         });
       }
-      if(existRentalOffice.status === "pending"){
+      if (existRentalOffice.status === "pending") {
         return res.status(400).send({
           status: false,
           code: 400,
@@ -810,7 +810,7 @@ const acceptUserAsProvider = async (req, res, next) => {
         message: lang == "ar" ? "هذا المستخدم غير موجود" : "this user does not exist"
       });
     }
-    
+
     if (status === "refused") {
       await sendNotification({
         target: existUser,
@@ -829,8 +829,8 @@ const acceptUserAsProvider = async (req, res, next) => {
       });
 
     }
-    
-     
+
+
     else if (status === "accepted") {
       await User.findByIdAndUpdate(userId, { isProvider: true });
       await sendNotification({
@@ -843,7 +843,7 @@ const acceptUserAsProvider = async (req, res, next) => {
         lang: lang,
         actionType: "provider",
       });
-      
+
       return res.status(200).send({
         status: true,
         code: 200,
@@ -1124,27 +1124,42 @@ const getUserData = async (req, res, next) => {
     const phone = existUser.phone;
     const userAsRentalOffice = await rentalOffice.findOne({ phone })
     const haveService = await CenterService.findOne({ centerId: existUser._id });
+    const following = await CenterFollower.find({ userId: existUser._id });
+    const followers = await CenterFollower.find({ centerId: existUser._id });
+    const favorite = await Favorite.find({ userId: existUser._id, entityType: "User" });
+    let ratings;
+    ratings = await RatingCenter.find({ centerId: existUser._id });
+    const allRatings = ratings.map(r => r.rating);
+    const avgRating =
+      allRatings.length > 0
+        ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
+        : 0;
     return res.status(200).send({
       code: 200,
       status: true,
       message: lang == "en" ? "request get successfully" : "تم معالجه الطلب بنجاح",
       data: {
         user: {
-          _id: existUser._id,
-          username: existUser.username,
-          image: existUser.image,
-          phone: existUser.phone,
-          email: existUser.email,
-          password: existUser.password,
-          likedBy: existUser.likedBy,
-          createdAt: existUser.createdAt,
-          subscribeAsRntalOffice: userAsRentalOffice ? true : false,
-          categoryId: existUser.categoryCenterId || "user",
-          haveService: haveService ? true : false,
-          role: existUser.isProvider ? "provider" : "user",
-          createdAt: existUser.createdAt,
-          updatedAt: existUser.updatedAt,
-          __v: 0,
+        _id: existUser._id,
+            username: existUser.username,
+            image: existUser.image,
+            phone: existUser.phone,
+            email: existUser.email,
+            password: existUser.password,
+            likedBy: existUser.likedBy,
+            avgRating: avgRating,
+            favorite: favorite.length,
+            followers: followers.length,
+            following: following.length,
+            createdAt: existUser.createdAt,
+            subscribeAsRntalOffice: userAsRentalOffice ? true : false,
+            categoryId: existUser.categoryCenterId?._id || "user",
+            category: existUser.categoryCenterId?.name.en || "user",
+            haveService: haveService ? true : false,
+            role: existUser.isProvider ? "provider" : "user",
+            createdAt: existUser.createdAt,
+            updatedAt: existUser.updatedAt,
+            __v: 0,
 
         },
       }
