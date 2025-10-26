@@ -8,7 +8,10 @@ router.post("/",upload.fields([
 ]),addPost);
 router.get("/search-title",makeSearchByTitle);
 router.get("/profile-posts",getProfilePosts);
-router.put("/update-post-profile",upload.array("images"),updateEntityByType);
+router.put("/update-post-profile",upload.fields([
+    { name: "images", maxCount: 10 }, // استقبال صور متعددة
+    { name: "video", maxCount: 1 },   // فيديو واحد فقط
+  ]),updateEntityByType);
 router.post("/update-createdAt",updateCreatedAt);
 router.get("/profile-type",getEntityByTypeAndId);
 router.get("/number-status",getNumberOfPostsWithStatus)

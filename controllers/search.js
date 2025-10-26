@@ -193,9 +193,9 @@ const getPostById = async (req, res, next) => {
     }
     const isFollow=await FollowerCenter.findOne({userId:userId,centerId:post.userId.id});
     const mapContactType = {
-      Call: 1,
-      WhatsApp: 2,
-      Chat: 3,
+      call: 1,
+      whatsapp: 2,
+      inAppChat: 3,
     };
 
     let contactTypes = [];
@@ -211,15 +211,15 @@ const getPostById = async (req, res, next) => {
 
     let contactValue = null;
     if (
-      contactTypes.includes(mapContactType.Call) &&
-      contactTypes.includes(mapContactType.Whatsapp)
+      contactTypes.includes(mapContactType.call) &&
+      contactTypes.includes(mapContactType.whatsapp)
     ) {
       // ✅ لو Call + WhatsApp مع بعض
       contactValue = post.phoneNumber;
-    } else if (contactTypes.includes(mapContactType.Call)) {
+    } else if (contactTypes.includes(mapContactType.call)) {
       // ✅ لو Call فقط
       contactValue = post.phoneNumber;
-    } else if (contactTypes.includes(mapContactType.WhatsApp)) {
+    } else if (contactTypes.includes(mapContactType.whatsApp)) {
       // ✅ لو WhatsApp فقط
       contactValue = post.phoneNumber;
     } else if (contactTypes.includes(mapContactType.Chat)) {
@@ -232,10 +232,10 @@ const getPostById = async (req, res, next) => {
       title: post.title,
       details: post.details,
       images: post.images,
-      price: post.price || null,
-      contactTypes: contactTypes,
-      contactValue: contactValue,
-      city:post.cityId.name[lang],
+      price: post.price || "",
+      contactTypes: contactTypes || "",
+      contactValue: contactValue || "",
+      city:{id:post.cityId._id,name:post.cityId.name[lang]},
       postNumber:post.postNumber,
       isFavorite:!!isFavorite,
       isFollow:!!isFollow,

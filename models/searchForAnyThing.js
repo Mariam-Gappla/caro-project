@@ -5,7 +5,7 @@ const searchSchema = new mongoose.Schema({
   details: { type: String, required: true },
   contactMethods: {
     type: [String],
-    enum: ["WhatsApp", "Call", "Chat"],
+    enum: ["whatsapp", "call", "inAppChat"],
     required: true,
   },
   price:{type:Number},

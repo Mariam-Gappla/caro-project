@@ -1,6 +1,8 @@
 const Post = require("../models/post");
 const postSchema = require("../validation/postValidition");
 const Comment = require("../models/centerComments");
+const path=require("path");
+const fs=require("fs");
 const Reply = require("../models/centerReplies");
 const { saveImage, deleteImage } = require("../configration/saveImage");
 const Tweet = require("../models/tweets");
@@ -500,7 +502,7 @@ const getProfilePosts = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const haveService = await Service.findOne({ centerId: userId });
-    const user = await User.findOne({ _id: userId }).populate("cityId").populate("subCategoryCenterId").lean();
+    const user = await User.findOne({ _id: userId }).populate("cityId").populate("subCategoryCenterId").populate("categoryCenterId").lean();
     // 🟢 جلب البيانات من كل الجداول
     const [posts, showroomPosts, searchPosts] = await Promise.all([
       Post.find({ userId })
@@ -594,7 +596,7 @@ const getProfilePosts = async (req, res, next) => {
           id: post._id,
           type,
           category: post.mainCategoryId?.name?.[lang] || "",
-          cat:post.mainCategoryId?.name?.en || "",
+          cat: post.mainCategoryId?.name?.en || "",
           title: post.title,
           price: post.price,
           status: post.status || "",
@@ -630,13 +632,12 @@ const getProfilePosts = async (req, res, next) => {
         allRatings.length > 0
           ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
           : 0;
-
-
       serviceData = {
         username: user.username,
         createdAt: user.createdAt,
         status: haveService.status,
         details: user.details || "",
+        categoryCenter: user.categoryCenterId?.name?.[lang] || "",
         subCategoryCenter: user.subCategoryCenterId?.name?.[lang] || "",
         city: user.cityId?.name?.[lang] || "",
         averageRate: avgRating.toFixed(1),
@@ -843,10 +844,12 @@ const updateEntityByType = async (req, res, next) => {
       });
     }
 
-    // ✅ معالجة الصور
+    // ✅ معالجة الصور والفيديو
     let newImages = [];
+    let newVideo = null;
 
-    if (req.files && req.files.length > 0) {
+    // معالجة الصور
+    if (req.files && req.files.images && req.files.images.length > 0) {
       // حذف الصور القديمة فقط لو فيه صور جديدة
       if (type === "Service") {
         if (existingDoc.products?.length) {
@@ -858,7 +861,10 @@ const updateEntityByType = async (req, res, next) => {
           });
         }
       } else {
-        const images = type === "Tweet" ? [existingDoc.images] : existingDoc.images || [];
+        const images =
+          type === "Tweet"
+            ? [existingDoc.images]
+            : existingDoc.images || [];
         images.forEach((imgPath) => {
           const fullPath = path.join("/var/www", imgPath);
           if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
@@ -866,25 +872,46 @@ const updateEntityByType = async (req, res, next) => {
       }
 
       // حفظ الصور الجديدة
-      newImages = req.files.map((file) => BASE_URL + saveImage(file));
+      newImages = req.files.images.map((file) => BASE_URL + saveImage(file));
     }
 
-    // ✅ تحديث البيانات
+    // معالجة الفيديو
+    if (req.files && req.files.video && req.files.video.length > 0) {
+      // حذف الفيديو القديم لو موجود
+      if (existingDoc.video) {
+        const oldVideoPath = path.join("/var/www", existingDoc.video);
+        if (fs.existsSync(oldVideoPath)) fs.unlinkSync(oldVideoPath);
+      }
+
+      // حفظ الفيديو الجديد
+      newVideo = BASE_URL + saveImage(req.files.video[0]);
+    }
+
+    // ✅ تجهيز البيانات للتحديث
     const updatedData = { ...req.body };
 
-    if (req.files && req.files.length > 0) {
+    // صور
+    if (req.files && req.files.images && req.files.images.length > 0) {
       if (type === "Service") {
-        updatedData.products = req.files.map((file) => BASE_URL + saveImage(file));
+        updatedData.products = req.files.images.map(
+          (file) => BASE_URL + saveImage(file)
+        );
       } else if (type === "Tweet") {
         updatedData.images = newImages[0]; // لأنها مش Array
       } else {
         updatedData.images = newImages;
       }
     } else {
-      // لو مفيش صور جديدة نخلي القديمة
       if (type === "Service") updatedData.products = existingDoc.products;
       else if (type === "Tweet") updatedData.images = existingDoc.images;
       else updatedData.images = existingDoc.images;
+    }
+
+    // فيديو
+    if (newVideo) {
+      updatedData.video = newVideo;
+    } else {
+      updatedData.video = existingDoc.video;
     }
 
     await Model.findByIdAndUpdate(id, updatedData, { new: true });
@@ -1108,30 +1135,28 @@ const getEntityByTypeAndId = async (req, res, next) => {
       const obj = entity[field];
       if (!obj) return;
 
-      // 🔹 لو الفيلد فيه name.en أو name.ar
-      if (obj?.name?.[lang]) {
-        entity[newKey] = obj.name[lang];
-      }
-      // 🔹 لو الفيلد فيه carName.en
-      else if (obj?.carName?.[lang]) {
-        entity[newKey] = obj.carName[lang];
-      }
-      // 🔹 لو الفيلد فيه model.en
-      else if (obj?.model?.[lang]) {
-        entity[newKey] = obj.model[lang];
-      }
-      // 🔹 لو الفيلد فيه type.en
-      else if (obj?.type?.[lang]) {
-        entity[newKey] = obj.type[lang];
-      }
-      // 🔹 لو الفيلد فيه قيمة name عادية (رقم أو نص)
-      else if (obj?.name) {
-        entity[newKey] = obj.name;
+      let value = null;
+
+      // 🔹 استخراج الاسم حسب اللغة أو القيم الممكنة
+      if (obj?.name?.[lang]) value = obj.name[lang];
+      else if (obj?.carName?.[lang]) value = obj.carName[lang];
+      else if (obj?.model?.[lang]) value = obj.model[lang];
+      else if (obj?.type?.[lang]) value = obj.type[lang];
+      else if (obj?.name) value = obj.name;
+      else value = null;
+
+      // 🆔 إرجاع الكائن كاسم + id
+      if (field=== "areaId" || field === "cityId") {
+        entity[newKey] = {
+          id: obj?._id || null,
+          name: value,
+        };
       }
 
-      // 🧹 نحذف الفيلد القديم بعد الاستخراج
+      // نحذف الفيلد الأصلي
       delete entity[field];
     };
+
 
 
     // ✅ Rename populated fields to friendly names

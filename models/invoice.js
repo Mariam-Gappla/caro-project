@@ -12,18 +12,26 @@ const invoiceSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  rentalOfficeId: {
+  targetId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'RentalOffice',
-    required: true
+    refPath: 'targetType',
+  },
+  targetType: {
+    type: String,
+    enum: ['rentalOffice', "User"]
   },
   amount: {
     type: Number,
     required: true
   },
+  orderType: {
+    type: String,
+    required: true,
+    enum: ['OrdersRentalOffice',"CarPlate",'Wallet','Car']
+  },
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'OrdersRentalOffice',
+    refPath: 'orderType',
     required: true
   },
   issuedAt: {

@@ -265,6 +265,56 @@ const getRevenueById = async (req, res, next) => {
         next(error);
     }
 };
+const getRevenueForUser = async (req, res, next) => {
+    try {
+        const lang = req.headers["accept-language"] || "en";
+        const messages = getMessages(lang);
+        const userId = req.user.id;
+
+        const userExist = await User.findById(userId);
+        if (!userExist) {
+            return res.status(400).send({
+                code: 400,
+                status: false,
+                message:lang==="ar"?"المستخدم غير موجود":"User not found"
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const totalCount = await invoice.countDocuments({ userId });
+
+        const invoices = await invoice.find({ userId })
+            .skip(skip)
+            .limit(limit)
+            .sort({ issuedAt: -1 }); // اختياري حسب الترتيب
+
+        const formattedInvoices = invoices.map((inv) => ({
+            _id: inv._id,
+            invoiceNumber: inv.invoiceNumber,
+            amount: inv.amount,
+            issuedAt: inv.issuedAt
+        }));
+
+        res.status(200).send({
+            code: 200,
+            status: true,
+            message: lang === "en" ? "Invoices fetched successfully" : "تم جلب الفواتير بنجاح",
+            data: {
+                revenue: formattedInvoices,
+                pagination: {
+                    page,
+                    totalPages: Math.ceil(totalCount / limit),
+                }
+            }
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
 
 
 
@@ -272,5 +322,6 @@ const getRevenueById = async (req, res, next) => {
 module.exports = {
     addinvoice,
     getRevenue,
-    getRevenueById
+    getRevenueById,
+    getRevenueForUser
 }

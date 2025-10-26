@@ -1,7 +1,7 @@
 const Wallet = require("../models/wallet.js");
 const Transaction = require("../models/transaction.js");
 const getNextOrderNumber = require("../controllers/counter.js");
-const {sendNotification}=require("../configration/firebase.js");
+const { sendNotification } = require("../configration/firebase.js");
 const User = require("../models/user.js");
 /*
 const createOrder = async (req, res, next) => {
@@ -90,6 +90,14 @@ const deposit = async (req, res, next) => {
       type: "deposit",
       amount,
       description,
+    });
+    const counter = await getNextOrderNumber("invoice");
+    await invoice.create({
+      invoiceNumber: counter,
+      userId:userId,
+      orderType: "Wallet",
+      orderId: wallet._id,
+      amount: amount,
     });
     await sendNotification({
       target: user,
@@ -216,6 +224,14 @@ const withdraw = async (req, res, next) => {
       type: "withdraw",
       amount,
       description,
+    });
+    const counter = await getNextOrderNumber("invoice");
+    await invoice.create({
+      invoiceNumber: counter,
+      userId: userId,
+      orderType: "Wallet",
+      orderId: wallet._id,
+      amount: amount,
     });
     await sendNotification({
       target: user,

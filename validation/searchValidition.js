@@ -7,14 +7,14 @@ const searchValidationSchema = (lang = "en") => {
     title: Joi.string().required().messages(msg.title),
     details: Joi.string().required().messages(msg.details),
     contactMethods: Joi.array()
-      .items(Joi.string().valid("WhatsApp", "Call", "Chat"))
+      .items(Joi.string().valid("whatsapp", "call", "inAppChat"))
       .min(1)
       .required()
       .messages(msg.contactMethods),
     cityId: Joi.string().required().messages(msg.cityId),
     price: Joi.number().messages(msg.price),
     phoneNumber: Joi.when("contactMethods", {
-      is: Joi.array().items(Joi.string().valid("WhatsApp", "Call")).has(Joi.string().valid("WhatsApp", "Call")),
+      is: Joi.array().items(Joi.string().valid("whatsapp", "call")).has(Joi.string().valid("WhatsApp", "Call")),
       then: Joi.string().required().messages(msg.phoneNumberRequired),
       otherwise: Joi.string().optional(),
     }),

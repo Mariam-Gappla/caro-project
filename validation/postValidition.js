@@ -83,7 +83,7 @@ const postSchema = (lang = "en") => {
       .when("contactType", {
         is: Joi.array().items(Joi.valid("whatsapp", "call")).has(Joi.valid("whatsapp", "call")),
         then: Joi.required(),
-        otherwise: Joi.forbidden(),
+        otherwise: Joi.string().optional(),
       })
       .messages({
         "string.base": messages.contactValue.base,

@@ -4,6 +4,7 @@ const CarType = require("../models/carType");
 const rentalOffice = require("../models/rentalOffice");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
 const counter = require("../models/counter");
+const getNextOrderNumber = require("../controllers/counter");
 const invoice = require("../models/invoice");
 const CarArchive = require("../models/carArchive");
 const SlavgePost = require("../models/slavgePost.js");
@@ -164,7 +165,7 @@ const addOrder = async (req, res, next) => {
         console.log(rentalOfficeId);
         const Office = await rentalOffice.findById(rentalOfficeId);
         const user = await User.findById(userId);
-        
+
         await sendNotification({
             target: Office, // المقدم هو اللي جاله الطلب
             targetType: "rentalOffice",
@@ -177,7 +178,7 @@ const addOrder = async (req, res, next) => {
             orderModel: "OrdersRentalOffice",
             lang,
         });
-       
+
 
         return res.status(200).send({
             status: true,
@@ -637,6 +638,7 @@ const acceptorder = async (req, res, next) => {
 
             // نرجع لينك مباشر يوصل من المتصفح
             const fileUrl = `${BASE_URL}images/${fileName}`;
+            const rentalOfficeId = req.user.id;
             const order = await rentalOfficeOrders.findByIdAndUpdate(
                 { _id: orderId },
                 { status: status },
@@ -657,6 +659,16 @@ const acceptorder = async (req, res, next) => {
                 { new: true }
             );
             const user = await User.findById(order.userId);
+            const counter = await getNextOrderNumber("invoice");
+            await invoice.create({
+                invoiceNumber: counter,
+                userId:order.userId,
+                targetType: "rentalOffice",
+                targetId:rentalOfficeId,
+                orderType: "OrdersRentalOffice",
+                orderId: order._id,
+                amount: order.totalCost,
+            });
             await sendNotification({
                 target: user, // المستخدم اللي قدم الطلب
                 targetType: "User",
@@ -859,6 +871,23 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     const diffInDays = Math.ceil(
                         (new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24)
                     );
+                    const count = await counter.findOneAndUpdate(
+                        { name: "invoice" },
+                        { $inc: { seq: 1 } },
+                        { returnDocument: "after", upsert: true }
+                    );
+
+                    if (!count) {
+                        return res.status(500).json({ message: "Counter not found" });
+                    }
+
+                    await invoice.create({
+                        invoiceNumber: count.seq,
+                        userId,
+                        rentalOfficeId,
+                        orderId,
+                        amount: order.totalCost,
+                    });
 
                     return {
                         id: order._id,
@@ -996,131 +1025,131 @@ const endOrder = async (req, res, next) => {
     }
 }
 const getAllUserOrders = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const lang = req.headers['accept-language'] || 'en';
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    try {
+        const userId = req.user.id;
+        const lang = req.headers['accept-language'] || 'en';
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-    const messages = getMessages(lang);
+        const messages = getMessages(lang);
 
-    const paymentStatusTranslations = {
-      en: { ended: "Ended", inProgress: "inProgress", paid: "Paid" },
-      ar: { ended: "منتهيه", inProgress: "بأنتظار الدفع", paid: "تم الدفع" }
-    };
-
-    // 🟢 1. طلبات المستخدم من مكتب التأجير
-    const rentalOrders = await rentalOfficeOrder.find({ userId }).lean();
-    updateOrderStatuses(rentalOrders);
-
-    const rentalFormatted = await Promise.all(
-      rentalOrders.map(async (order) => {
-        let carData = await CarRental.findById(order.carId).lean();
-        if (!carData) {
-          const archivedCar = await CarArchive.findOne({ originalCarId: order.carId }).lean();
-          if (archivedCar) carData = archivedCar;
-        }
-        if (!carData) return null;
-
-        const paymentStatus = order.ended ? "ended" : order.paymentStatus;
-        const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
-
-        // ✅ تفريق بين التأجير اليومي/الأسبوعي والتمليك
-        if (carData.rentalType === "weekly/daily") {
-          return {
-            id: order._id,
-            type: "rentalOffice",
-            title: carData.title,
-            rentalType: carData.rentalType,
-            startDate: order.startDate,
-            endDate: order.endDate,
-            city: carData.city,
-            totalCost: order.totalCost,
-            paymentStatus,
-            paymentStatusText,
-            createdAt: order.createdAt
-          };
-        } else {
-          return {
-            id: order._id,
-            type: "rentalOffice",
-            title: carData.title,
-            ownershipPeriod: carData.ownershipPeriod,
-            rentalType: carData.rentalType,
-            city: carData.city,
-            totalCost: order.totalCost,
-            paymentStatus,
-            paymentStatusText,
-            createdAt: order.createdAt
-          };
-        }
-      })
-    );
-
-    // 🟣 2. طلبات المستخدم من مزود الخدمة
-    const providerOrders = await serviceProviderOrder
-      .find({ userId })
-      .lean();
-
-    const providerFormatted = await Promise.all(
-      providerOrders.map(async (order) => {
-        const paymentStatusText =
-          paymentStatusTranslations[lang][order.paymentStatus] || "";
-
-        return {
-          id: order._id,
-          type: "serviceProvider",
-          serviceType: order.serviceType,
-          price: order.price,
-          paymentStatus: order.paymentStatus,
-          paymentStatusText,
-          createdAt: order.createdAt,
+        const paymentStatusTranslations = {
+            en: { ended: "Ended", inProgress: "inProgress", paid: "Paid" },
+            ar: { ended: "منتهيه", inProgress: "بأنتظار الدفع", paid: "تم الدفع" }
         };
-      })
-    );
-    const slavePosts = await SlavgePost.find({ userId }).lean();
 
-    const slavePostsFormatted = await Promise.all(
-        slavePosts.map(async (post) => {
-            return {
-                id: post._id,
-                type: "slavePost",
-                title: post.title,
-                details: post.details,
-                createdAt: post.createdAt,
-            };
-        })
-    );
+        // 🟢 1. طلبات المستخدم من مكتب التأجير
+        const rentalOrders = await rentalOfficeOrder.find({ userId }).lean();
+        updateOrderStatuses(rentalOrders);
 
-    // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
-    const allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
-      .filter(Boolean)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const rentalFormatted = await Promise.all(
+            rentalOrders.map(async (order) => {
+                let carData = await CarRental.findById(order.carId).lean();
+                if (!carData) {
+                    const archivedCar = await CarArchive.findOne({ originalCarId: order.carId }).lean();
+                    if (archivedCar) carData = archivedCar;
+                }
+                if (!carData) return null;
 
-    // 🧮 pagination يدوي بعد الدمج
-    const paginated = allOrders.slice(skip, skip + limit);
-    const totalPages = Math.ceil(allOrders.length / limit);
+                const paymentStatus = order.ended ? "ended" : order.paymentStatus;
+                const paymentStatusText = paymentStatusTranslations[lang][paymentStatus] || "";
 
-    return res.status(200).send({
-      status: true,
-      code: 200,
-      message:
-        lang === "ar"
-          ? "تم استرجاع جميع الطلبات بنجاح"
-          : "All orders retrieved successfully",
-      data: {
-        orders: paginated,
-        pagination: {
-          page,
-          totalPages
-        }
-      }
-    });
+                // ✅ تفريق بين التأجير اليومي/الأسبوعي والتمليك
+                if (carData.rentalType === "weekly/daily") {
+                    return {
+                        id: order._id,
+                        type: "rentalOffice",
+                        title: carData.title,
+                        rentalType: carData.rentalType,
+                        startDate: order.startDate,
+                        endDate: order.endDate,
+                        city: carData.city,
+                        totalCost: order.totalCost,
+                        paymentStatus,
+                        paymentStatusText,
+                        createdAt: order.createdAt
+                    };
+                } else {
+                    return {
+                        id: order._id,
+                        type: "rentalOffice",
+                        title: carData.title,
+                        ownershipPeriod: carData.ownershipPeriod,
+                        rentalType: carData.rentalType,
+                        city: carData.city,
+                        totalCost: order.totalCost,
+                        paymentStatus,
+                        paymentStatusText,
+                        createdAt: order.createdAt
+                    };
+                }
+            })
+        );
 
-  } catch (error) {
-    next(error);
-  }
+        // 🟣 2. طلبات المستخدم من مزود الخدمة
+        const providerOrders = await serviceProviderOrder
+            .find({ userId })
+            .lean();
+
+        const providerFormatted = await Promise.all(
+            providerOrders.map(async (order) => {
+                const paymentStatusText =
+                    paymentStatusTranslations[lang][order.paymentStatus] || "";
+
+                return {
+                    id: order._id,
+                    type: "serviceProvider",
+                    serviceType: order.serviceType,
+                    price: order.price,
+                    paymentStatus: order.paymentStatus,
+                    paymentStatusText,
+                    createdAt: order.createdAt,
+                };
+            })
+        );
+        const slavePosts = await SlavgePost.find({ userId }).lean();
+
+        const slavePostsFormatted = await Promise.all(
+            slavePosts.map(async (post) => {
+                return {
+                    id: post._id,
+                    type: "slavePost",
+                    title: post.title,
+                    details: post.details,
+                    createdAt: post.createdAt,
+                };
+            })
+        );
+
+        // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
+        const allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // 🧮 pagination يدوي بعد الدمج
+        const paginated = allOrders.slice(skip, skip + limit);
+        const totalPages = Math.ceil(allOrders.length / limit);
+
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message:
+                lang === "ar"
+                    ? "تم استرجاع جميع الطلبات بنجاح"
+                    : "All orders retrieved successfully",
+            data: {
+                orders: paginated,
+                pagination: {
+                    page,
+                    totalPages
+                }
+            }
+        });
+
+    } catch (error) {
+        next(error);
+    }
 };
 
 
