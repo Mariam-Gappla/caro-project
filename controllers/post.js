@@ -1171,6 +1171,8 @@ const getEntityByTypeAndId = async (req, res, next) => {
         (a) => a.name?.[lang] || a.name || ""
       );
     }
+    entity.id = entity._id;
+    delete entity._id;
     return res.status(200).json({
       status: true,
       code: 200,

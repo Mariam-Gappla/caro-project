@@ -18,7 +18,7 @@ const getCylinder = async (req, res, next) => {
         const formated = cylinders.map((body) => {
             return {
                 id: body._id,
-                text: body.name
+                text: String(body.name)
             }
         });
         return res.status(200).send({

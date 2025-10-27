@@ -1113,7 +1113,7 @@ const getUserData = async (req, res, next) => {
     const messages = getMessages(lang);
     const userId = req.user.id;
 
-    const existUser = await User.findOne({ _id: userId });
+    const existUser = await User.findOne({ _id: userId }).populate("categoryCenterId");
     if (!existUser) {
       return res.status(400).send({
         status: false,

@@ -162,8 +162,6 @@ const getPostById = async (req, res, next) => {
       .populate("deliveryOptionId")
       .populate("advantages")
       .lean();
-      
-      console.log(post)
 
     if (!post) {
       return res.status(404).send({
@@ -173,7 +171,7 @@ const getPostById = async (req, res, next) => {
       });
     }
 
-    // ✅ نعمل Format نضيف بس اللي محتاجينه
+    // ✅ Format output
     const formatedPost = {
       id: post._id,
       createdAt: post.createdAt,
@@ -182,29 +180,62 @@ const getPostById = async (req, res, next) => {
       images: post.images || [],
       title: post.title,
       price: post.price,
-      financing: post.financing, 
-      year:post.carModelId.model[lang],
-      fuelType: post.fuelTypeId?.name[lang],
-      cylinders: post.cylindersId.name,
-      carCondition: post.carConditionId?.name[lang],
-      interiorColor: post.interiorColor,
-      exteriorColor: post.exteriorColor,
-      transmissionType: post.transmissionTypeId?.name[lang] || null ,
       discount: post.discount,
       discountedPrice: post.discountedPrice,
       financing: post.financing,
-      fuelCapacity:post.fuelCapacity,
+      fuelCapacity: post.fuelCapacity,
       description: post.discription,
-      services: post.deliveryOptionId?.name.en=="Free Delivery"?1:2,
-      advantages: post.advantages?.map(a => a.name?.[lang]),
       postNumber: post.postNumber,
+      interiorColor: post.interiorColor,
+      exteriorColor: post.exteriorColor,
 
-      // ✅ ناخد بس النصوص بدل الـ object كله
-      carType: post.carTypeId?.type?.[lang] || "",
-      carName: post.carNameId?.carName?.[lang] || "",
-      city: post.cityId?.name?.[lang] || "",
+      // ✅ كل populate يكون فيه id + text
+      year: post.carModelId
+        ? { id: post.carModelId._id, text: post.carModelId.model?.[lang] }
+        : "",
 
-      showroomId: post.showroomId, // تسيبيه زي ماهو عشان ممكن تحتاجي بياناته بعدين
+      fuelType: post.fuelTypeId
+        ? { id: post.fuelTypeId._id, text: post.fuelTypeId.name?.[lang] }
+        : "",
+
+      cylinders: post.cylindersId
+        ? { id: post.cylindersId._id, text: post.cylindersId.name?.[lang] || String(post.cylindersId.name) }
+        : "",
+
+      carCondition: post.carConditionId
+        ? { id: post.carConditionId._id, text: post.carConditionId.name?.[lang] }
+        : "",
+
+      transmissionType: post.transmissionTypeId
+        ? { id: post.transmissionTypeId._id, text: post.transmissionTypeId.name?.[lang] }
+        : "",
+
+      carType: post.carTypeId
+        ? { id: post.carTypeId._id, text: post.carTypeId.type?.[lang] }
+        : "",
+
+      carName: post.carNameId
+        ? { id: post.carNameId._id, text: post.carNameId.carName?.[lang] }
+        : "",
+
+      city: post.cityId
+        ? { id: post.cityId._id, text: post.cityId.name?.[lang] }
+        : "",
+
+      carBody: post.carBodyId
+        ? { id: post.carBodyId._id, text: post.carBodyId.name?.[lang] }
+        : "",
+
+      services: post.deliveryOptionId
+        ? { id: post.deliveryOptionId._id, text: post.deliveryOptionId.name?.[lang] }
+        : "",
+
+      advantages: post.advantages?.map(a => ({
+        id: a._id,
+        text: a.name?.[lang]
+      })),
+
+      showroomId: post.showroomId,
     };
 
     return res.status(200).send({
