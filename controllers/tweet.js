@@ -310,7 +310,7 @@ const getTweetById = async (req, res, next) => {
 const getCommentsAndRepliesForTweet = async (req, res, next) => {
   try {
     const tweetId = req.params.id;
-    const lang = req.headers['accept-language'] || 'en';
+    const lang = req.headers["accept-language"] || "en";
 
     if (!mongoose.Types.ObjectId.isValid(tweetId)) {
       return res.status(400).send({
@@ -326,7 +326,7 @@ const getCommentsAndRepliesForTweet = async (req, res, next) => {
     const result = await Comment.aggregate([
       { $match: { tweetId: new mongoose.Types.ObjectId(tweetId) } },
 
-      // 🔹 المستخدم صاحب الكومنت
+      // 🔹 بيانات المستخدم صاحب الكومنت
       {
         $lookup: {
           from: "users",
@@ -347,7 +347,7 @@ const getCommentsAndRepliesForTweet = async (req, res, next) => {
         },
       },
 
-      // 🔹 المستخدمين اللي عاملين الردود
+      // 🔹 بيانات المستخدمين اللي عاملين الردود
       {
         $lookup: {
           from: "users",
@@ -357,7 +357,7 @@ const getCommentsAndRepliesForTweet = async (req, res, next) => {
         },
       },
 
-      // 🔹 دمج بيانات المستخدم في كل reply (username, image فقط)
+      // 🔹 دمج بيانات المستخدم داخل الرد
       {
         $addFields: {
           replies: {
@@ -365,9 +365,9 @@ const getCommentsAndRepliesForTweet = async (req, res, next) => {
               input: { $ifNull: ["$replies", []] },
               as: "reply",
               in: {
-                _id: "$$reply._id",
+                id: "$$reply._id", // ✅ تحويل _id إلى id
                 content: "$$reply.content",
-                createdAt: "$$reply.createdAt",
+                createdAt: "$$reply.date", // ✅ عرض createdAt للرد
                 userData: {
                   $let: {
                     vars: {
@@ -397,10 +397,11 @@ const getCommentsAndRepliesForTweet = async (req, res, next) => {
         },
       },
 
-      // 🔹 تحديد الحقول النهائية
+      // 🔹 الحقول النهائية
       {
         $project: {
-          _id: 1,
+          _id: 0, // ✅ نخفي _id
+          id: "$_id", // ✅ نظهره كـ id فقط
           content: 1,
           createdAt: 1,
           userData: {
