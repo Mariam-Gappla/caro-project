@@ -18,6 +18,7 @@ const path = require("path");
 const mongoose = require('mongoose');
 const fs = require("fs");
 const User = require("../models/user");
+const SalvagePost = require("../models/slavgePost.js");
 const addOrder = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -662,9 +663,9 @@ const acceptorder = async (req, res, next) => {
             const counter = await getNextOrderNumber("invoice");
             await invoice.create({
                 invoiceNumber: counter,
-                userId:order.userId,
+                userId: order.userId,
                 targetType: "rentalOffice",
-                targetId:rentalOfficeId,
+                targetId: rentalOfficeId,
                 orderType: "OrdersRentalOffice",
                 orderId: order._id,
                 amount: order.totalCost,
@@ -871,7 +872,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                     const diffInDays = Math.ceil(
                         (new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24)
                     );
-                
+
                     return {
                         id: order._id,
                         images: car.images,
@@ -1014,19 +1015,19 @@ const getAllUserOrders = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const status= req.query.status; 
-        let filter = {userId};
-        let filterSlavge={userId};
-        if(status=="paid"){
-            filter.paymentStatus="paid"
+        const status = req.query.status;
+        let filter = { userId };
+        let filterSlavge = { userId };
+        if (status == "paid") {
+            filter.paymentStatus = "paid"
         }
-        if(status=="inProgress"){
-            filter.paymentStatus="inProgress"
-            filterSlavge.ended=false
+        if (status == "inProgress") {
+            filter.paymentStatus = "inProgress"
+            filterSlavge.ended = false
         }
-        if(status=="ended"){
-            filter.ended=true
-            filterSlavge.ended=true
+        if (status == "ended") {
+            filter.ended = true
+            filterSlavge.ended = true
         }
         const messages = getMessages(lang);
 
@@ -1147,7 +1148,29 @@ const getAllUserOrders = async (req, res, next) => {
         next(error);
     }
 };
+const cancelOrder = async (req, res, next) => {
+    try {
+        const lang = req.headers['accept-language'] || 'en';
+        const { id, type } = req.body
+        let Model;
+        if (type == "salvagePost") {
+            Model = SalvagePost
+        }
+        if (type =="serviceProvider") {
+            Model = serviceProviderOrder
+        }
+        await Model.findByIdAndDelete(id);
+        return res.status(200).send({
+            code: 200,
+            status: true,
+            message: lang == "en" ? "order canceled successfuly" : "تم الغاء الاوردر بنجاح"
+        })
 
+    }
+    catch (err) {
+        next(err)
+    }
+}
 
 
 
@@ -1163,7 +1186,8 @@ module.exports = {
     getOrdersByRentalOffice,
     endOrder,
     getReportData,
-    getAllUserOrders
+    getAllUserOrders,
+    cancelOrder
 }
 
 
