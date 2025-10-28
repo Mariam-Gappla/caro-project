@@ -77,11 +77,6 @@ const rentalOfficeSchema = (lang = 'en') => {
             'string.empty': msg.phone.required,
             'any.required': msg.phone.required,
         }),
-        password: Joi.string().min(3).required().messages({
-            'string.empty': msg.password.required,
-            'string.min': msg.password.min,
-            'any.required': msg.password.required,
-        }),
         email: Joi.string().email().messages({
             'string.email':msg.email.invalid
         }),

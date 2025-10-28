@@ -2,7 +2,9 @@ const ShowRoomPosts = require("../models/showroomPost");
 const getNextOrderNumber = require("../controllers/counter");
 const showroomPostSchema = require("../validation/showroomPostsValidition");
 const {saveImage} = require("../configration/saveImage");
-const Reel = require("../models/reels")
+const Reel = require("../models/reels");
+const Wallet = require("../models/wallet");
+const User=require("../models/user");
 const addShowroomPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -251,8 +253,47 @@ const getPostById = async (req, res, next) => {
     next(error);
   }
 };
+const buyCar = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const userId = req.user.id;
+    const { carId } = req.body;
 
-module.exports = { addShowroomPost, getShowroomPosts, getPostById };
+    // 🟢 1. Fetch user, wallet, and car
+    const user = await User.findById(userId)
+    const userWallet=await Wallet.findOne({userId})
+    const car = await ShowRoomPosts.findById(carId);
+
+    if (!user || !car) {
+      return res.status(404).json({
+        status: false,
+        message: lang === "en" ? "User or Car not found" : "المستخدم أو السيارة غير موجودين",
+      });
+    }
+
+    // 🟢 2. Check if user has enough balance
+    if (userWallet.balance < car.price) {
+      return res.status(400).json({
+        status: false,
+        message: lang === "en" ? "Insufficient balance" : "رصيدك غير كافي",
+      });
+    }
+
+    // 🟢 3. Deduct from user wallet
+    userWallet.balance -= car.price;
+    await userWallet.save();
+    return res.status(200).json({
+      status: true,
+      code:200,
+      message: lang === "en" ? "Car purchased successfully" : "تم شراء السيارة بنجاح",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+module.exports = { addShowroomPost, getShowroomPosts, getPostById,buyCar };
 
 
 

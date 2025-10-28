@@ -52,7 +52,13 @@ const getCarPlatesPosts = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         // 🟢 تجهيز الفلترة
-        let filteration = {};
+        const now = new Date();
+        let filteration = {
+            $or: [
+                { isFixedPrice: true },
+                { isFixedPrice: false, auctionEnd: { $gte: now } }
+            ]
+        };
         if (req.query.isFixedPrice !== undefined && req.query.digites !== undefined) {
             filteration.isFixedPrice = req.query.isFixedPrice === "true";
             filteration.digites = Number(req.query.digites)

@@ -27,7 +27,7 @@ const addCar = async (req, res, next) => {
     console.log(imagePaths);
     const { rentalType } = req.body;
     if (rentalType == "weekly/daily") {
-
+       console.log(req.body);
       const { error } = carRentalWeeklyValiditionSchema(lang).validate({
         ...req.body,
         images: imagePaths,
@@ -45,21 +45,8 @@ const addCar = async (req, res, next) => {
         videoPath = `${BASE_URL}${saveImage(video[0])}`;
       }
       await carRental.create({
-        title: req.body.title,
-        rentalType: req.body.rentalType,
-        images: imagePaths,
-        nameId: req.body.nameId,
-        modelId: req.body.modelId,
-        carTypeId: req.body.carTypeId,
-        licensePlateNumber: req.body.licensePlateNumber,
-        freeKilometers: req.body.freeKilometers,
-        pricePerFreeKilometer: req.body.pricePerFreeKilometer,
-        pricePerExtraKilometer: req.body.pricePerExtraKilometer,
-        city: req.body.city,
-        area: req.body.area,
-        carDescription: req.body.carDescription,
-        deliveryOption: req.body.deliveryOption,
-        odoMeter: req.body.odoMeter,
+       ...req.body,
+       images: imagePaths,
         rentalOfficeId: req.user.id,
         videoCar: videoPath
       });

@@ -1,6 +1,6 @@
 const Car = require("../models/car");
 const carPostSchema = require("../validation/carValidition");
-const {saveImage} = require("../configration/saveImage");
+const { saveImage } = require("../configration/saveImage");
 const addCarPost = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
@@ -67,7 +67,13 @@ const getCarPosts = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        let filteration = {};
+        const now = new Date();
+        let filteration = {
+            $or: [
+                { isFixedPrice: true },
+                { isFixedPrice: false, auctionEnd: { $gte: now } }
+            ]
+        };
         if (req.query.cityId) {
             filteration.cityId = req.query.cityId
         }

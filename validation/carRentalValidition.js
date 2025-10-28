@@ -70,10 +70,10 @@ const carRentalWeeklyValiditionSchema = (lang = "en") => {
       "any.required": messages.modelId.required,
       "string.base": messages.modelId.string,
     }),
-    priceDay: {
+    priceDay: Joi.number().required().messages({
       "any.required": messages.priceDay.required,
-      "number.base": messages.modelId.number,
-    }
+      "number.base": messages.priceDay.number,
+    })
   });
 }
 const rentToOwnSchema = (lang = "en") => {

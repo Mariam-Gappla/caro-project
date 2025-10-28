@@ -1,6 +1,7 @@
 const rentalOffice = require("../models/rentalOffice");
 const getMessages = require("../configration/getmessages")
 const followersForRentalOffice = require("../models/followersForRentalOffice");
+const User=require("../models/user");
 const bcrypt = require("bcrypt");
 const Favorite = require("../models/favorite");
 const ratingForOrder = require("../models/ratingForOrder");
@@ -23,7 +24,7 @@ const getAllRentallOffice = async (req, res, next) => {
     const { lat, lng, cityId, search } = req.query;
     const maxDistance = 5000; // 5 كم افتراضي
 
-    const filters = {};
+    const filters = {status: 'accepted'};
     if (cityId) filters.cityId = cityId;
     if (search) filters.username = { $regex: search, $options: "i" };
 
@@ -334,12 +335,29 @@ const getProfileData = async (req, res, next) => {
 const rentalOfficeVerified = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
+    const existUser=await User.findOne({id:req.body.phone});
+    if(!existUser)
+    {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "يجب ان تسجل فى تطبيق المستخدم اولا" : "You must register in the user app first"
+      });
+    }
     const file = req.file;
     if (!file) {
       return res.status(400).send({
         status: false,
         code: 400,
         message: lang == "ar" ? "الصورة مطلوبة" : "Image is required"
+      });
+    }
+    const existRentalOffice = await rentalOffice.findOne({phone: req.body.phone});
+    if (existRentalOffice) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang == "ar" ? "رقم الهاتف مستخدم من قبل" : "Phone number is already in use"
       });
     }
 
@@ -377,8 +395,7 @@ const rentalOfficeVerified = async (req, res, next) => {
     // ✅ حفظ الصورة
     let imageUrl = saveImage(file);
     imageUrl = `${process.env.BASE_URL}${imageUrl}`;
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    await rentalOffice.create({...req.body, image: imageUrl, password: hashedPassword });
+    await rentalOffice.create({...req.body, image: imageUrl, password: existUser.password}); ;
     /*
     const admin = await Admin.find({}); // أو حسب نظامك لو عندك أكتر من أدمن
 
