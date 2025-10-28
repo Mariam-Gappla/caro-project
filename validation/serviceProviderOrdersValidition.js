@@ -47,9 +47,11 @@ const serviceWinchValidationSchema = (lang = 'en') => {
     }).required().messages({
       'any.required': messages.locationRequired,
     }),
-
+    locationText:Joi.string().required().messages({
+      'any.required': messages.locationRequired,
+    }),
     paymentType: Joi.string()
-      .valid('cash', 'card', 'online')
+      .valid('cash', 'mada', 'bank')
       .required()
       .messages({
         'any.required': messages.paymentTypeRequired,
@@ -65,6 +67,9 @@ const serviceWinchValidationSchema = (lang = 'en') => {
         'number.base': messages.dropoffLongInvalid,
       }),
     }).required().messages({
+      'any.required': messages.dropoffLocationRequired,
+    }),
+    dropoffLocationText:Joi.string().required().message({
       'any.required': messages.dropoffLocationRequired,
     }),
   });
@@ -117,9 +122,11 @@ const serviceTireValidationSchema = (lang = 'en') => {
     }).required().messages({
       'any.required': messages.locationRequired,
     }),
-
+    locationText:Joi.string().required().messages({
+      'any.required': messages.locationRequired,
+    }),
     paymentType: Joi.string()
-      .valid('cash', 'card', 'online')
+      .valid('cash', 'mada', 'bank')
       .required()
       .messages({
         'any.required': messages.paymentTypeRequired,

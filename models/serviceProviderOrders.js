@@ -36,9 +36,15 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
         type: Number,
       },
     },
+    locationText:{
+      type:String
+    },
+    dropoffLocationText:{
+      type:String
+    },
     paymentType: {
       type: String,
-      enum: ['cash', 'card', 'online'],
+      enum: ['cash', 'mada', 'bank'],
       required: true,
     },
     paymentStatus: {

@@ -5,7 +5,7 @@ const providerRating = require("../models/providerRating");
 const orderRating = require("../models/ratingForOrder");
 const workSession = require("../models/workingSession");
 const ServiceProvider = require("../models/serviceProvider");
-const {sendNotification,sendNotificationToMany}=require("../configration/firebase.js");
+const { sendNotification, sendNotificationToMany } = require("../configration/firebase.js");
 const winsh = require("../models/winsh");
 const getNextOrderNumber = require("../controllers/counter");
 const tire = require("../models/tire");
@@ -117,29 +117,16 @@ const getOrdersbyServiceType = async (req, res, next) => {
 
       if (verificationAccount.serviceType === 'winch') {
         if (
-          order.carLocation?.lat && order.carLocation?.long &&
+          order.dropoffLocation?.lat && order.dropoffLocation?.long &&
           provider.location?.lat && provider.location?.long
         ) {
           distanceToCar = haversineDistance(
             provider.location.lat,
             provider.location.long,
-            order.carLocation.lat,
-            order.carLocation.long
-          ).toFixed(2);
-        }
-
-        if (
-          order.carLocation?.lat && order.carLocation?.long &&
-          order.dropoffLocation?.lat && order.dropoffLocation?.long
-        ) {
-          distanceToDropoff = haversineDistance(
-            order.carLocation.lat,
-            order.carLocation.long,
             order.dropoffLocation.lat,
             order.dropoffLocation.long
           ).toFixed(2);
         }
-
         formattedOrders.push({
           id: order._id,
           userData: {
@@ -233,6 +220,13 @@ const addWinchOrder = async (req, res, next) => {
     delete req.body['location.long'];
     delete req.body['dropoffLocation.lat'];
     delete req.body['dropoffLocation.long'];
+    const distanceToCar = haversineDistance(
+      req.body.dropoffLocation.lat,
+      req.body.dropoffLocation.long,
+      req.body.location.lat,
+      req.body.location.long
+    ).toFixed(2);
+
     const formatedData = {
       ...req.body,
       image: image,
