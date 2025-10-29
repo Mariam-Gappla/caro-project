@@ -63,7 +63,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
       await winsh.findOne({ providerId }) ||
       await tire.findOne({ providerId });
 
-    const provider = await serviceProvider.findOne({ _id: providerId });
+    const provider = await ServiceProvider.findOne({ _id: providerId });
     if (!verificationAccount) {
       return res.status(404).json({
         status: false,
