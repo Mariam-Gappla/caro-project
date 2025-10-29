@@ -1,6 +1,7 @@
 const { serviceWinchValidationSchema, serviceTireValidationSchema } = require("../validation/serviceProviderOrdersValidition");
 const serviceProviderOrder = require("../models/serviceProviderOrders");
 const User = require("../models/user");
+const ServiceProviderPricing=require("../models/serviceProviderPrices.js")
 const providerRating = require("../models/providerRating");
 const orderRating = require("../models/ratingForOrder");
 const workSession = require("../models/workingSession");
@@ -226,7 +227,7 @@ const addWinchOrder = async (req, res, next) => {
       req.body.location.lat,
       req.body.location.long
     ).toFixed(2);
-
+    let price;
     const formatedData = {
       ...req.body,
       image: image,
@@ -235,7 +236,7 @@ const addWinchOrder = async (req, res, next) => {
     const serviceProviders = await winsh.find({ serviceType: "winch", status: "accepted" });
 
     console.log("formatedData", formatedData);
-
+  
     const { error } = serviceWinchValidationSchema(lang).validate(formatedData);
     if (error) {
       return res.status(400).json({
@@ -244,11 +245,22 @@ const addWinchOrder = async (req, res, next) => {
         message: error.details[0].message,
       });
     }
+    const pricing=await ServiceProviderPricing.find({});
+    if(distanceToCar > pricing.winchDistance)
+    {
+      const dis=distanceToCar-pricing.winchDistance;
+      const extra=dis*pricing.winchOpenPrice
+      price=pricing.winchFixedPrice+extra;
+    }
+    else
+    {
+      price=pricing.winchFixedPrice;
+    }
     const savedImagePath = saveImage(file); // مثل: "abc.jpg"
     console.log(savedImagePath);
     formatedData.image = BASE_URL + savedImagePath;
     formatedData.orderNumber = await getNextOrderNumber("order");
-    console.log(formatedData)
+    formatedData.price=price;
     const order = await serviceProviderOrder.create(formatedData);
     await sendNotificationToMany({
       target: serviceProviders, // كائن مقدم الخدمة اللى جاله الأوردر

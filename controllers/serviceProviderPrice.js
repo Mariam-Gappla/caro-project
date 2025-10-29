@@ -81,8 +81,33 @@ const addBatteryPricing = async (req, res, next) => {
         next(err)
     }
 }
+const getPricing = async (req, res, next) => {
+    try {
+        const lang = req.headers["accept-language"] || "en";
+        const { type } = req.body;
+        const pricing = await ServiceProviderPricing.find({});
+        let formated = {}
+        if (type == "tire") {
+            formated.start = pricing.tireStartPrice
+            formated.end = pricing.tireEndPrice
+
+        }
+        else if (type == "battery") {
+            formated.start = pricing.batteryStartPrice
+            formated.end = pricing.batteryEndPrice
+        }
+        return res.status(200).send({
+            status:true,
+            code:200,
+        })
+    }
+    catch (err) {
+        next(err)
+    }
+}
 module.exports = {
     addBatteryPricing,
     addTirePricing,
-    addWinchPricing
+    addWinchPricing,
+    getPricing
 }

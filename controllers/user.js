@@ -439,10 +439,10 @@ const requestResetPassword = async (req, res, next) => {
     next(err);
   }
 };
-const resetPassword = async (req, res, next) => {
+const verifyCode = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-    const { phone, otp, newPassword, role } = req.body;
+    const { phone, otp} = req.body;
 
     // تحديد الموديل بناءً على الـ role
     let Model;
@@ -477,13 +477,49 @@ const resetPassword = async (req, res, next) => {
         message: lang == "en" ? "Invalid or expired OTP" : "الكود غير صحيح أو انتهت صلاحيته"
       });
     }
-
-    // تحديث الباسورد (مع افتراض وجود bcrypt في pre-save)
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
     user.resetOtp = undefined;
     user.resetOtpExpires = undefined;
 
+    await user.save();
+
+    res.status(200).send({
+      code: 200,
+      status: true,
+      message: lang == "en" ? "Password reset successfully" : "تم تحديث الباسورد بنجاح"
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+const resetPassword = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const { phone, newPassword, role } = req.body;
+
+    // تحديد الموديل بناءً على الـ role
+    let Model;
+    switch (role) {
+      case 'user':
+        Model = User;
+        break;
+      case 'serviceProvider':
+        Model = serviceProvider;
+        break;
+      case 'rentalOffice':
+        Model = rentalOffice;
+        break;
+      default:
+        return res.status(400).send({
+          code: 400,
+          status: false,
+          message: lang == "en" ? "Invalid role" : "هذا الدور غير موجود"
+        });
+    }
+
+    const user = await Model.findOne({ phone });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
     await user.save();
 
     res.status(200).send({
@@ -1140,26 +1176,26 @@ const getUserData = async (req, res, next) => {
       message: lang == "en" ? "request get successfully" : "تم معالجه الطلب بنجاح",
       data: {
         user: {
-        _id: existUser._id,
-            username: existUser.username,
-            image: existUser.image,
-            phone: existUser.phone,
-            email: existUser.email,
-            password: existUser.password,
-            likedBy: existUser.likedBy,
-            avgRating: avgRating,
-            favorite: favorite.length,
-            followers: followers.length,
-            following: following.length,
-            createdAt: existUser.createdAt,
-            subscribeAsRntalOffice: userAsRentalOffice ? true : false,
-            categoryId: existUser.categoryCenterId?._id || "user",
-            category: existUser.categoryCenterId?.name.en || "user",
-            haveService: haveService ? true : false,
-            role: existUser.isProvider ? "provider" : "user",
-            createdAt: existUser.createdAt,
-            updatedAt: existUser.updatedAt,
-            __v: 0,
+          _id: existUser._id,
+          username: existUser.username,
+          image: existUser.image,
+          phone: existUser.phone,
+          email: existUser.email,
+          password: existUser.password,
+          likedBy: existUser.likedBy,
+          avgRating: avgRating,
+          favorite: favorite.length,
+          followers: followers.length,
+          following: following.length,
+          createdAt: existUser.createdAt,
+          subscribeAsRntalOffice: userAsRentalOffice ? true : false,
+          categoryId: existUser.categoryCenterId?._id || "user",
+          category: existUser.categoryCenterId?.name.en || "user",
+          haveService: haveService ? true : false,
+          role: existUser.isProvider ? "provider" : "user",
+          createdAt: existUser.createdAt,
+          updatedAt: existUser.updatedAt,
+          __v: 0,
 
         },
       }
@@ -1189,4 +1225,5 @@ module.exports = {
   getProfileDataForCenters,
   getUserData,
   userAsAutoSalvage,
+  verifyCode
 }

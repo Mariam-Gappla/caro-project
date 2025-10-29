@@ -6,8 +6,8 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ServiceProvider', // اسم الموديل المرتبط
     },
-    orderNumber:{
-     type: Number,
+    orderNumber: {
+      type: Number,
       required: true
     },
     userId: {
@@ -36,11 +36,11 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
         type: Number,
       },
     },
-    locationText:{
-      type:String
+    locationText: {
+      type: String
     },
-    dropoffLocationText:{
-      type:String
+    dropoffLocationText: {
+      type: String
     },
     paymentType: {
       type: String,
@@ -50,7 +50,7 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
     paymentStatus: {
       type: String,
       enum: ['inProgress', 'paid'],
-      default:"inProgress"
+      default: "inProgress"
     },
     dropoffLocation: {
       lat: {
@@ -60,9 +60,12 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
         type: Number,
       },
     },
-    ended:{
-      type:Boolean,
-      default:false
+    price: {
+      type: Number
+    },
+    ended: {
+      type: Boolean,
+      default: false
     },
     status: {
       type: String,
