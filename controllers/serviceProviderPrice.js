@@ -28,6 +28,7 @@ const addWinchPricing = async (req, res, next) => {
 };
 const addTirePricing = async (req, res, next) => {
     try {
+        const lang = req.headers["accept-language"] || "en";
         const { distance, fixedPrice, openPrice } = req.body;
 
         await ServiceProviderPricing.findOneAndUpdate(
@@ -54,6 +55,7 @@ const addTirePricing = async (req, res, next) => {
 }
 const addBatteryPricing = async (req, res, next) => {
     try {
+        const lang = req.headers["accept-language"] || "en";
         const { start, end } = req.body;
 
         await ServiceProviderPricing.findOneAndUpdate(
