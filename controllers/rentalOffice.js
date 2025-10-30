@@ -335,7 +335,7 @@ const getProfileData = async (req, res, next) => {
 const rentalOfficeVerified = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-    const existUser=await User.findOne({id:req.body.phone});
+    const existUser=await User.findOne({phone:req.body.phone});
     if(!existUser)
     {
       return res.status(400).send({
