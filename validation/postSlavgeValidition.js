@@ -1,5 +1,5 @@
-const Joi=require("joi");
-const getMessages=require("../locales/schemaValiditionMessages/slavgeValiditionMessages")
+const Joi = require("joi");
+const getMessages = require("../locales/schemaValiditionMessages/slavgeValiditionMessages")
 const salvagePostSchema = (lang = "en") => {
   const messages = getMessages(lang)
 
@@ -26,7 +26,8 @@ const salvagePostSchema = (lang = "en") => {
     })
       .required()
       .messages(messages.location),
+    locationText: Joi.string().required().messages(messages.location),
   });
 };
 
-module.exports=salvagePostSchema
+module.exports = salvagePostSchema

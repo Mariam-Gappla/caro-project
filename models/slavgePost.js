@@ -30,6 +30,9 @@ const salvagePostSchema = new mongoose.Schema(
           type:Boolean,
           default:false,
         },
+        locationText:{
+          type:String
+        },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

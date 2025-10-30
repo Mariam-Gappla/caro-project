@@ -1120,6 +1120,8 @@ const getAllUserOrders = async (req, res, next) => {
                     id: post._id,
                     type: "slavePost",
                     title: post.title,
+                    image:post.images,
+                    locationText:post.locationText,
                     details: post.details,
                     createdAt: post.createdAt,
                 };
