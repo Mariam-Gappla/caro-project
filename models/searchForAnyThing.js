@@ -17,7 +17,7 @@ const searchSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
-  status: { type: String, enum: ["pending", "accepted", "refused"], default: "pendding" }
+  status: { type: String, enum: ["pending", "accepted", "refused"], default: "pending" }
 }, { timestamps: true });
 
 const Search = mongoose.model("Search", searchSchema);

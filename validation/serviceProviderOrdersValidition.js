@@ -69,7 +69,7 @@ const serviceWinchValidationSchema = (lang = 'en') => {
     }).required().messages({
       'any.required': messages.dropoffLocationRequired,
     }),
-    dropoffLocationText:Joi.string().required().message({
+    dropoffLocationText:Joi.string().required().messages({
       'any.required': messages.dropoffLocationRequired,
     }),
   });
