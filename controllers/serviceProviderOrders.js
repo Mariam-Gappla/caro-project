@@ -140,7 +140,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
           serviceType: order.serviceType,
           payment: order.payment,
           paymentType: order.paymentType,
-          price: order.price,
+          price: order.price || 0,
           createdAt: order.createdAt,
           distanceToCar: distanceToCar ? `${distanceToCar} km` : "",
           distanceToDropoff: distanceToDropoff ? `${distanceToDropoff} km` : "",
@@ -173,7 +173,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
           serviceType: order.serviceType,
           payment: order.payment,
           paymentType: order.paymentType,
-          price: order.price,
+          price: order.price || 0,
           createdAt: order.createdAt,
           distance: distanceToCar ? `${distanceToCar} km` : "",
           location: order.location

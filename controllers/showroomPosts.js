@@ -1,10 +1,10 @@
 const ShowRoomPosts = require("../models/showroomPost");
 const getNextOrderNumber = require("../controllers/counter");
 const showroomPostSchema = require("../validation/showroomPostsValidition");
-const {saveImage} = require("../configration/saveImage");
+const { saveImage } = require("../configration/saveImage");
 const Reel = require("../models/reels");
 const Wallet = require("../models/wallet");
-const User=require("../models/user");
+const User = require("../models/user");
 const addShowroomPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -83,8 +83,8 @@ const getShowroomPosts = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     // 🟢 فلترة ديناميكية
-    const filteration = {showroomId: showroomId};
-    
+    const filteration = { showroomId: showroomId };
+
     if (req.query.cityId) {
       filteration.cityId = req.query.cityId; // ObjectId
     }
@@ -94,13 +94,11 @@ const getShowroomPosts = async (req, res, next) => {
     if (req.query.carConditionId) {
       filteration.carConditionId = req.query.carConditionId; // new/used
     }
-    if(req.query.fuelTypeId)
-    {
-      filteration.fuelTypeId=req.query.fuelTypeId
+    if (req.query.fuelTypeId) {
+      filteration.fuelTypeId = req.query.fuelTypeId
     }
-    if(req.query.deliveryOptionId)
-    {
-       filteration.deliveryOptionId=req.query.deliveryOptionId
+    if (req.query.deliveryOptionId) {
+      filteration.deliveryOptionId = req.query.deliveryOptionId
     }
     // 🟢 query مع الفلترة
     const showroomPosts = await ShowRoomPosts.find(filteration).populate("transmissionTypeId").populate("carConditionId")
@@ -113,11 +111,11 @@ const getShowroomPosts = async (req, res, next) => {
       return {
         id: post._id,
         title: post.title,
-        image:post.images,
-        price:post.price,
-        discount:post.discount,
-        fuelCapacity:post.fuelCapacity,
-        discountedPrice:post.discount==true?post.discountedPrice:0,
+        image: post.images,
+        price: post.price,
+        discount: post.discount,
+        fuelCapacity: post.fuelCapacity,
+        discountedPrice: post.discount == true ? post.discountedPrice : 0,
         transmissionType: post.transmissionTypeId.name[lang],
         carCondition: post.carConditionId.name[lang],
         financing: post.financing
@@ -181,9 +179,9 @@ const getPostById = async (req, res, next) => {
       video: post.video || null,
       images: post.images || [],
       title: post.title,
-      price: post.price,
-      discount: post.discount,
-      discountedPrice: post.discountedPrice,
+      price: post.price ? parseFloat(post.price) : 0,
+      discount: post.discount ? parseFloat(post.discount) : 0,
+      discountedPrice: post.discountedPrice ? parseFloat(post.discountedPrice) : 0,
       financing: post.financing,
       fuelCapacity: post.fuelCapacity,
       description: post.discription,
@@ -261,7 +259,7 @@ const buyCar = async (req, res, next) => {
 
     // 🟢 1. Fetch user, wallet, and car
     const user = await User.findById(userId)
-    const userWallet=await Wallet.findOne({userId})
+    const userWallet = await Wallet.findOne({ userId })
     const car = await ShowRoomPosts.findById(carId);
 
     if (!user || !car) {
@@ -284,7 +282,7 @@ const buyCar = async (req, res, next) => {
     await userWallet.save();
     return res.status(200).json({
       status: true,
-      code:200,
+      code: 200,
       message: lang === "en" ? "Car purchased successfully" : "تم شراء السيارة بنجاح",
     });
   } catch (error) {
@@ -293,7 +291,7 @@ const buyCar = async (req, res, next) => {
 };
 
 
-module.exports = { addShowroomPost, getShowroomPosts, getPostById,buyCar };
+module.exports = { addShowroomPost, getShowroomPosts, getPostById, buyCar };
 
 
 
