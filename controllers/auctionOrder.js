@@ -2,6 +2,8 @@
 const AuctionOrder = require("../models/auctionOrder");
 const Wallet = require("../models/wallet");
 const Invoice = require("../models/invoice");
+const io = req.app.get("io"); // ← نجيب io اللي عملناه في index.js
+
 const getNextOrderNumber = require("../controllers/counter");
 const placeBid = async (io, req, res) => {
     try {
@@ -34,7 +36,7 @@ const placeBid = async (io, req, res) => {
         const counter = await getNextOrderNumber("invoice");
         await Invoice.create({
             invoiceNumber: counter,
-            userId:userId,
+            userId: userId,
             targetType: "User",
             targetId: targetId,
             orderType: "OrdersRentalOffice",
@@ -43,13 +45,12 @@ const placeBid = async (io, req, res) => {
         });
 
         /*
-            // 🟢 إرسال تحديث لحظي فقط للمزاد الحالي
-            io.to(auctionId).emit("auctionUpdate", {
-              auctionId,
-              currentPrice: amount,
-              highestBidder: userId,
-            });
-        */
+         io.emit("auctionUpdate", {
+             auctionId: targetId,
+             amount,
+             userId,
+         });
+ */
         res.status(200).send({
             status: true,
             code: 200,

@@ -4,7 +4,7 @@ const http = require("http");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const path=require("path");
-
+const { Server } = require("socket.io");
 const server = http.createServer(app);
 
 // 🟢 MongoDB Connection
@@ -12,8 +12,33 @@ const connectDB = require("./configration/dbconfig.js");
 
 // 🟢 Socket.IO
 const socketConnection = require("./configration/socket.js");
+const io = new Server(server, {
+  cors: {
+    origin: "*", // ممكن تحدد دومينك بدل النجمة
+    methods: ["GET", "POST"],
+  },
+});
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error("Authentication error: No token provided"));
+  }
+  try {
+    const decoded = jwt.verify(token, "mysecret");
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    return next(new Error("Authentication error: Invalid token"));
+  }
+});
+io.on("connection", (socket) => {
+  console.log("🔌 مستخدم اتصل:", socket.id);
+  socket.on("disconnect", () => {
+    console.log("❌ المستخدم خرج:", socket.id);
+  });
+});
 
-
+app.set("io", io);
 
 
 
