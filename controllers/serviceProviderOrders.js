@@ -678,7 +678,7 @@ const getOrderById = async (req, res, next) => {
         id: order._id,
         orderNumber: order.orderNumber,
         userData: {
-          userId: user._id,
+          id: user._id,
           image: user.image,
           username: user.username,
           avgRating: avgRating,

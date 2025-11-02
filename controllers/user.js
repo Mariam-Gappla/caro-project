@@ -261,7 +261,6 @@ const login = async (req, res, next) => {
                 phone: existServiceProvider.phone,
                 email: existServiceProvider.email,
                 password: existServiceProvider.password,
-                likedBy: existServiceProvider.likedBy,
                 createdAt: existServiceProvider.createdAt,
                 __v: 0,
                 active: lastSession ? lastSession.isWorking : false,
