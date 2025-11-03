@@ -255,12 +255,12 @@ const buyCar = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const userId = req.user.id;
-    const { carId } = req.body;
+    const { postId } = req.body;
 
     // 🟢 1. Fetch user, wallet, and car
     const user = await User.findById(userId)
     const userWallet = await Wallet.findOne({ userId })
-    const car = await ShowRoomPosts.findById(carId);
+    const car = await ShowRoomPosts.findById(postId);
 
     if (!user || !car) {
       return res.status(404).json({

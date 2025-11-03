@@ -1166,7 +1166,7 @@ const getAllUserOrders = async (req, res, next) => {
             data: {
                 orders: paginated,
                 pagination: {
-                    page,
+                    page:paginated?page:0,
                     totalPages
                 }
             }
