@@ -249,7 +249,7 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
         };
 
         // Step 1: تحديث الحالات القديمة
-        const orders = await rentalOfficeOrder.find({ rentalOfficeId });
+        const orders = await rentalOfficeOrders.find({ rentalOfficeId });
         updateOrderStatuses(orders);
 
         // Step 2: تجهيز الفلتر
