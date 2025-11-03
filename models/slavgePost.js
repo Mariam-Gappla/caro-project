@@ -26,12 +26,16 @@ const salvagePostSchema = new mongoose.Schema(
                 required: true,
             },
         ],
-        ended:{
-          type:Boolean,
-          default:false,
+        ended: {
+            type: Boolean,
+            default: false,
         },
-        locationText:{
-          type:String
+        providerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        },
+        locationText: {
+            type: String
         },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -46,4 +50,4 @@ const salvagePostSchema = new mongoose.Schema(
 salvagePostSchema.index({ location: "2dsphere" });
 
 const SalvagePost = mongoose.model("SalvagePost", salvagePostSchema);
-module.exports=SalvagePost;
+module.exports = SalvagePost;

@@ -180,7 +180,7 @@ const getPostById = async (req, res, next) => {
       images: post.images || [],
       title: post.title,
       price: post.price ? parseFloat(post.price) : 0,
-      discount: post.discount ? parseFloat(post.discount) : 0,
+      discount: post.discount,
       discountedPrice: post.discountedPrice ? parseFloat(post.discountedPrice) : 0,
       financing: post.financing,
       fuelCapacity: post.fuelCapacity,

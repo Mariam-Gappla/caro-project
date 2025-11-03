@@ -1020,6 +1020,7 @@ const getAllUserOrders = async (req, res, next) => {
         let filterSlavge = { userId };
         if (status == "paid") {
             filter.paymentStatus = "paid"
+            filterSlavge.userId={}
         }
         if (status == "inProgress") {
             filter.paymentStatus = "inProgress"
@@ -1042,9 +1043,9 @@ const getAllUserOrders = async (req, res, next) => {
 
         const rentalFormatted = await Promise.all(
             rentalOrders.map(async (order) => {
-                let carData = await CarRental.findById(order.carId).lean();
+                let carData = await CarRental.findById(order.carId).populate("modelId").lean();
                 if (!carData) {
-                    const archivedCar = await CarArchive.findOne({ originalCarId: order.carId }).lean();
+                    const archivedCar = await CarArchive.findOne({ originalCarId: order.carId }).populate("modelId").lean();
                     if (archivedCar) carData = archivedCar;
                 }
                 if (!carData) return null;
@@ -1061,6 +1062,10 @@ const getAllUserOrders = async (req, res, next) => {
                         rentalType: carData.rentalType,
                         startDate: order.startDate,
                         endDate: order.endDate,
+                        deliveryType: order.deliveryType,
+                        paymentMethod: order.paymentMethod,
+                        priceType: order.priceType,
+                        model:carData.modelId.model[lang],
                         city: carData.city,
                         totalCost: order.totalCost,
                         paymentStatus,
@@ -1075,6 +1080,10 @@ const getAllUserOrders = async (req, res, next) => {
                         ownershipPeriod: carData.ownershipPeriod,
                         rentalType: carData.rentalType,
                         city: carData.city,
+                        deliveryType: order.deliveryType,
+                        monthlyPayment:carData.monthlyPayment,
+                        carPrice:carData.carPrice,
+                        paymentMethod: order.paymentMethod,
                         totalCost: order.totalCost,
                         paymentStatus,
                         paymentStatusText,
@@ -1086,7 +1095,7 @@ const getAllUserOrders = async (req, res, next) => {
 
         // 🟣 2. طلبات المستخدم من مزود الخدمة
         const providerOrders = await serviceProviderOrder
-            .find(filter)
+            .find(filter).populate("providerId")
             .lean();
 
         const providerFormatted = await Promise.all(
@@ -1099,20 +1108,24 @@ const getAllUserOrders = async (req, res, next) => {
                     type: "serviceProvider",
                     serviceType: order.serviceType,
                     price: order.price,
-                    details:order.details,
-                    paymentType:order.paymentType,
-                    image:order.image,
-                    location:order.location,
-                    locationText:order.locationText,
-                    dropoffLocation:order.dropoffLocation,
-                    dropoffLocationText:order.dropoffLocationText,
+                    details: order.details,
+                    paymentType: order.paymentType,
+                    image: order.image,
+                    location: order.location,
+                    locationText: order.locationText,
+                    dropoffLocation: order.dropoffLocation,
+                    dropoffLocationText: order.dropoffLocationText,
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
                     createdAt: order.createdAt,
+                    userData:providerOrders.providerId?{
+                        username:providerOrders.providerId.username,
+                        image:providerOrders.providerId.image,
+                    }:undefined
                 };
             })
         );
-        const slavePosts = await SlavgePost.find(filterSlavge).lean();
+        const slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
 
         const slavePostsFormatted = await Promise.all(
             slavePosts.map(async (post) => {
@@ -1120,10 +1133,14 @@ const getAllUserOrders = async (req, res, next) => {
                     id: post._id,
                     type: "slavePost",
                     title: post.title,
-                    image:post.images[0],
-                    locationText:post.locationText,
+                    image: post.images[0],
+                    locationText: post.locationText,
                     details: post.details,
                     createdAt: post.createdAt,
+                    providerData:slavePosts.providerId?{
+                       username:slavePosts.providerId.username,
+                       image:slavePosts.providerId.image
+                    }:undefined
                 };
             })
         );
@@ -1165,7 +1182,7 @@ const cancelOrder = async (req, res, next) => {
         if (type == "salvagePost") {
             Model = SalvagePost
         }
-        if (type =="serviceProvider") {
+        if (type == "serviceProvider") {
             Model = serviceProviderOrder
         }
         await Model.findByIdAndDelete(id);
