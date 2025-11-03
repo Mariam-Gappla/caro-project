@@ -1035,6 +1035,8 @@ const getAllUserOrders = async (req, res, next) => {
             slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
         if (status == "ended") {
+            filterrentalOffice.ended=true
+            filterServiceProvider.ended=true
             filterSlavge.ended = true
             slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
