@@ -1017,18 +1017,20 @@ const getAllUserOrders = async (req, res, next) => {
         const skip = (page - 1) * limit;
         const status = req.query.status;
         let filter = { userId };
+        let slavePosts=[];
         let filterSlavge = { userId };
         if (status == "paid") {
             filter.paymentStatus = "paid"
-            filterSlavge.userId={}
         }
         if (status == "inProgress") {
             filter.paymentStatus = "inProgress"
             filterSlavge.ended = false
+            slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
         if (status == "ended") {
             filter.ended = true
             filterSlavge.ended = true
+            slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
         const messages = getMessages(lang);
 
@@ -1125,7 +1127,7 @@ const getAllUserOrders = async (req, res, next) => {
                 };
             })
         );
-        const slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
+    
 
         const slavePostsFormatted = await Promise.all(
             slavePosts.map(async (post) => {
