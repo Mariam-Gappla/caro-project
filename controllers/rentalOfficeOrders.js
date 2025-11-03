@@ -1121,10 +1121,10 @@ const getAllUserOrders = async (req, res, next) => {
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
                     createdAt: order.createdAt,
-                    userData:{
+                    userData:order.providerId?{
                         username:order.providerId.username,
                         image:order.providerId.image
-                    }
+                    }:undefined
                 };
             })
         );
@@ -1140,9 +1140,9 @@ const getAllUserOrders = async (req, res, next) => {
                     locationText: post.locationText,
                     details: post.details,
                     createdAt: post.createdAt,
-                    providerData:slavePosts.providerId?{
-                       username:slavePosts.providerId.username,
-                       image:slavePosts.providerId.image
+                    providerData:post.providerId?{
+                       username:post.providerId.username,
+                       image:post.providerId.image
                     }:undefined
                 };
             })
