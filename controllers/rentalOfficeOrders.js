@@ -1148,7 +1148,7 @@ const getAllUserOrders = async (req, res, next) => {
                         order.dropoffLocation.long
                     ).toFixed(2);
                 }
-                else if(order.providerId) {
+                else*/ if(order.providerId) {
                     distance = haversineDistance(
                         order.providerId.location.lat,
                         order.providerId.location.long,
@@ -1156,7 +1156,7 @@ const getAllUserOrders = async (req, res, next) => {
                         order.location.long
                     ).toFixed(2);
                 }
-                    */
+            
                 return {
                     id: order._id,
                     type: "serviceProvider",
