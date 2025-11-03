@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
 const serviceProviderSchema = new mongoose.Schema({
     username: {
-        type: "string",
+        type: String,
+        required:true,
     },
     email: {
-        type: "string",
+        type: String,
         match: /^[a-zA-z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,4}$/,
     },
     phone: {
