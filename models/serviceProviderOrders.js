@@ -4,7 +4,7 @@ const serviceProviderOrdersSchema = new mongoose.Schema(
   {
     providerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'ServiceProvider', // اسم الموديل المرتبط
+      ref: 'serviceProvider', // اسم الموديل المرتبط
     },
     orderNumber: {
       type: Number,
