@@ -1121,10 +1121,7 @@ const getAllUserOrders = async (req, res, next) => {
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
                     createdAt: order.createdAt,
-                    userData:providerOrders.providerId?{
-                        username:providerOrders.providerId.username,
-                        image:providerOrders.providerId.image,
-                    }:undefined
+                    userData:providerOrders.providerId
                 };
             })
         );
