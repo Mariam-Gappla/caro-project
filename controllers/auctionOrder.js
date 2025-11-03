@@ -2,11 +2,12 @@
 const AuctionOrder = require("../models/auctionOrder");
 const Wallet = require("../models/wallet");
 const Invoice = require("../models/invoice");
-const io = req.app.get("io"); // ← نجيب io اللي عملناه في index.js
+ // ← نجيب io اللي عملناه في index.js
 
 const getNextOrderNumber = require("../controllers/counter");
 const placeBid = async (io, req, res) => {
     try {
+        const io = req.app.get("io");
         const lang = req.headers["accept-language"] || "en";
         const { userId, amount, targetType, targetId } = req.body;
         const auction = await AuctionOrder.findOne({ targetId, targetType });
