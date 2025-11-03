@@ -1171,8 +1171,6 @@ const getAllUserOrders = async (req, res, next) => {
                     dropoffLocationText: order.dropoffLocationText,
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
-                    order:order,
-                    provider:order.providerId,
                     distanceToProvider:order.providerId ? distance:undefined,
                     distanceToDrop:order.providerId ?distanceDrop:undefined,
                     createdAt: order.createdAt,
