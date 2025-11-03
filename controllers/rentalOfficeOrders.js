@@ -1121,7 +1121,7 @@ const getAllUserOrders = async (req, res, next) => {
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
                     createdAt: order.createdAt,
-                    userData:providerOrders
+                    userData:providerOrders.providerId
                 };
             })
         );
