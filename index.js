@@ -109,7 +109,8 @@ const slavgeServiceRoutes=require("./routes/slavgeServiceroutes.js");
 const membershipRoutes=require("./routes/membershiproutes.js");
 const packageRoutes=require("./routes/packageroutes.js");
 const faqRoutes=require("./routes/faqroutes.js");
-const serviceProviderPricingRoutes=require("./routes/serviceProviderPricingroutes.js")
+const serviceProviderPricingRoutes=require("./routes/serviceProviderPricingroutes.js");
+const auctionOrderRoutes=require("./routes/auctionOrderroutes.js");
 // 🟢 Middleware
 app.use(express.json());
 
@@ -215,7 +216,8 @@ app.use("/slavgeService",slavgeServiceRoutes);
 app.use("/membership",membershipRoutes);
 app.use("/packages",packageRoutes);
 app.use("/faq",faqRoutes);
-app.use("/serviceProvider-pricing",serviceProviderPricingRoutes)
+app.use("/serviceProvider-pricing",serviceProviderPricingRoutes);
+app.use("/auctionOrder",auctionOrderRoutes);
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({
