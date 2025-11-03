@@ -1133,6 +1133,7 @@ const getAllUserOrders = async (req, res, next) => {
                     const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
                     averageRating = (total / reviews.length).toFixed(1);
                 }
+                /*
                 if (order.serviceType = 'winch' && order.providerId) {
                     distance = haversineDistance(
                         order.providerId.location.lat,
@@ -1155,6 +1156,7 @@ const getAllUserOrders = async (req, res, next) => {
                         order.location.long
                     ).toFixed(2);
                 }
+                    */
                 return {
                     id: order._id,
                     type: "serviceProvider",
@@ -1169,8 +1171,11 @@ const getAllUserOrders = async (req, res, next) => {
                     dropoffLocationText: order.dropoffLocationText,
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
+                    order:order,
+                    provider:order.providerId,
+                    /*
                     distanceToProvider:order.providerId ? distance:undefined,
-                    distanceToDrop:order.providerId ?distanceDrop:undefined,
+                    distanceToDrop:order.providerId ?distanceDrop:undefined,*/
                     createdAt: order.createdAt,
                     userData: order.providerId ? {
                         username: order.providerId.username,
