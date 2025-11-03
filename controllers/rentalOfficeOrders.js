@@ -1,7 +1,6 @@
 const rentalOfficeOrders = require("../models/rentalOfficeOrders");
 const CarRental = require("../models/carRental");
 const CarType = require("../models/carType");
-const serviceProvider=require("../models/serviceProvider.js");
 const rentalOffice = require("../models/rentalOffice");
 const { rentalOfficeOrderSchema, rentToOwnOrderSchema } = require("../validation/rentalOfficeOrders");
 const counter = require("../models/counter");
@@ -1122,7 +1121,7 @@ const getAllUserOrders = async (req, res, next) => {
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
                     createdAt: order.createdAt,
-                    userData:providerOrders.providerId
+                    userData:providerOrders
                 };
             })
         );
