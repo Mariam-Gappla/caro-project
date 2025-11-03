@@ -1133,8 +1133,8 @@ const getAllUserOrders = async (req, res, next) => {
                     const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
                     averageRating = (total / reviews.length).toFixed(1);
                 }
-                /*
-                if (order.serviceType = 'winch' && order.providerId) {
+                
+                if (order.serviceType =='winch' && order.providerId) {
                     distance = haversineDistance(
                         order.providerId.location.lat,
                         order.providerId.location.long,
@@ -1148,7 +1148,7 @@ const getAllUserOrders = async (req, res, next) => {
                         order.dropoffLocation.long
                     ).toFixed(2);
                 }
-                else*/ if(order.providerId) {
+                else if(order.providerId) {
                     distance = haversineDistance(
                         order.providerId.location.lat,
                         order.providerId.location.long,
@@ -1173,9 +1173,8 @@ const getAllUserOrders = async (req, res, next) => {
                     paymentStatusText,
                     order:order,
                     provider:order.providerId,
-                    /*
                     distanceToProvider:order.providerId ? distance:undefined,
-                    distanceToDrop:order.providerId ?distanceDrop:undefined,*/
+                    distanceToDrop:order.providerId ?distanceDrop:undefined,
                     createdAt: order.createdAt,
                     userData: order.providerId ? {
                         username: order.providerId.username,
