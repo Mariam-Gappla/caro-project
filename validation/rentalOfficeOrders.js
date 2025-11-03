@@ -82,7 +82,7 @@ const rentToOwnOrderSchema = (lang = "en") => {
       "date.base": msg.startDate.date
     }),
 
-    paymentMethod: Joi.string().required().messages({
+    paymentMethod: Joi.string().required().valid("cash","bank","mada").messages({
       "any.required": msg.paymentMethod.required,
       "any.only": msg.paymentMethod.valid
     }),

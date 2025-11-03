@@ -262,9 +262,9 @@ const ordersForRentalOfficewithstatus = async (req, res, next) => {
             filters.status = "accepted";
         }
 
-        const totalOrders = await rentalOfficeOrder.countDocuments(filters);
+        const totalOrders = await rentalOfficeOrders.countDocuments(filters);
 
-        const ordersUpdated = await rentalOfficeOrder
+        const ordersUpdated = await rentalOfficeOrders
             .find(filters)
             .skip(skip)
             .limit(limit)
@@ -862,7 +862,7 @@ const getOrdersByRentalOffice = async (req, res, next) => {
                 message: messages.order.existOrders || "لا توجد طلبات",
                 data: {
                     orders: [],
-                    pagination: { currentPage: page, totalPages: 0 }
+                    pagination: { page: page, totalPages: 0 }
                 }
             });
         }
