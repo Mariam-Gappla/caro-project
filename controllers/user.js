@@ -256,7 +256,7 @@ const login = async (req, res, next) => {
             data: {
               user: {
                 _id: existServiceProvider._id,
-                username: existServiceProvider.username,
+                username: existServiceProvider.username || "",
                 image: existServiceProvider.image,
                 phone: existServiceProvider.phone,
                 email: existServiceProvider.email,
