@@ -20,6 +20,20 @@ const mongoose = require('mongoose');
 const fs = require("fs");
 const User = require("../models/user");
 const SalvagePost = require("../models/slavgePost.js");
+const haversineDistance = (lat1, lon1, lat2, lon2) => {
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371; // نصف قطر الأرض بالكيلومتر
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 const addOrder = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -1035,8 +1049,8 @@ const getAllUserOrders = async (req, res, next) => {
             slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
         if (status == "ended") {
-            filterrentalOffice.ended=true
-            filterServiceProvider.ended=true
+            filterrentalOffice.ended = true
+            filterServiceProvider.ended = true
             filterSlavge.ended = true
             slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
@@ -1107,6 +1121,8 @@ const getAllUserOrders = async (req, res, next) => {
         const providerOrders = await serviceProviderOrder
             .find(filterServiceProvider).populate("providerId")
             .lean();
+        let distance;
+        let distanceDrop;
         const providerFormatted = await Promise.all(
             providerOrders.map(async (order) => {
                 const paymentStatusText =
@@ -1116,6 +1132,28 @@ const getAllUserOrders = async (req, res, next) => {
                 if (reviews.length > 0) {
                     const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
                     averageRating = (total / reviews.length).toFixed(1);
+                }
+                if (order.serviceType = 'winch') {
+                    distance = haversineDistance(
+                        order.providerId.location.lat,
+                        order.providerId.location.long,
+                        order.location.lat,
+                        order.location.long
+                    ).toFixed(2);
+                    distanceDrop = haversineDistance(
+                        order.providerId.location.lat,
+                        order.providerId.location.long,
+                        order.dropoffLocation.lat,
+                        order.dropoffLocation.long
+                    ).toFixed(2);
+                }
+                else {
+                    distance = haversineDistance(
+                        order.providerId.location.lat,
+                        order.providerId.location.long,
+                        order.location.lat,
+                        order.location.long
+                    ).toFixed(2);
                 }
                 return {
                     id: order._id,
@@ -1131,6 +1169,8 @@ const getAllUserOrders = async (req, res, next) => {
                     dropoffLocationText: order.dropoffLocationText,
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
+                    distanceToProvider:order.providerId ? distance:undefined,
+                    distanceToDrop:order.providerId ?distanceDrop:undefined,
                     createdAt: order.createdAt,
                     userData: order.providerId ? {
                         username: order.providerId.username,
