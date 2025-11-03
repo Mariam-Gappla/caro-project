@@ -11,6 +11,7 @@ const SlavgePost = require("../models/slavgePost.js");
 const Rating = require("../models/ratingForOrder");
 const getMessages = require("../configration/getmessages");
 const { sendNotification } = require("../configration/firebase.js");
+const ProviderRating = require("../models/providerRating.js");
 const serviceProviderOrder = require("../models/serviceProviderOrders");
 const Name = require("../models/carName");
 const Model = require("../models/carModel");
@@ -557,7 +558,7 @@ const getOrderById = async (req, res, next) => {
                 odoMeter: carData.odoMeter,
                 licensePlateNumber: carData.licensePlateNumber,
                 startDate: rawOrder.startDate,
-                location:rawOrder.pickupLocation || "",
+                location: rawOrder.pickupLocation || "",
                 paymentStatus,
                 paymentStatusText,
                 licenseImage: rawOrder.licenseImage,
@@ -1017,19 +1018,23 @@ const getAllUserOrders = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const status = req.query.status;
-        let filter = { userId };
-        let slavePosts=[];
+        let filterrentalOffice = { userId };
+        let filterServiceProvider = { userId }
+        let slavePosts = [];
         let filterSlavge = { userId };
         if (status == "paid") {
-            filter.paymentStatus = "paid"
+            filterrentalOffice.status = "accepted";
+            filterServiceProvider.status = "accepted";
         }
         if (status == "inProgress") {
-            filter.paymentStatus = "inProgress"
+            filterrentalOffice.paymentStatus = "inProgress"
+            filterrentalOffice.status = "pending";
+            filterServiceProvider.status = "pending";
+            filterServiceProvider.paymentStatus = "inProgress";
             filterSlavge.ended = false
             slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
         if (status == "ended") {
-            filter.ended = true
             filterSlavge.ended = true
             slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
         }
@@ -1041,7 +1046,7 @@ const getAllUserOrders = async (req, res, next) => {
         };
 
         // 🟢 1. طلبات المستخدم من مكتب التأجير
-        const rentalOrders = await rentalOfficeOrders.find(filter).lean();
+        const rentalOrders = await rentalOfficeOrders.find(filterrentalOffice).lean();
         updateOrderStatuses(rentalOrders);
 
         const rentalFormatted = await Promise.all(
@@ -1068,7 +1073,7 @@ const getAllUserOrders = async (req, res, next) => {
                         deliveryType: order.deliveryType,
                         paymentMethod: order.paymentMethod,
                         priceType: order.priceType,
-                        model:carData.modelId.model[lang],
+                        model: carData.modelId.model[lang],
                         city: carData.city,
                         totalCost: order.totalCost,
                         paymentStatus,
@@ -1084,8 +1089,8 @@ const getAllUserOrders = async (req, res, next) => {
                         rentalType: carData.rentalType,
                         city: carData.city,
                         deliveryType: order.deliveryType,
-                        monthlyPayment:carData.monthlyPayment,
-                        carPrice:carData.carPrice,
+                        monthlyPayment: carData.monthlyPayment,
+                        carPrice: carData.carPrice,
                         paymentMethod: order.paymentMethod,
                         totalCost: order.totalCost,
                         paymentStatus,
@@ -1098,14 +1103,18 @@ const getAllUserOrders = async (req, res, next) => {
 
         // 🟣 2. طلبات المستخدم من مزود الخدمة
         const providerOrders = await serviceProviderOrder
-            .find(filter).populate("providerId")
+            .find(filterServiceProvider).populate("providerId")
             .lean();
-
         const providerFormatted = await Promise.all(
             providerOrders.map(async (order) => {
                 const paymentStatusText =
                     paymentStatusTranslations[lang][order.paymentStatus] || "";
-
+                let averageRating = null;
+                const reviews = await ProviderRating.find({ serviceProviderId: order.providerId });
+                if (reviews.length > 0) {
+                    const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+                    averageRating = (total / reviews.length).toFixed(1);
+                }
                 return {
                     id: order._id,
                     type: "serviceProvider",
@@ -1121,14 +1130,15 @@ const getAllUserOrders = async (req, res, next) => {
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
                     createdAt: order.createdAt,
-                    userData:order.providerId?{
-                        username:order.providerId.username,
-                        image:order.providerId.image
-                    }:undefined
+                    userData: order.providerId ? {
+                        username: order.providerId.username,
+                        image: order.providerId.image,
+                        rating: averageRating
+                    } : undefined
                 };
             })
         );
-    
+
 
         const slavePostsFormatted = await Promise.all(
             slavePosts.map(async (post) => {
@@ -1140,10 +1150,10 @@ const getAllUserOrders = async (req, res, next) => {
                     locationText: post.locationText,
                     details: post.details,
                     createdAt: post.createdAt,
-                    providerData:post.providerId?{
-                       username:post.providerId.username,
-                       image:post.providerId.image
-                    }:undefined
+                    providerData: post.providerId ? {
+                        username: post.providerId.username,
+                        image: post.providerId.image
+                    } : undefined
                 };
             })
         );
@@ -1167,7 +1177,7 @@ const getAllUserOrders = async (req, res, next) => {
             data: {
                 orders: paginated,
                 pagination: {
-                    page:paginated?page:0,
+                    page: paginated ? page : 0,
                     totalPages
                 }
             }
