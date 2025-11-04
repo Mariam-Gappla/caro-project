@@ -175,14 +175,14 @@ const getPostById = async (req, res, next) => {
                 lang === "ar"
                     ? "تم استرجاع جميع الطلبات بنجاح"
                     : "All orders retrieved successfully",
-            data:{
+            data: {
                 id: slavePosts._id,
                 title: slavePosts.title,
                 image: slavePosts.images?.[0],
                 locationText: slavePosts.locationText,
-                location:{
-                    lat:slavePosts.location[0],
-                    long:slavePosts.location[1]
+                location: {
+                    lat: slavePosts.location.coordinates[1],
+                    long: slavePosts.location.coordinates[0]
                 },
                 details: slavePosts.details,
                 createdAt: slavePosts.createdAt,
