@@ -806,7 +806,7 @@ const getOrderByIdForUser = async (req, res, next) => {
         message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
       });
     }
-
+/*
     const user = await User.findOne({ _id: order.providerId });
 
     // ✅ حساب متوسط التقييم
@@ -857,7 +857,7 @@ const getOrderByIdForUser = async (req, res, next) => {
         serviceType: order.serviceType
       };
     }
-
+*/
     return res.status(200).send({
       status: true,
       code: 200,
