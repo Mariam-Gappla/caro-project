@@ -163,7 +163,7 @@ const getPostById= async (req,res,next)=>{
         const lang = req.headers["accept-language"] || "en";
         const postId=req.query.id;
         // 🟢 count total documents for pagination
-        const totalCount = await SlavagePost.countDocuments(filterSlavage);
+        const totalCount = await SlavagePost.countDocuments({_id:postId});
 
         // 🟢 get paginated posts
         const slavePosts = await SlavagePost.findById(postId)
