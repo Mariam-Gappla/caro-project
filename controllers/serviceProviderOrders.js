@@ -862,7 +862,7 @@ const getOrderByIdForUser = async (req, res, next) => {
       status: true,
       code: 200,
       message: lang === "en" ? "Order retrieved" : "تم استرجاع الطلب بنجاح",
-      data: formattedOrder
+      data: order
     });
 
   } catch (error) {
