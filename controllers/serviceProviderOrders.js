@@ -795,10 +795,11 @@ const endOrder = async (req, res, next) => {
 }
 const getOrderByIdForUser = async (req, res, next) => {
   try {
+    console.log("getOrderByIdForUser")
     const lang = req.headers['accept-language'] || 'en';
     const userId = req.user.id;
     console.log(req.params.id)
-    const order = await serviceProviderOrder.find({ _id: req.params.id }).populate("providerId");
+    const order = await serviceProviderOrder.findOne({ _id: req.params.id }).populate("providerId");
     console.log(order)
     if (!order) {
       return res.status(400).send({
@@ -861,7 +862,7 @@ const getOrderByIdForUser = async (req, res, next) => {
       status: true,
       code: 200,
       message: lang === "en" ? "Order retrieved" : "تم استرجاع الطلب بنجاح",
-      data: order
+      data: formattedOrder
     });
 
   } catch (error) {
