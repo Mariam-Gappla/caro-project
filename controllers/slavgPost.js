@@ -180,7 +180,10 @@ const getPostById = async (req, res, next) => {
                 title: slavePosts.title,
                 image: slavePosts.images?.[0],
                 locationText: slavePosts.locationText,
-                location:slavePosts.location,
+                location:{
+                    lat:slavePosts.location.lat,
+                    long:slavePosts.location.long
+                },
                 details: slavePosts.details,
                 createdAt: slavePosts.createdAt,
                 userData: slavePosts.providerId
