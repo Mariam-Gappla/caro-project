@@ -1046,13 +1046,23 @@ const getAllUserOrders = async (req, res, next) => {
             filterServiceProvider.status = "pending";
             filterServiceProvider.paymentStatus = "inProgress";
             filterSlavge.ended = false
-            slavePosts = await SlavgePost.find({ended:false,userId}).populate("providerId").lean();
+            slavePosts = await SlavgePost.find({
+                ended: false, $or: [
+                    { userId: userId },
+                    { providerId: userId }
+                ]
+            }).populate("providerId").lean();
         }
         if (status == "ended") {
             filterrentalOffice.ended = true
             filterServiceProvider.ended = true
             filterSlavge.ended = true
-            slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
+            slavePosts = await SlavgePost.find({
+                ended: true, $or: [
+                    { userId: userId },
+                    { providerId: userId }
+                ]
+            }).populate("providerId").lean();
         }
         const messages = getMessages(lang);
 
@@ -1133,8 +1143,8 @@ const getAllUserOrders = async (req, res, next) => {
                     const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
                     averageRating = (total / reviews.length).toFixed(1);
                 }
-                
-                if (order.serviceType =='winch' && order.providerId) {
+
+                if (order.serviceType == 'winch' && order.providerId) {
                     distance = haversineDistance(
                         order.providerId.location.lat,
                         order.providerId.location.long,
@@ -1148,7 +1158,7 @@ const getAllUserOrders = async (req, res, next) => {
                         order.dropoffLocation.long
                     ).toFixed(2);
                 }
-                else if(order.providerId) {
+                else if (order.providerId) {
                     distance = haversineDistance(
                         order.providerId.location.lat,
                         order.providerId.location.long,
@@ -1156,7 +1166,7 @@ const getAllUserOrders = async (req, res, next) => {
                         order.location.long
                     ).toFixed(2);
                 }
-            
+
                 return {
                     id: order._id,
                     type: "serviceProvider",
@@ -1171,8 +1181,8 @@ const getAllUserOrders = async (req, res, next) => {
                     dropoffLocationText: order.dropoffLocationText,
                     paymentStatus: order.paymentStatus,
                     paymentStatusText,
-                    distanceToProvider:order.providerId ? distance:undefined,
-                    distanceToDrop:order.providerId ?distanceDrop:undefined,
+                    distanceToProvider: order.providerId ? distance : undefined,
+                    distanceToDrop: order.providerId ? distanceDrop : undefined,
                     createdAt: order.createdAt,
                     userData: order.providerId ? {
                         username: order.providerId.username,
