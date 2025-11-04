@@ -797,8 +797,8 @@ const getOrderByIdForUser = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
     const userId = req.user.id;
-     console.log(req.params.id)
-    const order = await serviceProviderOrder.find({_id:req.params.id}).populate("providerId");
+    console.log(req.params.id)
+    const order = await serviceProviderOrder.find({ _id: req.params.id }).populate("providerId");
     if (!order) {
       return res.status(400).send({
         status: false,
@@ -807,7 +807,7 @@ const getOrderByIdForUser = async (req, res, next) => {
       });
     }
 
-    
+
 
     // ✅ حساب متوسط التقييم
     const ratingDocs = await providerRating.find({ providerId: order.providerId._id });
@@ -841,9 +841,9 @@ const getOrderByIdForUser = async (req, res, next) => {
         createdAt: order.createdAt,
         image: order.image,
         providerData: {
-          userId: user._id,
-          image: user.image,
-          username: user.username,
+          userId: order.providerId._id,
+          image: order.providerId.image,
+          username: order.providerId.username,
           avgRating: avgRating,
         },
         location: order.location,
