@@ -161,7 +161,7 @@ const getPosts = async (req, res, next) => {
 const getPostById = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
-        const postId = req.query.id;
+        const postId = req.params.id;
         const slavePosts = await SlavagePost.findById(postId)
             .populate("userId")
             .sort({ createdAt: -1 })
@@ -175,7 +175,7 @@ const getPostById = async (req, res, next) => {
                 lang === "ar"
                     ? "تم استرجاع جميع الطلبات بنجاح"
                     : "All orders retrieved successfully",
-            data: slavePosts /*{
+            data:{
                 id: slavePosts._id,
                 title: slavePosts.title,
                 image: slavePosts.images?.[0],
@@ -188,7 +188,7 @@ const getPostById = async (req, res, next) => {
                         image: slavePosts.userId.image,
                     }
                     : undefined,
-            },*/
+            },
 
 
         });
