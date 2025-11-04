@@ -175,7 +175,7 @@ const getPostById = async (req, res, next) => {
                 lang === "ar"
                     ? "تم استرجاع جميع الطلبات بنجاح"
                     : "All orders retrieved successfully",
-            data: {
+            data: slavePosts /*{
                 id: slavePosts._id,
                 title: slavePosts.title,
                 image: slavePosts.images?.[0],
@@ -188,7 +188,7 @@ const getPostById = async (req, res, next) => {
                         image: slavePosts.userId.image,
                     }
                     : undefined,
-            },
+            },*/
 
 
         });
