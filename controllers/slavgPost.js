@@ -158,9 +158,63 @@ const getPosts = async (req, res, next) => {
         next(err);
     }
 };
+const getPostById= async (req,res,next)=>{
+     try {
+        const lang = req.headers["accept-language"] || "en";
+        const postId=req.query.id;
+        // 🟢 count total documents for pagination
+        const totalCount = await SlavagePost.countDocuments(filterSlavage);
+
+        // 🟢 get paginated posts
+        const slavePosts = await SlavagePost.findById(postId)
+            .populate("userId")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // 🟢 format posts
+        const slavePostsFormatted = slavePosts.map((post) => ({
+            id: post._id,
+            title: post.title,
+            image: post.images?.[0],
+            locationText: post.locationText,
+            details: post.details,
+            createdAt: post.createdAt,
+            userData: post.userId
+                ? {
+                    username: post.userId.username,
+                    image: post.userId.image,
+                }
+                : undefined,
+        }));
+
+        // 🟢 return response
+        return res.status(200).send({
+            status: true,
+            code: 200,
+            message:
+                lang === "ar"
+                    ? "تم استرجاع جميع الطلبات بنجاح"
+                    : "All orders retrieved successfully",
+            data: {
+                orders: slavePostsFormatted,
+                pagination: {
+                    page,
+                    limit,
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalItems: totalCount,
+                },
+            },
+        });
+    } catch (err) {
+        next(err);
+    }
+}
 
 module.exports = {
     addPost,
     endPost,
-    getPosts
+    getPosts,
+    getPostById
 }
