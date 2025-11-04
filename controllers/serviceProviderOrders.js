@@ -1,7 +1,7 @@
 const { serviceWinchValidationSchema, serviceTireValidationSchema } = require("../validation/serviceProviderOrdersValidition");
 const serviceProviderOrder = require("../models/serviceProviderOrders");
 const User = require("../models/user");
-const ServiceProviderPricing=require("../models/serviceProviderPrices.js")
+const ServiceProviderPricing = require("../models/serviceProviderPrices.js")
 const providerRating = require("../models/providerRating");
 const orderRating = require("../models/ratingForOrder");
 const workSession = require("../models/workingSession");
@@ -236,7 +236,7 @@ const addWinchOrder = async (req, res, next) => {
     const serviceProviders = await winsh.find({ serviceType: "winch", status: "accepted" });
 
     console.log("formatedData", formatedData);
-  
+
     const { error } = serviceWinchValidationSchema(lang).validate(formatedData);
     if (error) {
       return res.status(400).json({
@@ -245,22 +245,20 @@ const addWinchOrder = async (req, res, next) => {
         message: error.details[0].message,
       });
     }
-    const pricing=await ServiceProviderPricing.find({});
-    if(distanceToCar > pricing.winchDistance)
-    {
-      const dis=distanceToCar-pricing.winchDistance;
-      const extra=dis*pricing.winchOpenPrice
-      price=pricing.winchFixedPrice+extra;
+    const pricing = await ServiceProviderPricing.find({});
+    if (distanceToCar > pricing.winchDistance) {
+      const dis = distanceToCar - pricing.winchDistance;
+      const extra = dis * pricing.winchOpenPrice
+      price = pricing.winchFixedPrice + extra;
     }
-    else
-    {
-      price=pricing.winchFixedPrice;
+    else {
+      price = pricing.winchFixedPrice;
     }
     const savedImagePath = saveImage(file); // مثل: "abc.jpg"
     console.log(savedImagePath);
     formatedData.image = BASE_URL + savedImagePath;
     formatedData.orderNumber = await getNextOrderNumber("order");
-    formatedData.price=price;
+    formatedData.price = price;
     const order = await serviceProviderOrder.create(formatedData);
     await sendNotificationToMany({
       target: serviceProviders, // كائن مقدم الخدمة اللى جاله الأوردر
@@ -795,6 +793,82 @@ const endOrder = async (req, res, next) => {
     next(err);
   }
 }
+const getOrderByIdForUser = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const userId = req.user.id;
+
+    const order = await serviceProviderOrder.findOne({ _id: req.params.id, userId });
+    if (!order) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
+      });
+    }
+
+    const user = await User.findOne({ _id: order.providerId });
+
+    // ✅ حساب متوسط التقييم
+    const ratingDocs = await providerRating.find({ userId: user._id });
+    const totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
+    const avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
+
+    let formattedOrder = {};
+    if (order.serviceType === "tire Filling" || order.serviceType === "battery Jumpstart") {
+      formattedOrder = {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        providerData: {
+          id: user._id,
+          image: user.image,
+          username: user.username,
+          avgRating: avgRating,
+        },
+        location: order.location,
+        createdAt: order.createdAt,
+        image: order.image,
+        serviceType: order.serviceType,
+        paymentStatus: order.paymentStatus,
+        price: order.price || 0,
+        details: order.details,
+        userLocation: user.location,
+        paymentType: order.paymentType
+      };
+    } else {
+      formattedOrder = {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        createdAt: order.createdAt,
+        image: order.image,
+        providerData: {
+          userId: user._id,
+          image: user.image,
+          username: user.username,
+          avgRating: avgRating,
+        },
+        location: order.location,
+        paymentStatus: order.paymentStatus,
+        price: order.price || 0,
+        details: order.details,
+        userLocation: user.location,
+        paymentType: order.paymentType,
+        dropoffLocation: order.dropoffLocation,
+        serviceType: order.serviceType
+      };
+    }
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message: lang === "en" ? "Order retrieved" : "تم استرجاع الطلب بنجاح",
+      data: formattedOrder
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
 
 
 
@@ -812,5 +886,6 @@ module.exports = {
   reportForProvider,
   getOrdersByServiceProvider,
   getOrderById,
-  endOrder
+  endOrder,
+  getOrderByIdForUser
 }
