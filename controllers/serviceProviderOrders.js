@@ -806,9 +806,10 @@ const getOrderByIdForUser = async (req, res, next) => {
         message: lang === "ar" ? "الطلب غير موجود" : "Order not found"
       });
     }
-/*
-    const user = await User.findOne({ _id: order.providerId });
 
+    const user = await User.findOne({ _id: order.providerId });
+    console.log(user)
+/*
     // ✅ حساب متوسط التقييم
     const ratingDocs = await providerRating.find({ userId: user._id });
     const totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
