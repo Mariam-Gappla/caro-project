@@ -3,7 +3,7 @@ const app = express();
 const http = require("http");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const path=require("path");
+const path = require("path");
 const { Server } = require("socket.io");
 const server = http.createServer(app);
 
@@ -14,22 +14,10 @@ const connectDB = require("./configration/dbconfig.js");
 const socketConnection = require("./configration/socket.js");
 const io = new Server(server, {
   cors: {
-    origin: "*", // ممكن تحدد دومينك بدل النجمة
+    origin: ["https://carnoapp.com", "https://www.carnoapp.com"],
     methods: ["GET", "POST"],
+    credentials: true,
   },
-});
-io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
-  if (!token) {
-    return next(new Error("Authentication error: No token provided"));
-  }
-  try {
-    const decoded = jwt.verify(token, "mysecret");
-    socket.user = decoded;
-    next();
-  } catch (err) {
-    return next(new Error("Authentication error: Invalid token"));
-  }
 });
 io.on("connection", (socket) => {
   console.log("🔌 مستخدم اتصل:", socket.id);
@@ -231,5 +219,5 @@ const port = 3000;
 server.listen(port, async () => {
   await connectDB();
   console.log(`✅ Server is running on port ${port}`);
-  socketConnection(server); // ← تفعيل socket.io هنا
+  socketConnection(io); // ← تفعيل socket.io هنا
 });

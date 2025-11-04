@@ -45,13 +45,11 @@ const placeBid = async (io, req, res) => {
             amount: amount,
         });
 
-        /*
          io.emit("auctionUpdate", {
              auctionId: targetId,
              amount,
              userId,
          });
- */
         res.status(200).send({
             status: true,
             code: 200,
