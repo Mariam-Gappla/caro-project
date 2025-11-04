@@ -1046,7 +1046,7 @@ const getAllUserOrders = async (req, res, next) => {
             filterServiceProvider.status = "pending";
             filterServiceProvider.paymentStatus = "inProgress";
             filterSlavge.ended = false
-            slavePosts = await SlavgePost.find(filterSlavge).populate("providerId").lean();
+            slavePosts = await SlavgePost.find({ended:false,userId}).populate("providerId").lean();
         }
         if (status == "ended") {
             filterrentalOffice.ended = true

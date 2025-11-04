@@ -13,7 +13,7 @@ module.exports = {
       serviceProvider: "This service provider does not exist, please create an account",
       user: "This user does not exist, please create an account"
     },
-    incorrectData: "The entered information is incorrect, please check your email and password",
+    incorrectData: "The entered information is incorrect, please check your phone and password",
     success: "Logged in successfully",
   },
   rentalOffice:{
