@@ -798,7 +798,7 @@ const getOrderByIdForUser = async (req, res, next) => {
     const lang = req.headers['accept-language'] || 'en';
     const userId = req.user.id;
      console.log(req.params.id)
-    const order = await serviceProviderOrder.find({_id:req.params.id});
+    const order = await serviceProviderOrder.find({_id:req.params.id}).populate("providerId");
     if (!order) {
       return res.status(400).send({
         status: false,
@@ -807,11 +807,10 @@ const getOrderByIdForUser = async (req, res, next) => {
       });
     }
 
-    const user = await User.find({ _id: order.providerId });
-    console.log(user)
-/*
+    
+
     // ✅ حساب متوسط التقييم
-    const ratingDocs = await providerRating.find({ userId: user._id });
+    const ratingDocs = await providerRating.find({ providerId: order.providerId._id });
     const totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
     const avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
 
@@ -821,9 +820,9 @@ const getOrderByIdForUser = async (req, res, next) => {
         id: order._id,
         orderNumber: order.orderNumber,
         providerData: {
-          id: user._id,
-          image: user.image,
-          username: user.username,
+          id: order.providerId._id,
+          image: order.providerId.image,
+          username: order.providerId.username,
           avgRating: avgRating,
         },
         location: order.location,
@@ -833,7 +832,6 @@ const getOrderByIdForUser = async (req, res, next) => {
         paymentStatus: order.paymentStatus,
         price: order.price || 0,
         details: order.details,
-        userLocation: user.location,
         paymentType: order.paymentType
       };
     } else {
@@ -852,13 +850,12 @@ const getOrderByIdForUser = async (req, res, next) => {
         paymentStatus: order.paymentStatus,
         price: order.price || 0,
         details: order.details,
-        userLocation: user.location,
         paymentType: order.paymentType,
         dropoffLocation: order.dropoffLocation,
         serviceType: order.serviceType
       };
     }
-*/
+
     return res.status(200).send({
       status: true,
       code: 200,
