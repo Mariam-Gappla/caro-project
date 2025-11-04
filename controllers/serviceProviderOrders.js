@@ -809,24 +809,27 @@ const getOrderByIdForUser = async (req, res, next) => {
       });
     }
 
-
-
+    let ratingDocs;
+    let totalRating;
+    let avgRating;
     // ✅ حساب متوسط التقييم
-    const ratingDocs = await providerRating.find({ providerId: order.providerId._id });
-    const totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
-    const avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
+    if (order.providerId) {
+      ratingDocs = await providerRating.find({ providerId: order.providerId._id });
+      totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
+       avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
+    }
 
     let formattedOrder = {};
     if (order.serviceType === "tire Filling" || order.serviceType === "battery Jumpstart") {
       formattedOrder = {
         id: order._id,
         orderNumber: order.orderNumber,
-        providerData: {
+        providerData: order.providerId ? {
           id: order.providerId._id,
           image: order.providerId.image,
           username: order.providerId.username,
           avgRating: avgRating,
-        },
+        } : undefined,
         location: order.location,
         createdAt: order.createdAt,
         image: order.image,
@@ -842,12 +845,12 @@ const getOrderByIdForUser = async (req, res, next) => {
         orderNumber: order.orderNumber,
         createdAt: order.createdAt,
         image: order.image,
-        providerData: {
-          userId: order.providerId._id,
+        providerData: order.providerId ? {
+          id: order.providerId._id,
           image: order.providerId.image,
           username: order.providerId.username,
           avgRating: avgRating,
-        },
+        } : undefined,
         location: order.location,
         paymentStatus: order.paymentStatus,
         price: order.price || 0,
