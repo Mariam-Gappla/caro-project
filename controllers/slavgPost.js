@@ -158,19 +158,13 @@ const getPosts = async (req, res, next) => {
         next(err);
     }
 };
-const getPostById= async (req,res,next)=>{
-     try {
+const getPostById = async (req, res, next) => {
+    try {
         const lang = req.headers["accept-language"] || "en";
-        const postId=req.query.id;
-        // 🟢 count total documents for pagination
-        const totalCount = await SlavagePost.countDocuments({_id:postId});
-
-        // 🟢 get paginated posts
+        const postId = req.query.id;
         const slavePosts = await SlavagePost.findById(postId)
             .populate("userId")
             .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
             .lean();
 
         // 🟢 format posts
@@ -197,15 +191,9 @@ const getPostById= async (req,res,next)=>{
                 lang === "ar"
                     ? "تم استرجاع جميع الطلبات بنجاح"
                     : "All orders retrieved successfully",
-            data: {
-                orders: slavePostsFormatted,
-                pagination: {
-                    page,
-                    limit,
-                    totalPages: Math.ceil(totalCount / limit),
-                    totalItems: totalCount,
-                },
-            },
+            data: slavePostsFormatted,
+
+
         });
     } catch (err) {
         next(err);
