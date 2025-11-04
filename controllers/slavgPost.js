@@ -163,7 +163,7 @@ const getPostById = async (req, res, next) => {
         const lang = req.headers["accept-language"] || "en";
         const postId = req.params.id;
         const slavePosts = await SlavagePost.findById(postId)
-            .populate("userId")
+            .populate("providerId")
             .sort({ createdAt: -1 })
             .lean();
 
@@ -183,10 +183,10 @@ const getPostById = async (req, res, next) => {
                 location:slavePosts.location,
                 details: slavePosts.details,
                 createdAt: slavePosts.createdAt,
-                userData: slavePosts.userId
+                userData: slavePosts.providerId
                     ? {
-                        username: slavePosts.userId.username,
-                        image: slavePosts.userId.image,
+                        username: slavePosts.providerId.username,
+                        image: slavePosts.providerId.image,
                     }
                     : undefined,
             },
