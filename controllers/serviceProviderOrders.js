@@ -799,7 +799,6 @@ const getOrderByIdForUser = async (req, res, next) => {
     const userId = req.user.id;
      console.log(req.params.id)
     const order = await serviceProviderOrder.find({});
-    console.log(order)
     if (!order) {
       return res.status(400).send({
         status: false,

@@ -10,6 +10,6 @@ router.get("/report",reportForProvider);
 router.get("/ordersForProvider",getOrdersByServiceProvider)
 router.post("/changeStatus",changeStatusForOrder);
 router.get("/OrderById/:id",getOrderById);
-router.get("/orderForUser/:id",getOrderByIdForUser)
+router.get("/orders/user/:id",getOrderByIdForUser)
 router.put("/endOrder", endOrder)
 module.exports=router;
