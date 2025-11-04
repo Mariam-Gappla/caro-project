@@ -807,7 +807,7 @@ const getOrderByIdForUser = async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ _id: order.providerId });
+    const user = await User.find({ _id: order.providerId });
     console.log(user)
 /*
     // ✅ حساب متوسط التقييم
