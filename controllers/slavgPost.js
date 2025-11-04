@@ -181,8 +181,8 @@ const getPostById = async (req, res, next) => {
                 image: slavePosts.images?.[0],
                 locationText: slavePosts.locationText,
                 location:{
-                    lat:slavePosts.location.lat,
-                    long:slavePosts.location.long
+                    lat:slavePosts.location[0],
+                    long:slavePosts.location[1]
                 },
                 details: slavePosts.details,
                 createdAt: slavePosts.createdAt,
