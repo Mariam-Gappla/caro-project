@@ -167,22 +167,6 @@ const getPostById = async (req, res, next) => {
             .sort({ createdAt: -1 })
             .lean();
 
-        // 🟢 format posts
-        const slavePostsFormatted = slavePosts.map((post) => ({
-            id: post._id,
-            title: post.title,
-            image: post.images?.[0],
-            locationText: post.locationText,
-            details: post.details,
-            createdAt: post.createdAt,
-            userData: post.userId
-                ? {
-                    username: post.userId.username,
-                    image: post.userId.image,
-                }
-                : undefined,
-        }));
-
         // 🟢 return response
         return res.status(200).send({
             status: true,
@@ -191,7 +175,20 @@ const getPostById = async (req, res, next) => {
                 lang === "ar"
                     ? "تم استرجاع جميع الطلبات بنجاح"
                     : "All orders retrieved successfully",
-            data: slavePostsFormatted,
+            data: {
+                id: slavePosts._id,
+                title: slavePosts.title,
+                image: slavePosts.images?.[0],
+                locationText: slavePosts.locationText,
+                details: slavePosts.details,
+                createdAt: slavePosts.createdAt,
+                userData: slavePosts.userId
+                    ? {
+                        username: slavePosts.userId.username,
+                        image: slavePosts.userId.image,
+                    }
+                    : undefined,
+            },
 
 
         });
