@@ -35,7 +35,7 @@ const placeBid = async (req, res, next) => {
         await wallet.save();
 
         const counter = await getNextOrderNumber("invoice");
-        await AuctionOrder.create({
+        const order=await AuctionOrder.create({
             targetId: new mongoose.Types.ObjectId(targetId),
             targetType,
             price: amount,
@@ -48,7 +48,7 @@ const placeBid = async (req, res, next) => {
             targetType: "User",
             targetId,
             orderType: "OrdersRentalOffice",
-            orderId: auction._id,
+            orderId: order._id,
             amount,
         });
 
