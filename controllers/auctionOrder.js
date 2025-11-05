@@ -9,13 +9,6 @@ const placeBid = async (req, res, next) => {
         const io = req.app.get("io");
         const lang = req.headers["accept-language"] || "ar";
         const { userId, amount, targetType, targetId } = req.body;
-
-        await AuctionOrder.create({
-            targetId: new mongoose.Types.ObjectId(targetId),
-            targetType,
-            price:amount
-        });
-
         const wallet = await Wallet.findOne({ userId });
         if (!wallet || wallet.balance < amount) {
             return res.status(400).send({
@@ -38,6 +31,13 @@ const placeBid = async (req, res, next) => {
         await wallet.save();
 
         const counter = await getNextOrderNumber("invoice");
+        await AuctionOrder.create({
+            targetId: new mongoose.Types.ObjectId(targetId),
+            targetType,
+            price: amount,
+            userId:userId
+        });
+
         await Invoice.create({
             invoiceNumber: counter,
             userId,
