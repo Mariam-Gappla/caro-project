@@ -10,7 +10,10 @@ const placeBid = async (req, res, next) => {
         const lang = req.headers["accept-language"] || "ar";
         const { userId, amount, targetType, targetId } = req.body;
 
-        const auction = await AuctionOrder.findOne({ targetId: new mongoose.Types.ObjectId(targetId), targetType });
+        console.log("Target ID from request:", targetId);
+console.log("Target Type from request:", targetType);
+console.log("Auctions in DB with this type:", await AuctionOrder.find({ targetType }));
+
         if (!auction) {
             return res.status(400).send({
                 status: false,
