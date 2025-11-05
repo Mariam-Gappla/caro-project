@@ -1,12 +1,12 @@
 const { handleMessage } = require("../controllers/chat");
-const {handleAuction}=require("../controllers/auctionOrder");
+const { placeBid } = require("../controllers/auctionOrder");
 module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("🔌 مستخدم اتصل:", socket.id);
 
     // استدعاء دوال بتتعامل مع أنواع مختلفة من الأحداث
     handleMessage(io, socket);
-    handleAuction(io, socket);
+    placeBid(io, socket);
 
     // عند فصل الاتصال
     socket.on("disconnect", () => {

@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 const http = require("http");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
 const path = require("path");
 const { Server } = require("socket.io");
 const server = http.createServer(app);
