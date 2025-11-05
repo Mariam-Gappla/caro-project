@@ -2,7 +2,7 @@ const AuctionOrder = require("../models/auctionOrder");
 const Wallet = require("../models/wallet");
 const Invoice = require("../models/invoice");
 const getNextOrderNumber = require("../controllers/counter");
-
+const mongoose = require("mongoose");
 const placeBid = async (req, res, next) => {
     try {
         // هنا io بيتجاب من السيرفر نفسه
@@ -10,7 +10,7 @@ const placeBid = async (req, res, next) => {
         const lang = req.headers["accept-language"] || "ar";
         const { userId, amount, targetType, targetId } = req.body;
 
-        const auction = await AuctionOrder.findOne({ targetId, targetType });
+        const auction = await AuctionOrder.findOne({ targetId: new mongoose.Types.ObjectId(targetId), targetType });
         if (!auction) {
             return res.status(400).send({
                 status: false,
