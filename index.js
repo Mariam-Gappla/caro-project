@@ -19,13 +19,6 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-io.on("connection", (socket) => {
-  console.log("🔌 مستخدم اتصل:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("❌ المستخدم خرج:", socket.id);
-  });
-});
-
 app.set("io", io);
 
 

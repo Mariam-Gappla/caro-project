@@ -2,12 +2,11 @@
 const AuctionOrder = require("../models/auctionOrder");
 const Wallet = require("../models/wallet");
 const Invoice = require("../models/invoice");
- // ← نجيب io اللي عملناه في index.js
+// ← نجيب io اللي عملناه في index.js
 
 const getNextOrderNumber = require("../controllers/counter");
 const placeBid = async (io, req, res) => {
     try {
-        const io = req.app.get("io");
         const lang = req.headers["accept-language"] || "en";
         const { userId, amount, targetType, targetId } = req.body;
         const auction = await AuctionOrder.findOne({ targetId, targetType });
@@ -27,10 +26,11 @@ const placeBid = async (io, req, res) => {
             });
         }
         // التأكد إن المزايدة أعلى من السعر الحالي
-        if (amount <= auction.price) {
+        if (amount > auction.price) {
             auction.price = amount;
             auction.userId = userId;
         }
+
         await auction.save();
         wallet.balance -= amount;
         await wallet.save();
@@ -41,15 +41,16 @@ const placeBid = async (io, req, res) => {
             targetType: "User",
             targetId: targetId,
             orderType: "OrdersRentalOffice",
-            orderId: order._id,
+            orderId: auction._id,
             amount: amount,
         });
 
-         io.emit("auctionUpdate", {
-             auctionId: targetId,
-             amount,
-             userId,
-         });
+        io.emit("auctionUpdate", {
+            auctionId: targetId,
+            amount,
+            userId,
+            targetType
+        });
         res.status(200).send({
             status: true,
             code: 200,

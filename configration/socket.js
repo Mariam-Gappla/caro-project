@@ -1,7 +1,16 @@
-const { handleMessage } = require("../controllers/chat")
+const { handleMessage } = require("../controllers/chat");
+const {handleAuction}=require("../controllers/auctionOrder");
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("🟢 New client connected");
+    console.log("🔌 مستخدم اتصل:", socket.id);
+
+    // استدعاء دوال بتتعامل مع أنواع مختلفة من الأحداث
     handleMessage(io, socket);
+    handleAuction(io, socket);
+
+    // عند فصل الاتصال
+    socket.on("disconnect", () => {
+      console.log("❌ المستخدم خرج:", socket.id);
+    });
   });
 };
