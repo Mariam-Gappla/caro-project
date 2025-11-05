@@ -20,11 +20,18 @@ const placeBid = async (req, res, next) => {
                         : "Insufficient balance to place bid",
             });
         }
+        const auction = await AuctionOrder.findOne({
+            targetId: new mongoose.Types.ObjectId(targetId),
+            targetType,
+        });
+        if (auction) {
+            if (amount > auction.price) {
+                auction.price = amount;
+                auction.userId = userId;
+            }
 
-        if (amount > auction.price) {
-            auction.price = amount;
-            auction.userId = userId;
         }
+
 
         await auction.save();
         wallet.balance -= amount;
@@ -35,7 +42,7 @@ const placeBid = async (req, res, next) => {
             targetId: new mongoose.Types.ObjectId(targetId),
             targetType,
             price: amount,
-            userId:userId
+            userId: userId
         });
 
         await Invoice.create({
