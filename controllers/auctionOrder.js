@@ -31,9 +31,6 @@ const placeBid = async (req, res, next) => {
             }
 
         }
-
-
-        await auction.save();
         wallet.balance -= amount;
         await wallet.save();
 
