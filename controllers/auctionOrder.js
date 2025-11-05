@@ -7,7 +7,7 @@ const placeBid = async (req, res, next) => {
     try {
         // هنا io بيتجاب من السيرفر نفسه
         const io = req.app.get("io");
-        const lang = req.headers["accept-language"] || "en";
+        const lang = req.headers["accept-language"] || "ar";
         const { userId, amount, targetType, targetId } = req.body;
 
         const auction = await AuctionOrder.findOne({ targetId, targetType });
