@@ -12,7 +12,8 @@ const placeBid = async (req, res, next) => {
 
         await AuctionOrder.create({
             targetId: new mongoose.Types.ObjectId(targetId),
-            targetType
+            targetType,
+            price:amount
         });
 
         const wallet = await Wallet.findOne({ userId });
