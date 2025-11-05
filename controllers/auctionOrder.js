@@ -1,32 +1,36 @@
-// controllers/auctionController.js
 const AuctionOrder = require("../models/auctionOrder");
 const Wallet = require("../models/wallet");
 const Invoice = require("../models/invoice");
-// ← نجيب io اللي عملناه في index.js
-
 const getNextOrderNumber = require("../controllers/counter");
-const placeBid = async (req, res,next) => {
+
+const placeBid = async (req, res, next) => {
     try {
+        // هنا io بيتجاب من السيرفر نفسه
         const io = req.app.get("io");
         const lang = req.headers["accept-language"] || "en";
         const { userId, amount, targetType, targetId } = req.body;
+
         const auction = await AuctionOrder.findOne({ targetId, targetType });
         if (!auction) {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: lang === "ar" ? "االعنصر غير موجود" : "item not found"
+                message: lang === "ar" ? "العنصر غير موجود" : "Item not found",
             });
         }
+
         const wallet = await Wallet.findOne({ userId });
         if (!wallet || wallet.balance < amount) {
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: lang === "ar" ? "الرصيد غير كافٍ للمزايدة" : "Insufficient balance to place bid"
+                message:
+                    lang === "ar"
+                        ? "الرصيد غير كافٍ للمزايدة"
+                        : "Insufficient balance to place bid",
             });
         }
-        // التأكد إن المزايدة أعلى من السعر الحالي
+
         if (amount > auction.price) {
             auction.price = amount;
             auction.userId = userId;
@@ -35,29 +39,34 @@ const placeBid = async (req, res,next) => {
         await auction.save();
         wallet.balance -= amount;
         await wallet.save();
+
         const counter = await getNextOrderNumber("invoice");
         await Invoice.create({
             invoiceNumber: counter,
-            userId: userId,
+            userId,
             targetType: "User",
-            targetId: targetId,
+            targetId,
             orderType: "OrdersRentalOffice",
             orderId: auction._id,
-            amount: amount,
+            amount,
         });
 
+        // نرسل التحديث لكل العملاء عبر Socket.IO
         io.emit("auctionUpdate", {
             auctionId: targetId,
             amount,
             userId,
-            targetType
+            targetType,
         });
+
         res.status(200).send({
             status: true,
             code: 200,
-            message: lang === "ar" ? "تم تقديم المزايدة بنجاح" : "Bid placed successfully",
+            message:
+                lang === "ar"
+                    ? "تم تقديم المزايدة بنجاح"
+                    : "Bid placed successfully",
         });
-
     } catch (error) {
         next(error);
     }
