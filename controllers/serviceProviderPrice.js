@@ -85,7 +85,7 @@ const getPricing = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const { type } = req.body;
-        const pricing = await ServiceProviderPricing.find({});
+        const pricing = await ServiceProviderPricing.findOne({});
         let formated = {}
         if (type == "tire") {
             formated.start = pricing.tireStartPrice
