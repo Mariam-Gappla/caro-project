@@ -200,6 +200,7 @@ const getOrdersbyServiceType = async (req, res, next) => {
 }
 const addWinchOrder = async (req, res, next) => {
   try {
+     const io = req.app.get("io");
     const userId = req.user.id;
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
@@ -284,7 +285,7 @@ const addWinchOrder = async (req, res, next) => {
       const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
       averageRating = (total / reviews.length).toFixed(1);
     }
-    io.emit("serviceProviderOrder", {
+    io.emit("serviceProviderOrderWinch", {
       id: order._id,
       createdAt: order.createdAt,
       serviceType: order.serviceType,
@@ -321,6 +322,7 @@ const addWinchOrder = async (req, res, next) => {
 }
 const addTireOrder = async (req, res, next) => {
   try {
+     const io = req.app.get("io");
     const userId = req.user.id;
     const user = await User.findOne({ _id: userId });
     const lang = req.headers['accept-language'] || 'en';
@@ -371,7 +373,7 @@ const addTireOrder = async (req, res, next) => {
       order.location.lat,
       order.location.long
     ).toFixed(2)
-    io.emit("serviceProviderOrder", {
+    io.emit("serviceProviderOrderTire", {
       id: order._id,
       createdAt: order.createdAt,
       serviceType: order.serviceType,

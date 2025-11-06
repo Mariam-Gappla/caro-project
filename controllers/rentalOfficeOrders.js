@@ -36,6 +36,7 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 }
 const addOrder = async (req, res, next) => {
     try {
+         const io = req.app.get("io");
         const userId = req.user.id;
         const carId = req.params.id;
         const lang = req.headers['accept-language'] || 'en';

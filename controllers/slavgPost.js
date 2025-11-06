@@ -5,6 +5,7 @@ const User = require("../models/user");
 const salvagePostSchema = require("../validation/postSlavgeValidition");
 const addPost = async (req, res, next) => {
     try {
+         const io = req.app.get("io");
         const lang = req.headers['accept-language'] || 'en';
         const userId = req.user.id;
         const user = await User.findOne({ _id: userId })
