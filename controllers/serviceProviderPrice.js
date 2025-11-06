@@ -85,10 +85,9 @@ const getPricing = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const { type } = req.body;
-        console.log(type);
+
+        // جلب أول مستند
         const pricing = await ServiceProviderPricing.findOne({});
-        console.log(pricing)
-        console.log(pricing)
         if (!pricing) {
             return res.status(404).json({
                 status: false,
@@ -99,23 +98,23 @@ const getPricing = async (req, res, next) => {
         }
 
         let formatted = {};
+        const typeClean = type ? type.trim().toLowerCase() : "";
 
-        if (type == "tire") {
-            formatted.start = pricing.tireStartPrice;
-            formatted.end = pricing.tireEndPrice;
-        } else if (type =="battery") {
-            formatted.start = pricing.batteryStartPrice;
-            formatted.end = pricing.batteryEndPrice;
+        if (typeClean === "tire") {
+            formatted.start = pricing.tireStartPrice ?? 0;
+            formatted.end = pricing.tireEndPrice ?? 0;
+        } else if (typeClean === "battery") {
+            formatted.start = pricing.batteryStartPrice ?? 0;
+            formatted.end = pricing.batteryEndPrice ?? 0;
         } else {
-            // لو type غير محدد أو أي حاجة تانية، نرجع جميع القيم
             formatted = {
-                tireStartPrice: pricing.tireStartPrice,
-                tireEndPrice: pricing.tireEndPrice,
-                batteryStartPrice: pricing.batteryStartPrice,
-                batteryEndPrice: pricing.batteryEndPrice,
-                winchDistance: pricing.winchDistance,
-                winchFixedPrice: pricing.winchFixedPrice,
-                winchOpenPrice: pricing.winchOpenPrice
+                tireStartPrice: pricing.tireStartPrice ?? 0,
+                tireEndPrice: pricing.tireEndPrice ?? 0,
+                batteryStartPrice: pricing.batteryStartPrice ?? 0,
+                batteryEndPrice: pricing.batteryEndPrice ?? 0,
+                winchDistance: pricing.winchDistance ?? 0,
+                winchFixedPrice: pricing.winchFixedPrice ?? 0,
+                winchOpenPrice: pricing.winchOpenPrice ?? 0
             };
         }
 
@@ -130,6 +129,7 @@ const getPricing = async (req, res, next) => {
         next(err);
     }
 };
+
 
 module.exports = {
     addBatteryPricing,
