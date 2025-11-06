@@ -18,6 +18,10 @@ const carSchema = new mongoose.Schema({
     auctionEnd: { type: Date },
     phoneNumber: { type: String, required: true },
     priceAfterAuction:{type:Number},
+    ended:{
+     type:Boolean,
+     default:false,
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

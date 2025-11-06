@@ -96,9 +96,17 @@ const getPricing = async (req, res, next) => {
             formated.start = pricing.batteryStartPrice
             formated.end = pricing.batteryEndPrice
         }
+        else
+        {
+            formated.winchDistance=pricing.winchDistance
+            formated.winchFixedPrice=pricing.winchFixedPrice
+            formated.winchOpenPrice=pricing.winchOpenPrice
+        }
         return res.status(200).send({
             status:true,
             code:200,
+            message:lang=="en"?"get pricing successfully":"تم جلب الاسعار بنجاح",
+            data:formated
         })
     }
     catch (err) {

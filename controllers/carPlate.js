@@ -57,7 +57,8 @@ const getCarPlatesPosts = async (req, res, next) => {
             $or: [
                 { isFixedPrice: true },
                 { isFixedPrice: false, auctionEnd: { $gte: now } }
-            ]
+            ],
+            ended:false
         };
         if (req.query.isFixedPrice !== undefined && req.query.digites !== undefined) {
             filteration.isFixedPrice = req.query.isFixedPrice === "true";

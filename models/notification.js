@@ -16,14 +16,11 @@ const notificationSchema = new mongoose.Schema({
   },
   orderModel: {
     type: String,
-    enum: ['OrdersRentalOffice', 'ServiceProviderOrders'],
-    required: function () {
-      return this.orderId != null;
-    }
+    enum: ['OrdersRentalOffice', 'ServiceProviderOrders','AuctionOrder'],
   },
   actionType: {
     type: String,
-    enum: ['message', 'follow', 'order', 'system','wallet','provider'],
+    enum: ['message', 'follow', 'order', 'system','wallet','provider','actionOrder'],
     default: 'system',
   },
   title: { en: { type: String, required: true }, ar: { type: String, required: true } },

@@ -72,7 +72,8 @@ const getCarPosts = async (req, res, next) => {
             $or: [
                 { isFixedPrice: true },
                 { isFixedPrice: false, auctionEnd: { $gte: now } }
-            ]
+            ],
+            ended:false
         };
         if (req.query.cityId) {
             filteration.cityId = req.query.cityId

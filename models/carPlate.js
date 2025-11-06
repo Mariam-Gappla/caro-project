@@ -11,12 +11,16 @@ const carPlateSchema = new mongoose.Schema({
       required: true
     }
   },
-  digites:{
-    type:Number,
-    required:true,
-    enum:[1,2,3,4]
+  digites: {
+    type: Number,
+    required: true,
+    enum: [1, 2, 3, 4]
   },
-  priceLimit:{type:Number},
+  ended: {
+    type: Boolean,
+    default: false,
+  },
+  priceLimit: { type: Number },
   cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City", required: true },
   notes: { type: String },
   ownershipFeesIncluded: { type: Boolean, default: false },

@@ -194,7 +194,45 @@ const addOrder = async (req, res, next) => {
             orderModel: "OrdersRentalOffice",
             lang,
         });
-
+        if (car.rentalType) {
+            io.emit("weekly", {
+                id: order._id,
+                images: car.images,
+                title: lang === "ar"
+                    ? `تأجير سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                    : `Renting a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
+                orderType: "nonOwnership",
+                licensePlateNumber: car.licensePlateNumber,
+                rentalDays: diffInDays,
+                startDate: order.startDate,
+                endDate: order.endDate,
+                priceType: order.priceType,
+                price:
+                    order.priceType === "open_km"
+                        ? car.freeKilometers * car.pricePerFreeKilometer
+                        : car.pricePerExtraKilometer,
+                deliveryType: order.deliveryType,
+                paymentMethod: order.paymentMethod,
+                carModel: lang === "ar" ? model?.model.ar : model?.model.en || " ",
+            });
+        }
+        else {
+            io.emit("rentToOwn", {
+                id: order._id,
+                images: car.images,
+                title: lang === "ar"
+                    ? `تملك سيارة ${name?.carName.ar || ""} ${model?.model.ar || ""}`
+                    : `Owning a car ${name?.carName.en || ""} ${model?.model.en || ""}`,
+                orderType: "Ownership",
+                licensePlateNumber: car.licensePlateNumber,
+                monthlyPayment: car.monthlyPayment,
+                odoMeter: car.odoMeter,
+                price: car.carPrice,
+                carModel: lang === "ar" ? model?.model.ar : model?.model.en || " ",
+                deliveryType: order.deliveryType,
+                paymentMethod: order.paymentMethod
+            });
+        }
 
         return res.status(200).send({
             status: true,

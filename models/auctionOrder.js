@@ -16,10 +16,19 @@ const auctionOrderSchema = new mongoose.Schema(
        refPath:"targetType",
       required: true,
     },
+    fixedPrice:{
+      type:Boolean,
+      default:false
+    },
     price: {
       type: Number,
       required: true,
     },
+    status:{
+      type:String,
+      enum:["pending","accepted","refused"],
+      default:"pending"
+    }
   },
   { timestamps: true }
 );
