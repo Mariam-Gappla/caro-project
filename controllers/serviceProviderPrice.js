@@ -98,10 +98,10 @@ const getPricing = async (req, res, next) => {
 
         let formatted = {};
 
-        if (type === "tire") {
+        if (type == "tire") {
             formatted.start = pricing.tireStartPrice;
             formatted.end = pricing.tireEndPrice;
-        } else if (type === "battery") {
+        } else if (type =="battery") {
             formatted.start = pricing.batteryStartPrice;
             formatted.end = pricing.batteryEndPrice;
         } else {
@@ -121,7 +121,7 @@ const getPricing = async (req, res, next) => {
             status: true,
             code: 200,
             message: lang === "en" ? "get pricing successfully" : "تم جلب الاسعار بنجاح",
-            data: pricing
+            data: formatted
         });
 
     } catch (err) {
