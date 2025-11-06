@@ -151,8 +151,8 @@ const addOrder = async (req, res, next) => {
                 status: false,
                 code: 400,
                 message: lang === "ar"
-                    ? "الرصيد غير كافٍ للمزايدة"
-                    : "Insufficient balance to place bid",
+                    ? "الرصيد غير كافى"
+                    : "Insufficient balance",
             });
         }
         const auction = await AuctionOrder.create({
