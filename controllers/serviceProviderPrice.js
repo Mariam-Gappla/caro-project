@@ -88,6 +88,7 @@ const getPricing = async (req, res, next) => {
         console.log(type);
         const pricing = await ServiceProviderPricing.findOne({});
         console.log(pricing)
+        console.log(pricing)
         if (!pricing) {
             return res.status(404).json({
                 status: false,
