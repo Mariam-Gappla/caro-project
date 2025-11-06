@@ -121,7 +121,7 @@ const getPricing = async (req, res, next) => {
             status: true,
             code: 200,
             message: lang === "en" ? "get pricing successfully" : "تم جلب الاسعار بنجاح",
-            data: formatted
+            data: pricing
         });
 
     } catch (err) {
