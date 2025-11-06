@@ -203,6 +203,16 @@ const addWinchOrder = async (req, res, next) => {
     const userId = req.user.id;
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+    const paymentStatusTranslations = {
+      en: {
+        inProgress: "inProgress",
+        paid: "Paid"
+      },
+      ar: {
+        inProgress: "بأنتظار الدفع",
+        paid: "تم الدفع"
+      }
+    };
     const file = req.file;
     const user = await User.findOne({ _id: userId });
     console.log("req.file", req.file);
@@ -260,6 +270,33 @@ const addWinchOrder = async (req, res, next) => {
     formatedData.orderNumber = await getNextOrderNumber("order");
     formatedData.price = price;
     const order = await serviceProviderOrder.create(formatedData);
+    const paymentStatusText = paymentStatusTranslations[lang][order.paymentStatus] || "";
+    let distance = haversineDistance(
+      user.location.lat,
+      user.location.long,
+      order.location.lat,
+      order.location.long
+    ).toFixed(2)
+    // متوسط التقييم للمستخدم
+    let averageRating = null;
+    const reviews = await providerRating.find({ userId: order.userId._id });
+    if (reviews.length > 0) {
+      const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+      averageRating = (total / reviews.length).toFixed(1);
+    }
+    io.emit("serviceProviderOrder", {
+      id: order._id,
+      createdAt: order.createdAt,
+      serviceType: order.serviceType,
+      userId: order.userId._id,
+      price: order.price || 0,
+      distance: distance ? `${distance} km` : "",
+      paymentStatus: order.paymentStatus,
+      username: order.userId.username,
+      image: order.userId.image,
+      rating: averageRating || "0.0",
+      paymentStatusText
+    })
     await sendNotificationToMany({
       target: serviceProviders, // كائن مقدم الخدمة اللى جاله الأوردر
       targetType: "serviceProvider",
@@ -328,6 +365,25 @@ const addTireOrder = async (req, res, next) => {
       serviceProviders.push(...tireProviders);
       serviceProvidersIds.push(...tireProviders.map(sp => ({ _id: sp._id })));
     }
+    let distance = haversineDistance(
+      user.location.lat,
+      user.location.long,
+      order.location.lat,
+      order.location.long
+    ).toFixed(2)
+    io.emit("serviceProviderOrder", {
+      id: order._id,
+      createdAt: order.createdAt,
+      serviceType: order.serviceType,
+      userId: order.userId._id,
+      price: order.price || 0,
+      distance: distance ? `${distance} km` : "",
+      paymentStatus: order.paymentStatus,
+      username: order.userId.username,
+      image: order.userId.image,
+      rating: averageRating || "0.0",
+      paymentStatusText
+    })
     await sendNotificationToMany({
       target: serviceProviders, // كائن مقدم الخدمة اللى جاله الأوردر
       targetType: "serviceProvider",
@@ -816,7 +872,7 @@ const getOrderByIdForUser = async (req, res, next) => {
     if (order.providerId) {
       ratingDocs = await providerRating.find({ providerId: order.providerId._id });
       totalRating = ratingDocs.reduce((sum, doc) => sum + doc.rating, 0);
-       avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
+      avgRating = ratingDocs.length > 0 ? (totalRating / ratingDocs.length).toFixed(1) : "0.0";
     }
 
     let formattedOrder = {};

@@ -84,8 +84,6 @@ const addBatteryPricing = async (req, res, next) => {
 const getPricing = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
-        const { type } = req.body;
-        console.log(type)
         // جلب أول مستند
         const pricing = await ServiceProviderPricing.findOne().lean();
         if (!pricing) {
@@ -97,32 +95,13 @@ const getPricing = async (req, res, next) => {
             });
         }
 
-        let formatted = {};
-        const typeClean = type ? type.trim().toLowerCase() : "";
-
-        if (typeClean === "tire") {
-            formatted.start = pricing.tireStartPrice ?? 0;
-            formatted.end = pricing.tireEndPrice ?? 0;
-        } else if (typeClean === "battery") {
-            formatted.start = pricing.batteryStartPrice ?? 0;
-            formatted.end = pricing.batteryEndPrice ?? 0;
-        } else {
-            formatted = {
-                tireStartPrice: pricing.tireStartPrice ?? 0,
-                tireEndPrice: pricing.tireEndPrice ?? 0,
-                batteryStartPrice: pricing.batteryStartPrice ?? 0,
-                batteryEndPrice: pricing.batteryEndPrice ?? 0,
-                winchDistance: pricing.winchDistance ?? 0,
-                winchFixedPrice: pricing.winchFixedPrice ?? 0,
-                winchOpenPrice: pricing.winchOpenPrice ?? 0
-            };
-        }
+        
 
         return res.status(200).json({
             status: true,
             code: 200,
             message: lang === "en" ? "get pricing successfully" : "تم جلب الاسعار بنجاح",
-            data: formatted
+            data: pricing 
         });
 
     } catch (err) {

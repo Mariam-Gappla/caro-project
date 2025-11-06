@@ -51,7 +51,8 @@ const addOrder = async (req, res, next) => {
                 message: messages.rentalCar.existCar
             });
         }
-
+        const name = await Name.findById(car.nameId).lean();
+        const model = await Model.findById(car.modelId).lean();
         // ✅ معالجة موقع الاستلام (لو موجود)
         if (req.body['pickupLocation.lat'] && req.body['pickupLocation.long']) {
             req.body.pickupLocation = {
@@ -194,7 +195,10 @@ const addOrder = async (req, res, next) => {
             orderModel: "OrdersRentalOffice",
             lang,
         });
-        if (car.rentalType) {
+        if (car.rentalType=="weekly/daily") {
+            const diffInDays = Math.ceil(
+                (new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24)
+            );
             io.emit("weekly", {
                 id: order._id,
                 images: car.images,

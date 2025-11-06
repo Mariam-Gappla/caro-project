@@ -1,10 +1,13 @@
 const SlavagePost = require("../models/slavgePost");
 const { saveImage } = require("../configration/saveImage");
+const mongoose = require("mongoose");
+const User = require("../models/user");
 const salvagePostSchema = require("../validation/postSlavgeValidition");
 const addPost = async (req, res, next) => {
     try {
         const lang = req.headers['accept-language'] || 'en';
         const userId = req.user.id;
+        const user = await User.findOne({ _id: userId })
         const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
         console.log(req.body);
         const { lat, long } = req.body;
@@ -48,11 +51,20 @@ const addPost = async (req, res, next) => {
             const imagePath = saveImage(file);
             imagePaths.push(`${BASE_URL}${imagePath}`);
         });
-        await SlavagePost.create({
+        const post = await SlavagePost.create({
             ...req.body,
             userId: userId,
             images: imagePaths,
         });
+        io.emit("slavgeOrder", {
+            id: post._id,
+            type: "slavePost",
+            title: post.title,
+            image: post.images[0],
+            locationText: post.locationText,
+            details: post.details,
+            createdAt: post.createdAt,
+        })
         return res.status(200).send({
             status: true,
             code: 200,
@@ -65,30 +77,81 @@ const addPost = async (req, res, next) => {
     }
 }
 const endPost = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const lang = req.headers['accept-language'] || 'en';
-        const { providerId } = req.body
+        const { providerId } = req.body;
         const userId = req.user.id;
-        const post = await SlavagePost.findOne({ _id: req.params.id, userId: userId });
-        if (!post) {
+
+        if (!providerId) {
+            await session.abortTransaction();
+            session.endSession();
             return res.status(400).send({
                 status: false,
                 code: 400,
-                message: lang == "en" ? "post not found" : "المنشور غير موجود"
-            })
+                message: lang === "en" ? "providerId is required" : "معرف المزود مطلوب"
+            });
         }
-        const postId = req.params.id;
-        await SlavagePost.findOneAndUpdate({ _id: postId }, { ended: true, providerId: providerId });
+
+        const post = await SlavagePost.findOne({ _id: req.params.id, userId: userId }).session(session);
+        if (!post) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang === "en" ? "post not found" : "المنشور غير موجود"
+            });
+        }
+
+        const updatedPost = await SlavagePost.findOneAndUpdate(
+            { _id: req.params.id },
+            { ended: true, providerId: providerId },
+            { new: true, session }
+        );
+
+        const user = await User.findOne({ _id: providerId }).session(session);
+        if (!user) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).send({
+                status: false,
+                code: 400,
+                message: lang === "en" ? "provider not found" : "المزود غير موجود"
+            });
+        }
+
+        // كل العمليات نجحت، نعمل commit
+        await session.commitTransaction();
+        session.endSession();
+
+        io.emit("slavgeOrder", {
+            id: updatedPost._id,
+            type: "slavePost",
+            title: updatedPost.title,
+            image: updatedPost.images[0],
+            locationText: updatedPost.locationText,
+            details: updatedPost.details,
+            createdAt: updatedPost.createdAt,
+            providerData: {
+                username: user.username,
+                image: user.image
+            }
+        });
+
         return res.status(200).send({
             status: true,
             code: 200,
-            message: lang == "en" ? "order ended succesfully" : "تم انهاء الاوردر بنجاح"
-        })
+            message: lang === "en" ? "order ended successfully" : "تم انهاء الاوردر بنجاح"
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        next(error);
     }
-    catch (error) {
-        next(error)
-    }
-}
+};
 const getPosts = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
