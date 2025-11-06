@@ -85,7 +85,7 @@ const getPricing = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const { type } = req.body;
-
+        console.log(type)
         // جلب أول مستند
         const pricing = await ServiceProviderPricing.findOne().lean();
         if (!pricing) {
