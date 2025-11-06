@@ -1085,10 +1085,7 @@ const getAllUserOrders = async (req, res, next) => {
             filterServiceProvider.paymentStatus = "inProgress";
             filterSlavge.ended = false
             slavePosts = await SlavgePost.find({
-                ended: false, $or: [
-                    { userId: userId },
-                    { providerId: userId }
-                ]
+                ended: false, userId
             }).populate("providerId").lean();
         }
         if (status == "ended") {
@@ -1097,7 +1094,6 @@ const getAllUserOrders = async (req, res, next) => {
             filterSlavge.ended = true
             slavePosts = await SlavgePost.find({
                 ended: true, $or: [
-                    { userId: userId },
                     { providerId: userId }
                 ]
             }).populate("providerId").lean();
