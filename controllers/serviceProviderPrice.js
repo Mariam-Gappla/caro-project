@@ -85,8 +85,9 @@ const getPricing = async (req, res, next) => {
     try {
         const lang = req.headers["accept-language"] || "en";
         const { type } = req.body;
-
+        console.log(type);
         const pricing = await ServiceProviderPricing.findOne({});
+        console.log(pricing)
         if (!pricing) {
             return res.status(404).json({
                 status: false,
