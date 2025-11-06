@@ -87,7 +87,7 @@ const getPricing = async (req, res, next) => {
         const { type } = req.body;
 
         // جلب أول مستند
-        const pricing = await ServiceProviderPricing.findOne({});
+        const pricing = await ServiceProviderPricing.findOne().lean();
         if (!pricing) {
             return res.status(404).json({
                 status: false,
