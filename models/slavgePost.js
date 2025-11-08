@@ -37,6 +37,7 @@ const salvagePostSchema = new mongoose.Schema(
         locationText: {
             type: String
         },
+        hiddenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] ,
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

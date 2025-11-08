@@ -36,7 +36,7 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 }
 const addOrder = async (req, res, next) => {
     try {
-         const io = req.app.get("io");
+        const io = req.app.get("io");
         const userId = req.user.id;
         const carId = req.params.id;
         const lang = req.headers['accept-language'] || 'en';
@@ -196,7 +196,7 @@ const addOrder = async (req, res, next) => {
             orderModel: "OrdersRentalOffice",
             lang,
         });
-        if (car.rentalType=="weekly/daily") {
+        if (car.rentalType == "weekly/daily") {
             const diffInDays = Math.ceil(
                 (new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24)
             );
@@ -1091,52 +1091,53 @@ const getAllUserOrders = async (req, res, next) => {
             filterServiceProvider.paymentStatus = "inProgress";
             filterSlavge.ended = false
             slavePosts = await SlavgePost.find({
-                ended: false
-            }).populate("userId").lean();
-            slavePostsFormatted = await Promise.all(
-            slavePosts.map(async (post) => {
-                return {
-                    id: post._id,
-                    type: "slavePost",
-                    title: post.title,
-                    image: post.images[0],
-                    locationText: post.locationText,
-                    details: post.details,
-                    createdAt: post.createdAt,
-                    userData:{
-                        username: post.userId.username,
-                        image: post.userId.image
-                    }
-                };
+                ended: false,
+                hiddenBy: { $ne: providerId } // تجاهل أي منشور مخفي لهذا المقدم
             })
-        );
+                .populate("userId")
+                .lean();
+            slavePostsFormatted = await Promise.all(
+                slavePosts.map(async (post) => {
+                    return {
+                        id: post._id,
+                        type: "slavePost",
+                        title: post.title,
+                        image: post.images[0],
+                        locationText: post.locationText,
+                        details: post.details,
+                        createdAt: post.createdAt,
+                        userData: {
+                            username: post.userId.username,
+                            image: post.userId.image
+                        }
+                    };
+                })
+            );
         }
         if (status == "ended") {
             filterrentalOffice.ended = true
             filterServiceProvider.ended = true
             filterSlavge.ended = true
             slavePosts = await SlavgePost.find({
-                ended: true, $or: [
-                    { providerId: userId }
-                ]
+                ended: true, providerId: userId, hiddenBy: { $ne: providerId }
             }).populate("providerId").lean();
             slavePostsFormatted = await Promise.all(
-            slavePosts.map(async (post) => {
-                return {
-                    id: post._id,
-                    type: "slavePost",
-                    title: post.title,
-                    image: post.images[0],
-                    locationText: post.locationText,
-                    details: post.details,
-                    createdAt: post.createdAt,
-                    providerData:{
-                        username: post.providerId.username,
-                        image: post.providerId.image
-                    }
-                };
-            })
-        );
+                slavePosts.map(async (post) => {
+                    return {
+                        id: post._id,
+                        type: "slavePost",
+                        title: post.title,
+                        image: post.images[0],
+                        locationText: post.locationText,
+                        details: post.details,
+                        createdAt: post.createdAt,
+                        providerData: {
+                            username: post.providerId.username,
+                            image: post.providerId.image
+                        }
+                    };
+                })
+            );
         }
         const messages = getMessages(lang);
 
@@ -1268,7 +1269,7 @@ const getAllUserOrders = async (req, res, next) => {
         );
 
 
-        
+
 
         // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
         const allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
@@ -1322,6 +1323,23 @@ const cancelOrder = async (req, res, next) => {
         next(err)
     }
 }
+const hidenPost = async (req, res,next) => {
+    try {
+        const userId = req.user.id;
+        const { postId } = req.body;
+        const lang = req.headers['accept-language'] || 'en';
+        await SalvagePost.findByIdAndUpdate(postId, {
+            $addToSet: { hiddenBy: userId } // يضيفه فقط إذا لم يكن موجودًا
+        });
+        res.send({
+            status: true,
+            code: 200,
+            message: lang == "en" ? "post hidden for you" : "تم اخفاء الاوردر"
+        });
+    } catch (err) {
+       next(err)
+    }
+};
 
 
 
@@ -1338,6 +1356,7 @@ module.exports = {
     endOrder,
     getReportData,
     getAllUserOrders,
+    hidenPost,
     cancelOrder
 }
 
