@@ -373,6 +373,12 @@ const addTireOrder = async (req, res, next) => {
       order.location.lat,
       order.location.long
     ).toFixed(2)
+     let averageRating = null;
+    const reviews = await providerRating.find({ userId: order.userId._id });
+    if (reviews.length > 0) {
+      const total = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+      averageRating = (total / reviews.length).toFixed(1);
+    }
     io.emit("serviceProviderOrderTire", {
       id: order._id,
       createdAt: order.createdAt,
