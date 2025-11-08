@@ -1075,6 +1075,7 @@ const getAllUserOrders = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const status = req.query.status;
+        let slavePostsFormatted;
         let filterrentalOffice = { userId };
         let filterServiceProvider = { userId }
         let slavePosts = [];
@@ -1091,7 +1092,24 @@ const getAllUserOrders = async (req, res, next) => {
             filterSlavge.ended = false
             slavePosts = await SlavgePost.find({
                 ended: false
-            }).populate("providerId").lean();
+            }).populate("userId").lean();
+            slavePostsFormatted = await Promise.all(
+            slavePosts.map(async (post) => {
+                return {
+                    id: post._id,
+                    type: "slavePost",
+                    title: post.title,
+                    image: post.images[0],
+                    locationText: post.locationText,
+                    details: post.details,
+                    createdAt: post.createdAt,
+                    userData:{
+                        username: post.userId.username,
+                        image: post.userId.image
+                    }
+                };
+            })
+        );
         }
         if (status == "ended") {
             filterrentalOffice.ended = true
@@ -1102,6 +1120,23 @@ const getAllUserOrders = async (req, res, next) => {
                     { providerId: userId }
                 ]
             }).populate("providerId").lean();
+            slavePostsFormatted = await Promise.all(
+            slavePosts.map(async (post) => {
+                return {
+                    id: post._id,
+                    type: "slavePost",
+                    title: post.title,
+                    image: post.images[0],
+                    locationText: post.locationText,
+                    details: post.details,
+                    createdAt: post.createdAt,
+                    providerData:{
+                        username: post.providerId.username,
+                        image: post.providerId.image
+                    }
+                };
+            })
+        );
         }
         const messages = getMessages(lang);
 
@@ -1233,23 +1268,7 @@ const getAllUserOrders = async (req, res, next) => {
         );
 
 
-        const slavePostsFormatted = await Promise.all(
-            slavePosts.map(async (post) => {
-                return {
-                    id: post._id,
-                    type: "slavePost",
-                    title: post.title,
-                    image: post.images[0],
-                    locationText: post.locationText,
-                    details: post.details,
-                    createdAt: post.createdAt,
-                    providerData: post.providerId ? {
-                        username: post.providerId.username,
-                        image: post.providerId.image
-                    } : undefined
-                };
-            })
-        );
+        
 
         // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
         const allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
