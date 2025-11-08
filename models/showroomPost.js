@@ -22,10 +22,15 @@ const showroomPostsSchema = new mongoose.Schema({
     ref: "Advantage",
     required: true
   }],
+  ended:{
+    type:Boolean,
+    default:false
+  },
   discount: { type: Boolean, required: true },
   financing: { type: Boolean, required: true },
   price: { type: Number, required: true },
   discountedPrice: { type: Number },
+  userIdBuy:{type: mongoose.Schema.Types.ObjectId, ref: "User"},
   postNumber: { type: Number, required: true },
   fuelCapacity: { type: Number, required: true },
   status: {

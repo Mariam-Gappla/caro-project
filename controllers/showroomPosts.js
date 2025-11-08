@@ -5,6 +5,7 @@ const { saveImage } = require("../configration/saveImage");
 const Reel = require("../models/reels");
 const Wallet = require("../models/wallet");
 const User = require("../models/user");
+const { sendNotification } = require("../configration/firebase.js");
 const addShowroomPost = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -81,46 +82,50 @@ const getShowroomPosts = async (req, res, next) => {
     const showroomId = req.params.showroomId;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const userId = req.user?.id; // المستخدم الحالي
+
+    // 🟢 جلب المعرض
+    const showroom = await User.findById(showroomId);
 
     // 🟢 فلترة ديناميكية
     const filteration = { showroomId: showroomId };
 
-    if (req.query.cityId) {
-      filteration.cityId = req.query.cityId; // ObjectId
+    // لو المستخدم مش صاحب المعرض → فلتر ended:false
+    if (!userId || userId.toString() !== showroomId.toString()) {
+      filteration.ended = false;
     }
-    if (req.query.carNameId) {
-      filteration.carNameId = req.query.carNameId; // ObjectId
-    }
-    if (req.query.carConditionId) {
-      filteration.carConditionId = req.query.carConditionId; // new/used
-    }
-    if (req.query.fuelTypeId) {
-      filteration.fuelTypeId = req.query.fuelTypeId
-    }
-    if (req.query.deliveryOptionId) {
-      filteration.deliveryOptionId = req.query.deliveryOptionId
-    }
+
+    // باقي الفلاتر
+    if (req.query.cityId) filteration.cityId = req.query.cityId;
+    if (req.query.carNameId) filteration.carNameId = req.query.carNameId;
+    if (req.query.carConditionId) filteration.carConditionId = req.query.carConditionId;
+    if (req.query.fuelTypeId) filteration.fuelTypeId = req.query.fuelTypeId;
+    if (req.query.deliveryOptionId) filteration.deliveryOptionId = req.query.deliveryOptionId;
+
     // 🟢 query مع الفلترة
-    const showroomPosts = await ShowRoomPosts.find(filteration).populate("transmissionTypeId").populate("carConditionId")
-      .populate("carNameId").populate("carModelId").populate("carTypeId")
+    const showroomPosts = await ShowRoomPosts.find(filteration)
+      .populate("transmissionTypeId")
+      .populate("carConditionId")
+      .populate("carNameId")
+      .populate("carModelId")
+      .populate("carTypeId")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const formatedShowRoomPosts = showroomPosts.map((post) => {
-      return {
-        id: post._id,
-        title: post.title,
-        image: post.images,
-        price: post.price,
-        discount: post.discount,
-        fuelCapacity: post.fuelCapacity,
-        discountedPrice: post.discount == true ? post.discountedPrice : 0,
-        transmissionType: post.transmissionTypeId.name[lang],
-        carCondition: post.carConditionId.name[lang],
-        financing: post.financing
-      }
-    })
+    const formatedShowRoomPosts = showroomPosts.map((post) => ({
+      id: post._id,
+      title: post.title,
+      image: post.images,
+      price: post.price,
+      discount: post.discount,
+      fuelCapacity: post.fuelCapacity,
+      discountedPrice: post.discount ? post.discountedPrice : 0,
+      transmissionType: post.transmissionTypeId?.name?.[lang],
+      carCondition: post.carConditionId?.name?.[lang],
+      financing: post.financing,
+    }));
+
     // 🟢 عدد الصفحات
     const totalDocs = await ShowRoomPosts.countDocuments(filteration);
     const totalPages = Math.ceil(totalDocs / limit);
@@ -144,6 +149,7 @@ const getShowroomPosts = async (req, res, next) => {
     next(error);
   }
 };
+
 const getPostById = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -260,12 +266,20 @@ const buyCar = async (req, res, next) => {
     // 🟢 1. Fetch user, wallet, and car
     const user = await User.findById(userId)
     const userWallet = await Wallet.findOne({ userId })
-    const car = await ShowRoomPosts.findById(postId);
+    const car = await ShowRoomPosts.findById(postId).populate("showroomId");
 
     if (!user || !car) {
       return res.status(404).json({
         status: false,
         message: lang === "en" ? "User or Car not found" : "المستخدم أو السيارة غير موجودين",
+      });
+    }
+    if (car.userIdBuy) {
+      return res.status(400).json({
+        status: false,
+        message: lang === "en"
+          ? "This car already has a pending purchase request"
+          : "هناك طلب شراء قيد المعالجة لهذه السيارة بالفعل",
       });
     }
 
@@ -276,10 +290,18 @@ const buyCar = async (req, res, next) => {
         message: lang === "en" ? "Insufficient balance" : "رصيدك غير كافي",
       });
     }
-
-    // 🟢 3. Deduct from user wallet
-    userWallet.balance -= car.price;
-    await userWallet.save();
+    car.userIdBuy = userId;
+    await car.save()
+    await sendNotification({
+      target: car.showroomId,
+      targetType: "User",
+      titleAr: "طلب جديد",
+      titleEn: "New Order",
+      messageAr: `لقد تلقيت طلبًا شراء من المستخدم ${user.username || 'عميل'}.`,
+      messageEn: `You have received a new order to buy from ${user.username || 'a customer'}.`,
+      actionType: "order",
+      lang,
+    });
     return res.status(200).json({
       status: true,
       code: 200,
@@ -289,9 +311,134 @@ const buyCar = async (req, res, next) => {
     next(error);
   }
 };
+const confirmCarPurchase = async (req, res, next) => {
+  try {
+    const lang = req.headers["accept-language"] || "en";
+    const { postId } = req.body;
+    const status= req.query.params;
+    const showroomOwnerId = req.user.id; // صاحب المعرض اللي بيوافق أو بيرفض
+
+    // 1️⃣ التأكد من وجود السيارة
+    const car = await ShowRoomPosts.findById(postId).populate("showroomId");
+    if (!car || !car.userIdBuy) {
+      return res.status(404).json({
+        status: false,
+        message:
+          lang === "en"
+            ? "No pending purchase found"
+            : "لا يوجد طلب شراء معلق",
+      });
+    }
+
+    // 2️⃣ تأكيد إن اللي بينفذ هو صاحب المعرض
+    if (car.showroomId._id.toString() !== showroomOwnerId.toString()) {
+      return res.status(403).json({
+        status: false,
+        message:
+          lang === "en"
+            ? "Unauthorized"
+            : "غير مصرح لك بتنفيذ هذا الإجراء",
+      });
+    }
+
+    // 3️⃣ حالة الرفض
+    if (status === "refused") {
+      // إرسال إشعار للمشتري بالرفض
+      await sendNotification({
+        target: car.userIdBuy,
+        targetType: "User",
+        titleAr: "تم رفض الطلب",
+        titleEn: "Purchase Request Refused",
+        messageAr: `تم رفض طلب شراء السيارة ${car.title}.`,
+        messageEn: `Your purchase request for ${
+          car.title
+        } has been refused.`,
+        actionType: "order",
+        lang,
+      });
+
+      // إعادة تعيين المستخدم اللي قدم الطلب
+      car.userIdBuy = null;
+      await car.save();
+
+      return res.status(200).json({
+        status: true,
+        code: 200,
+        message:
+          lang === "en"
+            ? "Purchase request refused successfully"
+            : "تم رفض طلب الشراء بنجاح",
+      });
+    }
+
+    // 4️⃣ حالة القبول
+    if (status === "accepted") {
+      const buyerWallet = await Wallet.findOne({ userId: car.userIdBuy });
+      const showroomWallet = await Wallet.findOne({ userId: showroomOwnerId });
+
+      if (!buyerWallet || !showroomWallet) {
+        return res.status(404).json({
+          status: false,
+          message:
+            lang === "en"
+              ? "Wallet not found"
+              : "المحفظة غير موجودة",
+        });
+      }
+
+      // التأكد من الرصيد
+      if (buyerWallet.balance < car.price) {
+        return res.status(400).json({
+          code:400,
+          status: false,
+          message:
+            lang === "en"
+              ? "Buyer has insufficient balance"
+              : "رصيد المشتري غير كافٍ",
+        });
+      }
+
+      // خصم وتحويل
+      buyerWallet.balance -= car.price;
+      showroomWallet.balance += car.price;
+      await buyerWallet.save();
+      await showroomWallet.save();
+
+      // تحديث حالة السيارة
+      car.ended = true;
+      await car.save();
+
+      // إشعار المشتري
+      await sendNotification({
+        target: car.userIdBuy,
+        targetType: "User",
+        titleAr: "تم تأكيد الشراء",
+        titleEn: "Purchase Confirmed",
+        messageAr: `تمت الموافقة على شراء السيارة ${car.title}.`,
+        messageEn: `Your purchase for ${
+          car.title
+        } has been confirmed.`,
+        actionType: "purchase_confirmed",
+        lang,
+      });
+
+      return res.status(200).json({
+        status: true,
+        code: 200,
+        message:
+          lang === "en"
+            ? "Purchase confirmed successfully"
+            : "تم تأكيد الشراء بنجاح",
+      });
+    }
+   
+  } catch (error) {
+    next(error);
+  }
+};
 
 
-module.exports = { addShowroomPost, getShowroomPosts, getPostById, buyCar };
+module.exports = { addShowroomPost, getShowroomPosts, getPostById, buyCar,confirmCarPurchase};
 
 
 

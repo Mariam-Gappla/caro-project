@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {addShowroomPost,getShowroomPosts,getPostById,buyCar}=require("../controllers/showroomPosts");
+const {addShowroomPost,getShowroomPosts,getPostById,buyCar,confirmCarPurchase}=require("../controllers/showroomPosts");
 const upload=require("../configration/uploadFile");
 router.post("/",upload.fields([
     { name:"images"},
@@ -8,6 +8,7 @@ router.post("/",upload.fields([
 ]), addShowroomPost);
 router.post("/buyCar", buyCar)
 router.get("/posts/:showroomId",getShowroomPosts)
+router.post("/confirm",confirmCarPurchase,)
 router.get("/:id",getPostById)
 
 
