@@ -4,79 +4,104 @@ const mongoose = require("mongoose");
 const User = require("../models/user");
 const salvagePostSchema = require("../validation/postSlavgeValidition");
 const addPost = async (req, res, next) => {
-    try {
-         const io = req.app.get("io");
-        const lang = req.headers['accept-language'] || 'en';
-        const userId = req.user.id;
-        const user = await User.findOne({ _id: userId })
-        const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-        console.log(req.body);
-        const { lat, long } = req.body;
+  try {
+    const io = req.app.get("io");
+    const lang = req.headers["accept-language"] || "en";
+    const userId = req.user.id;
+    const user = await User.findOne({ _id: userId });
+    const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
-        if (!lat || !long) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang == "ar" ? "الموقع (lat, long) مطلوب" : "Location (lat, long) is required"
-            });
-        }
+    console.log(req.body);
+    const { lat, long } = req.body;
 
-        // ✅ جهز location object
-        req.body.location = {
-            type: "Point",
-            coordinates: [parseFloat(long), parseFloat(lat)] // [longitude, latitude]
-        };
-
-        // ❌ امسح الـ lat,long علشان مش محتاجينهم في الموديل
-        delete req.body.lat;
-        delete req.body.long;
-        const images = req.files.images;
-        if (!images || images.length === 0) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: lang === "en" ? "Images are required" : "الصور مطلوبة"
-            });
-        }
-        const { error } = salvagePostSchema(lang).validate({ ...req.body });
-        if (error) {
-            return res.status(400).send({
-                status: false,
-                code: 400,
-                message: error.details[0].message
-            });
-        }
-
-        let imagePaths = [];
-        images.forEach(file => {
-            const imagePath = saveImage(file);
-            imagePaths.push(`${BASE_URL}${imagePath}`);
-        });
-        const post = await SlavagePost.create({
-            ...req.body,
-            userId: userId,
-            images: imagePaths,
-        });
-        io.emit("slavgeOrder", {
-            id: post._id,
-            type: "slavePost",
-            title: post.title,
-            image: post.images[0],
-            locationText: post.locationText,
-            details: post.details,
-            createdAt: post.createdAt,
-        })
-        return res.status(200).send({
-            status: true,
-            code: 200,
-            message: lang === "en" ? "Post added successfully" : "تم إضافة المنشور بنجاح"
-        });
-
+    if (!lat || !long) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message:
+          lang == "ar"
+            ? "الموقع (lat, long) مطلوب"
+            : "Location (lat, long) is required",
+      });
     }
-    catch (err) {
-        next(err)
+
+    // ✅ تجهيز الـ location
+    req.body.location = {
+      type: "Point",
+      coordinates: [parseFloat(long), parseFloat(lat)], // [longitude, latitude]
+    };
+
+    // ✅ تأكد إنهم أرقام فعلاً
+    if (
+      isNaN(req.body.location.coordinates[0]) ||
+      isNaN(req.body.location.coordinates[1])
+    ) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message:
+          lang === "ar"
+            ? "إحداثيات الموقع غير صالحة"
+            : "Invalid location coordinates",
+      });
     }
-}
+
+    delete req.body.lat;
+    delete req.body.long;
+
+    const images = req.files.images;
+    if (!images || images.length === 0) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: lang === "en" ? "Images are required" : "الصور مطلوبة",
+      });
+    }
+
+    console.log(req.body);
+    const { error } = salvagePostSchema(lang).validate({ ...req.body });
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        code: 400,
+        message: error.details[0].message,
+      });
+    }
+
+    let imagePaths = [];
+    images.forEach((file) => {
+      const imagePath = saveImage(file);
+      imagePaths.push(`${BASE_URL}${imagePath}`);
+    });
+
+    const post = await SlavagePost.create({
+      ...req.body,
+      userId: userId,
+      images: imagePaths,
+    });
+
+    io.emit("slavgeOrder", {
+      id: post._id,
+      type: "slavePost",
+      title: post.title,
+      image: post.images[0],
+      locationText: post.locationText,
+      details: post.details,
+      createdAt: post.createdAt,
+    });
+
+    return res.status(200).send({
+      status: true,
+      code: 200,
+      message:
+        lang === "en"
+          ? "Post added successfully"
+          : "تم إضافة المنشور بنجاح",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 const endPost = async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
