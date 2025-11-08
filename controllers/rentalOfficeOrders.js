@@ -1107,6 +1107,7 @@ const getAllUserOrders = async (req, res, next) => {
                         details: post.details,
                         createdAt: post.createdAt,
                         userData: {
+                            id:post.userId._id,
                             username: post.userId.username,
                             image: post.userId.image
                         }
