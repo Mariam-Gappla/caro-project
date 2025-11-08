@@ -1092,7 +1092,7 @@ const getAllUserOrders = async (req, res, next) => {
             filterSlavge.ended = false
             slavePosts = await SlavgePost.find({
                 ended: false,
-                hiddenBy: { $ne: providerId } // تجاهل أي منشور مخفي لهذا المقدم
+                hiddenBy: { $ne: userId } // تجاهل أي منشور مخفي لهذا المقدم
             })
                 .populate("userId")
                 .lean();
