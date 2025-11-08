@@ -327,6 +327,16 @@ const addTireOrder = async (req, res, next) => {
     const user = await User.findOne({ _id: userId });
     const lang = req.headers['accept-language'] || 'en';
     const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+     const paymentStatusTranslations = {
+      en: {
+        inProgress: "inProgress",
+        paid: "Paid"
+      },
+      ar: {
+        inProgress: "بأنتظار الدفع",
+        paid: "تم الدفع"
+      }
+    };
     const file = req.file;
     const image = file ? `${BASE_URL}/images/${file.filename}` : "";
     req.body.location = {
@@ -367,6 +377,7 @@ const addTireOrder = async (req, res, next) => {
       serviceProviders.push(...tireProviders);
       serviceProvidersIds.push(...tireProviders.map(sp => ({ _id: sp._id })));
     }
+     const paymentStatusText = paymentStatusTranslations[lang][order.paymentStatus] || "";
     let distance = haversineDistance(
       user.location.lat,
       user.location.long,
