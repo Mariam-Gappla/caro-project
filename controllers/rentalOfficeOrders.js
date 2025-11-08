@@ -1090,7 +1090,7 @@ const getAllUserOrders = async (req, res, next) => {
             filterServiceProvider.paymentStatus = "inProgress";
             filterSlavge.ended = false
             slavePosts = await SlavgePost.find({
-                ended: false, userId
+                ended: false
             }).populate("providerId").lean();
         }
         if (status == "ended") {
