@@ -69,11 +69,12 @@ const getAllRentallOffice = async (req, res, next) => {
         $unwind: { path: "$city", preserveNullAndEmptyArrays: true },
       });
 
-      allRentalOffice = await rentalOffice.aggregate(pipeline);
+      allRentalOffice = await rentalOffice.aggregate(pipeline).sort(-1);
     } else {
       allRentalOffice = await rentalOffice
         .find(filters)
         .populate("cityId")
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
     }
