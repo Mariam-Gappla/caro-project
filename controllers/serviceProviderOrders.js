@@ -306,6 +306,7 @@ const addWinchOrder = async (req, res, next) => {
       messageAr: `تم استلام طلب جديد من المستخدم ${user.username}.`,
       messageEn: `You have received a new order from ${user.username}.`,
       lang: lang,
+      request:true,
       actionType: "serviceProvider",
       orderId: order._id,
       orderModel: "ServiceProviderOrder", // حسب اسم الموديل عندك
@@ -411,6 +412,7 @@ const addTireOrder = async (req, res, next) => {
       messageAr: `تم استلام طلب جديد من المستخدم ${user.username}.`,
       messageEn: `You have received a new order from ${user.username}.`,
       lang: lang,
+       request:true,
       actionType: "serviceProvider",
       orderId: order._id,
       orderModel: "ServiceProviderOrder", // حسب اسم الموديل عندك

@@ -1,6 +1,5 @@
 const Notification = require("../models/notification");
 const getMessages = require("../locales/schemaValiditionMessages/notificationValiditionMessages");
-
 const getNotifications = async (req, res, next) => {
   const lang = req.headers["accept-language"] || "en";
   try {
@@ -28,6 +27,7 @@ const getNotifications = async (req, res, next) => {
     const formattedNotifications = notifications.map((not) => ({
       id:not._id,
       title: not.title[lang],
+      request:not.request || "",
       message: not.message[lang],
       date: not.createdAt,
     }));

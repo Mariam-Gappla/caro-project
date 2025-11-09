@@ -17,6 +17,7 @@ const sendNotification = async ({
   senderId = null,
   orderId = null,
   orderModel = null,
+  request
 }) => {
   try {
     const finalTitle = lang === "ar" && titleAr ? titleAr : titleEn;
@@ -26,6 +27,7 @@ const sendNotification = async ({
       targetType,
       orderId,
       orderModel,
+      request,
       message:{ ar: messageAr, en: messageEn },
       title: { ar: titleAr, en: titleEn },
       actionType,
@@ -36,6 +38,7 @@ const sendNotification = async ({
         notification: { title:finalTitle, body: finalMessage },
         data: {
           actionType,
+          request,
           ...(senderId ? { senderId: senderId.toString() } : {}),
           ...(orderId ? { orderId: orderId.toString() } : {}),
           ...(orderModel ? { orderModel } : {}),

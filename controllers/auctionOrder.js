@@ -43,7 +43,7 @@ const placeBid = async (req, res, next) => {
             auction = await AuctionOrder.create({
                 targetId: new mongoose.Types.ObjectId(targetId),
                 targetType,
-                price: amount+modelResult.price,
+                price: amount + modelResult.price,
                 userId,
                 fixedPrice: false,
                 status: "pending"
@@ -117,6 +117,7 @@ const placeBid = async (req, res, next) => {
             messageEn: `You have received a new order from ${ownerUser.username || 'a customer'}.`,
             actionType: "order",
             orderId: auction._id,
+            request: true,
             orderModel: "AuctionOrder",
             lang,
         });
@@ -177,6 +178,8 @@ const addOrder = async (req, res, next) => {
             messageEn: `You have received a new order from ${user.username || 'a customer'}.`,
             actionType: "order",
             orderId: auction._id,
+             request:true,
+            request: true,
             orderModel: "AuctionOrder",
             lang,
         });

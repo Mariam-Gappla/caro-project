@@ -193,6 +193,7 @@ const addOrder = async (req, res, next) => {
             messageEn: `You have received a new order from ${user.username || 'a customer'}.`,
             actionType: "order",
             orderId: order._id,
+            request:true,
             orderModel: "OrdersRentalOffice",
             lang,
         });

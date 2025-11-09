@@ -149,7 +149,6 @@ const getShowroomPosts = async (req, res, next) => {
     next(error);
   }
 };
-
 const getPostById = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
@@ -296,6 +295,7 @@ const buyCar = async (req, res, next) => {
       target: car.showroomId,
       targetType: "User",
       titleAr: "طلب جديد",
+       request:true,
       titleEn: "New Order",
       messageAr: `لقد تلقيت طلبًا شراء من المستخدم ${user.username || 'عميل'}.`,
       messageEn: `You have received a new order to buy from ${user.username || 'a customer'}.`,
