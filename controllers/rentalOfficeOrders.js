@@ -1132,10 +1132,10 @@ const getAllUserOrders = async (req, res, next) => {
                         locationText: post.locationText,
                         details: post.details,
                         createdAt: post.createdAt,
-                        providerData: {
+                        providerData: post.providerId?{
                             username: post.providerId.username,
                             image: post.providerId.image
-                        }
+                        }:undefined
                     };
                 })
             );
