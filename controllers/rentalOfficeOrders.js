@@ -1075,7 +1075,7 @@ const getAllUserOrders = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const status = req.query.status;
-        let slavePostsFormatted;
+        let slavePostsFormatted={};
         let filterrentalOffice = { userId };
         let filterServiceProvider = { userId }
         let slavePosts = [];
