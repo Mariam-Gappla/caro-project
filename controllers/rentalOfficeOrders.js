@@ -767,8 +767,8 @@ const acceptorder = async (req, res, next) => {
                 targetType: "User",
                 titleAr: "تم رفض طلبك",
                 titleEn: "Your order has been rejected",
-                messageAr: `تم رفض طلبك رقم ${order._id} من قبل ${provider.username || 'المستخدم'}`,
-                messageEn: `Your order #${order._id} has been rejected by ${provider.username || 'the user'}`,
+                messageAr: `تم رفض طلبك رقم ${order._id} من قبل ${user.username || 'المستخدم'}`,
+                messageEn: `Your order #${order._id} has been rejected by ${user.username || 'the user'}`,
                 actionType: "orderRejected",
                 orderId: order._id,
                 orderModel: "ServiceProviderOrder", // أو OrdersRentalOffice حسب نوع الطلب

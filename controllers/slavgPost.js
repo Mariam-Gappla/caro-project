@@ -89,8 +89,8 @@ const addPost = async (req, res, next) => {
       details: post.details,
       createdAt: post.createdAt,
       userData: {
-        id:post.userId._id,
-        username:user.username,
+        id: post.userId._id,
+        username: user.username,
         image: user.image
       }
     });
@@ -108,16 +108,12 @@ const addPost = async (req, res, next) => {
   }
 };
 const endPost = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
     const lang = req.headers['accept-language'] || 'en';
     const { providerId } = req.body;
     const userId = req.user.id;
 
     if (!providerId) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).send({
         status: false,
         code: 400,
@@ -125,10 +121,8 @@ const endPost = async (req, res, next) => {
       });
     }
 
-    const post = await SlavagePost.findOne({ _id: req.params.id, userId: userId }).session(session);
+    const post = await SlavagePost.findOne({ _id: req.params.id, userId: userId })
     if (!post) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).send({
         status: false,
         code: 400,
@@ -142,21 +136,14 @@ const endPost = async (req, res, next) => {
       { new: true, session }
     );
 
-    const user = await User.findOne({ _id: providerId }).session(session);
+    const user = await User.findOne({ _id: providerId })
     if (!user) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).send({
         status: false,
         code: 400,
         message: lang === "en" ? "provider not found" : "المزود غير موجود"
       });
     }
-
-    // كل العمليات نجحت، نعمل commit
-    await session.commitTransaction();
-    session.endSession();
-
     io.emit("slavgeOrder", {
       id: updatedPost._id,
       type: "slavePost",
@@ -178,8 +165,6 @@ const endPost = async (req, res, next) => {
     });
 
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     next(error);
   }
 };
