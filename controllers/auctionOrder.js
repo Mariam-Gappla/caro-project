@@ -2,6 +2,7 @@ const AuctionOrder = require("../models/auctionOrder");
 const Car = require("../models/car.js");
 const User = require("../models/user.js");
 const CarPlate = require("../models/carPlate.js");
+const Notification = require("../models/notification.js");
 const Wallet = require("../models/wallet");
 const Invoice = require("../models/invoice");
 const getNextOrderNumber = require("../controllers/counter");
@@ -178,8 +179,9 @@ const addOrder = async (req, res, next) => {
             messageEn: `You have received a new order from ${user.username || 'a customer'}.`,
             actionType: "order",
             orderId: auction._id,
-             request:true,
             request: true,
+            request: true,
+            type:"auction",
             orderModel: "AuctionOrder",
             lang,
         });
@@ -221,6 +223,9 @@ const acceptOrRefusedAuctionOrder = async (req, res, next) => {
         // 3️⃣ تحديث الحالة
         if (status === "accepted") {
             order.status = "accepted";
+            const notification = await Notification.findOne({ orderId: orderId, orderModel: "AuctionOrder", })
+            notification.action = true;
+            await notification.save();
             if (targetType == "Car") {
                 await Car.findOneAndUpdate({ _id: order.targetId }, { ended: true });
 
@@ -230,6 +235,9 @@ const acceptOrRefusedAuctionOrder = async (req, res, next) => {
             }
         } else if (status === "refused") {
             order.status = "refused";
+            const notification = await Notification.findOne({ orderId: orderId, orderModel: "AuctionOrder", })
+            notification.action = false;
+            await notification.save();
         } else {
             return res.status(400).json({
                 status: false,

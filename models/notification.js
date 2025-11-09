@@ -18,6 +18,14 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     enum: ['OrdersRentalOffice', 'ServiceProviderOrders','AuctionOrder'],
   },
+  type:{
+    type:String,
+    enum: ['showroom','auction'],
+  },
+  action:{
+    type:Boolean,
+    default:false,
+  },
   actionType: {
     type: String,
     enum: ['message', 'follow', 'order', 'system','wallet','provider','actionOrder'],

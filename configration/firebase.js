@@ -17,6 +17,7 @@ const sendNotification = async ({
   senderId = null,
   orderId = null,
   orderModel = null,
+  type,
   request
 }) => {
   try {
@@ -31,6 +32,7 @@ const sendNotification = async ({
       message:{ ar: messageAr, en: messageEn },
       title: { ar: titleAr, en: titleEn },
       actionType,
+      type
     });
 
     if (target.fcmToken) {
@@ -80,6 +82,8 @@ const sendNotificationToMany = async ({
       actionType,
       orderId,
       orderModel,
+      request,
+      type
     }));
 
     await Notification.insertMany(notifications);

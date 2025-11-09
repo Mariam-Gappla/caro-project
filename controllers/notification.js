@@ -28,6 +28,8 @@ const getNotifications = async (req, res, next) => {
       id:not._id,
       title: not.title[lang],
       request:not.request || "",
+      action:not.action || " ",
+      type:not.type || " ",
       message: not.message[lang],
       date: not.createdAt,
     }));

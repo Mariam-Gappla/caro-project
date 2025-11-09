@@ -2,6 +2,7 @@ const ShowRoomPosts = require("../models/showroomPost");
 const getNextOrderNumber = require("../controllers/counter");
 const showroomPostSchema = require("../validation/showroomPostsValidition");
 const { saveImage } = require("../configration/saveImage");
+const Notification=require("../models/notification.js")
 const Reel = require("../models/reels");
 const Wallet = require("../models/wallet");
 const User = require("../models/user");
@@ -295,8 +296,9 @@ const buyCar = async (req, res, next) => {
       target: car.showroomId,
       targetType: "User",
       titleAr: "طلب جديد",
-       request:true,
+      request: true,
       titleEn: "New Order",
+      type:"showroom",
       messageAr: `لقد تلقيت طلبًا شراء من المستخدم ${user.username || 'عميل'}.`,
       messageEn: `You have received a new order to buy from ${user.username || 'a customer'}.`,
       actionType: "order",
@@ -315,7 +317,7 @@ const confirmCarPurchase = async (req, res, next) => {
   try {
     const lang = req.headers["accept-language"] || "en";
     const { postId } = req.body;
-    const status= req.query.params;
+    const status = req.query.params;
     const showroomOwnerId = req.user.id; // صاحب المعرض اللي بيوافق أو بيرفض
 
     // 1️⃣ التأكد من وجود السيارة
@@ -343,6 +345,9 @@ const confirmCarPurchase = async (req, res, next) => {
 
     // 3️⃣ حالة الرفض
     if (status === "refused") {
+      const notification = await Notification.findOne({orderId:postId})
+      notification.action = false;
+      await notification.save();
       // إرسال إشعار للمشتري بالرفض
       await sendNotification({
         target: car.userIdBuy,
@@ -350,9 +355,8 @@ const confirmCarPurchase = async (req, res, next) => {
         titleAr: "تم رفض الطلب",
         titleEn: "Purchase Request Refused",
         messageAr: `تم رفض طلب شراء السيارة ${car.title}.`,
-        messageEn: `Your purchase request for ${
-          car.title
-        } has been refused.`,
+        messageEn: `Your purchase request for ${car.title
+          } has been refused.`,
         actionType: "order",
         lang,
       });
@@ -375,7 +379,6 @@ const confirmCarPurchase = async (req, res, next) => {
     if (status === "accepted") {
       const buyerWallet = await Wallet.findOne({ userId: car.userIdBuy });
       const showroomWallet = await Wallet.findOne({ userId: showroomOwnerId });
-
       if (!buyerWallet || !showroomWallet) {
         return res.status(404).json({
           status: false,
@@ -389,7 +392,7 @@ const confirmCarPurchase = async (req, res, next) => {
       // التأكد من الرصيد
       if (buyerWallet.balance < car.price) {
         return res.status(400).json({
-          code:400,
+          code: 400,
           status: false,
           message:
             lang === "en"
@@ -407,7 +410,9 @@ const confirmCarPurchase = async (req, res, next) => {
       // تحديث حالة السيارة
       car.ended = true;
       await car.save();
-
+      const notification = await Notification.findOne({orderId:postId})
+      notification.action = true;
+      await notification.save();
       // إشعار المشتري
       await sendNotification({
         target: car.userIdBuy,
@@ -415,9 +420,8 @@ const confirmCarPurchase = async (req, res, next) => {
         titleAr: "تم تأكيد الشراء",
         titleEn: "Purchase Confirmed",
         messageAr: `تمت الموافقة على شراء السيارة ${car.title}.`,
-        messageEn: `Your purchase for ${
-          car.title
-        } has been confirmed.`,
+        messageEn: `Your purchase for ${car.title
+          } has been confirmed.`,
         actionType: "purchase_confirmed",
         lang,
       });
@@ -431,14 +435,14 @@ const confirmCarPurchase = async (req, res, next) => {
             : "تم تأكيد الشراء بنجاح",
       });
     }
-   
+
   } catch (error) {
     next(error);
   }
 };
 
 
-module.exports = { addShowroomPost, getShowroomPosts, getPostById, buyCar,confirmCarPurchase};
+module.exports = { addShowroomPost, getShowroomPosts, getPostById, buyCar, confirmCarPurchase };
 
 
 
