@@ -1120,7 +1120,7 @@ const getAllUserOrders = async (req, res, next) => {
             filterServiceProvider.ended = true
             filterSlavge.ended = true
             slavePosts = await SlavgePost.find({
-                ended: true, providerId: userId, hiddenBy: { $ne: providerId }
+                ended: true, providerId: userId, hiddenBy: { $ne: userId }
             }).populate("providerId").lean();
             slavePostsFormatted = await Promise.all(
                 slavePosts.map(async (post) => {
