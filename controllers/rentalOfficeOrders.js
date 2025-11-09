@@ -1075,7 +1075,7 @@ const getAllUserOrders = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const status = req.query.status;
-        let slavePostsFormatted={};
+        let slavePostsFormatted = {};
         let filterrentalOffice = { userId };
         let filterServiceProvider = { userId }
         let slavePosts = [];
@@ -1107,7 +1107,7 @@ const getAllUserOrders = async (req, res, next) => {
                         details: post.details,
                         createdAt: post.createdAt,
                         userData: {
-                            id:post.userId._id,
+                            id: post.userId._id,
                             username: post.userId.username,
                             image: post.userId.image
                         }
@@ -1269,13 +1269,20 @@ const getAllUserOrders = async (req, res, next) => {
             })
         );
 
-
-
+        let allOrders = []
+        if (Array.isArray(slavePostsFormatted)) {
+            allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
+                .filter(Boolean)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+        else {
+            allOrders = [...rentalFormatted, ...providerFormatted]
+                .filter(Boolean)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
 
         // 🟡 3. دمج وترتيب الطلبات (الأحدث أولًا)
-        const allOrders = [...rentalFormatted, ...providerFormatted, ...slavePostsFormatted]
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
 
         // 🧮 pagination يدوي بعد الدمج
         const paginated = allOrders.slice(skip, skip + limit);
@@ -1324,7 +1331,7 @@ const cancelOrder = async (req, res, next) => {
         next(err)
     }
 }
-const hidenPost = async (req, res,next) => {
+const hidenPost = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const { postId } = req.body;
@@ -1338,7 +1345,7 @@ const hidenPost = async (req, res,next) => {
             message: lang == "en" ? "post hidden for you" : "تم اخفاء الاوردر"
         });
     } catch (err) {
-       next(err)
+        next(err)
     }
 };
 
