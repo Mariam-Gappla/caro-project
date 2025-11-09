@@ -256,7 +256,7 @@ const addWinchOrder = async (req, res, next) => {
         message: error.details[0].message,
       });
     }
-    const pricing = await ServiceProviderPricing.find({});
+    const pricing = await ServiceProviderPricing.findOne({});
     if (distanceToCar > pricing.winchDistance) {
       const dis = distanceToCar - pricing.winchDistance;
       const extra = dis * pricing.winchOpenPrice
