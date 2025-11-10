@@ -92,6 +92,7 @@ const packageRoutes=require("./routes/packageroutes.js");
 const faqRoutes=require("./routes/faqroutes.js");
 const serviceProviderPricingRoutes=require("./routes/serviceProviderPricingroutes.js");
 const auctionOrderRoutes=require("./routes/auctionOrderroutes.js");
+const TrackingRoutes=require("./routes/trackingroutes.js")
 // 🟢 Middleware
 app.use(express.json());
 
@@ -199,6 +200,7 @@ app.use("/packages",packageRoutes);
 app.use("/faq",faqRoutes);
 app.use("/serviceProvider-pricing",serviceProviderPricingRoutes);
 app.use("/auctionOrder",auctionOrderRoutes);
+app.use("/tracking",TrackingRoutes)
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
   res.status(400).send({

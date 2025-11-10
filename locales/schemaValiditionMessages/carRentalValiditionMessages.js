@@ -1,6 +1,6 @@
 const messages = {
   en: {
-    title: "العنوان مطلوب",
+    title: "Title is required",
     rentalType: {
       required: "Rental type is required",
       only: "Rental type must be 'weekly/daily'",
@@ -13,6 +13,10 @@ const messages = {
     carType: {
       required: "Car type is required",
       string: "Car type must be a string"
+    },
+    imagesToDelete: {
+      base: "Images to delete must be an array",
+      uri: "Each image must be a valid URL"
     },
     licensePlateNumber: {
       required: "License plate number is required",
@@ -81,7 +85,11 @@ const messages = {
   },
 
   ar: {
-    title: "Title is required",
+    title: "العنوان مطلوب",
+    imagesToDelete: {
+      base: "يجب أن تكون الصور المراد حذفها مصفوفة",
+      uri: "كل صورة يجب أن تكون رابط صالح"
+    },
     rentalType: {
       required: "نوع الإيجار مطلوب",
       only: "نوع الإيجار يجب أن يكون 'weekly/daily'",

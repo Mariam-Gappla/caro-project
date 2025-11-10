@@ -219,8 +219,12 @@ const carRentalWeeklyValiditionUpdateSchema = (lang = "en") => {
     imagesToDelete: Joi
       .optional()
       .messages({
-        'array.base': 'imagesToDelete يجب أن تكون قائمة.',
-        'string.uri': 'كل عنصر في imagesToDelete يجب أن يكون رابطًا صحيحًا.'
+        imagesToDelete: Joi
+          .optional()
+          .messages({
+            'array.base': messages.imagesToDelete.base,
+            'string.uri': messages.imagesToDelete.uri
+          }),
       }),
     nameId: Joi.string().required().messages({
       "string.base": messages.nameId.string,
