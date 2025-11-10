@@ -1,4 +1,4 @@
-const User = require("../models/user");
+const ServiceProvider = require("../models/user");
 const activeSessions = new Map();
 // === API: Start Tracking ===
 const startTracking = (req, res) => {
@@ -39,7 +39,7 @@ const sendLocation = async (userId, lat, long) => {
     if (!activeSessions.get(userId)) return null; // لو التتبع مش شغال، تجاهل
 
     // تحديث الموقع مباشرة في الموديل
-    const user = await User.findByIdAndUpdate(
+    const user = await ServiceProvider.findByIdAndUpdate(
         userId,
         { location: { lat, long } },
         { new: true }
