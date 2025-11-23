@@ -313,7 +313,7 @@ const login = async (req, res, next) => {
     // الحالة: User
     // ----------------------
     if (role === "user") {
-      const existUser = await User.findOne({ phone }).populate("categoryCenterId");
+      const existUser = await User.findOne({ phone, isDeleted: false }).populate("categoryCenterId");
       if (!existUser) {
         return res.status(400).send({
           status: false,
@@ -441,7 +441,7 @@ const requestResetPassword = async (req, res, next) => {
 const verifyCode = async (req, res, next) => {
   try {
     const lang = req.headers['accept-language'] || 'en';
-    const { phone, otp} = req.body;
+    const { phone, otp } = req.body;
 
     // تحديد الموديل بناءً على الـ role
     let Model;
@@ -1204,6 +1204,37 @@ const getUserData = async (req, res, next) => {
     next(error)
   }
 }
+const deleteAccount = async (req, res, next) => {
+  try {
+    const lang = req.headers['accept-language'] || 'en';
+    const { type, id } = req.body;
+    let Model;
+    switch (type) {
+      case "user":
+        Model = User;
+        break;
+      case "rentaloffice":
+        Model = rentalOffice;
+        break;
+      case "serviceprovider":
+        Model = serviceProvider;
+        break;
+    }
+    await Model.findByIdAndUpdate(id, {
+      isDeleted: true,
+    });
+
+    return res.status(200).send({
+      code: 200,
+      status: true,
+      message:lang=="en"?"Account soft deleted successfully":"تم حذف الحساب بنجاح"
+    });
+
+  } catch (err) {
+    next(err);
+  }
+}
+
 
 
 
@@ -1224,5 +1255,6 @@ module.exports = {
   getProfileDataForCenters,
   getUserData,
   userAsAutoSalvage,
-  verifyCode
+  verifyCode,
+  deleteAccount
 }

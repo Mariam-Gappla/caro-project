@@ -46,16 +46,20 @@ const rentalOfficeSchema = new mongoose.Schema({
     administrationNumber: {
         type: String,
     },
-    employeeNumber:{
+    employeeNumber: {
         type: String,
     },
-    status:{
+    status: {
         type: String,
         enum: ['pending', 'accepted', 'refuded'],
         default: 'pending'
     },
     fcmToken: {
         type: String
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false
     },
     createdAt: { type: Date, default: Date.now },
 });

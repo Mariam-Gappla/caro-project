@@ -42,6 +42,10 @@ const serviceProviderSchema = new mongoose.Schema({
     fcmToken: {
         type: String
     },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
     createdAt: { type: Date, default: Date.now },
 });
 const serviceProvider = mongoose.model("serviceProvider", serviceProviderSchema);
