@@ -147,7 +147,7 @@ const login = async (req, res, next) => {
     // ----------------------
     if (role === "rentalOffice") {
       console.log(phone)
-      let existRentalOffice = await rentalOffice.findOne({ phone: phone });
+      let existRentalOffice = await rentalOffice.findOne({ phone:phone, isDeleted: false  });
       console.log(existRentalOffice)
       if (!existRentalOffice) {
         return res.status(400).send({
@@ -209,7 +209,7 @@ const login = async (req, res, next) => {
     // الحالة: Service Provider
     // ----------------------
     if (role === "serviceProvider") {
-      const existServiceProvider = await serviceProvider.findOne({ phone });
+      const existServiceProvider = await serviceProvider.findOne({ phone, isDeleted: false });
 
       if (existServiceProvider) {
         // التحقق من حالة الطلب
